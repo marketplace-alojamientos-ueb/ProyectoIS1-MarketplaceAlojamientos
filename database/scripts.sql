@@ -23,8 +23,10 @@ USE marketplace;
 --  USUARIOS Y ROLES
 -- =====================================================================
 
+-- La llave es un id interno; la cédula se guarda aparte para no exponerla en los endpoints.
 CREATE TABLE usuario (
-    cedula            BIGINT        NOT NULL,
+    id_usuario        INT           NOT NULL AUTO_INCREMENT,
+    cedula            VARCHAR(10)   NOT NULL,
     primer_nombre     VARCHAR(50)   NOT NULL,
     segundo_nombre    VARCHAR(50),
     primer_apellido   VARCHAR(50)   NOT NULL,
@@ -33,45 +35,46 @@ CREATE TABLE usuario (
     contrasena        VARCHAR(100)  NOT NULL,  -- hash (BCrypt = 60 caracteres)
     estado_cuenta     VARCHAR(20)   NOT NULL DEFAULT 'ACTIVA',
     restringido       TINYINT(1)    NOT NULL DEFAULT 0,
-    CONSTRAINT usuario_pk PRIMARY KEY (cedula),
+    CONSTRAINT usuario_pk PRIMARY KEY (id_usuario),
+    CONSTRAINT usuario_cedula_un UNIQUE (cedula),
     CONSTRAINT usuario_email_un UNIQUE (email),
     CONSTRAINT ck_usuario_estado_cuenta CHECK (estado_cuenta IN ('ACTIVA', 'DESACTIVADA')),
     CONSTRAINT ck_usuario_restringido CHECK (restringido IN (0, 1))
 ) ENGINE = InnoDB;
 
 CREATE TABLE admin (
-    cedula BIGINT NOT NULL,
-    CONSTRAINT admin_pk PRIMARY KEY (cedula),
-    CONSTRAINT admin_usuario_fk FOREIGN KEY (cedula) REFERENCES usuario (cedula)
+    id_usuario INT NOT NULL,
+    CONSTRAINT admin_pk PRIMARY KEY (id_usuario),
+    CONSTRAINT admin_usuario_fk FOREIGN KEY (id_usuario) REFERENCES usuario (id_usuario)
 ) ENGINE = InnoDB;
 
 CREATE TABLE anfitrion (
-    cedula BIGINT NOT NULL,
-    CONSTRAINT anfitrion_pk PRIMARY KEY (cedula),
-    CONSTRAINT anfitrion_usuario_fk FOREIGN KEY (cedula) REFERENCES usuario (cedula)
+    id_usuario INT NOT NULL,
+    CONSTRAINT anfitrion_pk PRIMARY KEY (id_usuario),
+    CONSTRAINT anfitrion_usuario_fk FOREIGN KEY (id_usuario) REFERENCES usuario (id_usuario)
 ) ENGINE = InnoDB;
 
 CREATE TABLE huesped (
-    cedula BIGINT NOT NULL,
-    CONSTRAINT huesped_pk PRIMARY KEY (cedula),
-    CONSTRAINT huesped_usuario_fk FOREIGN KEY (cedula) REFERENCES usuario (cedula)
+    id_usuario INT NOT NULL,
+    CONSTRAINT huesped_pk PRIMARY KEY (id_usuario),
+    CONSTRAINT huesped_usuario_fk FOREIGN KEY (id_usuario) REFERENCES usuario (id_usuario)
 ) ENGINE = InnoDB;
 
 CREATE TABLE notificacion (
     id_notificacion  INT           NOT NULL AUTO_INCREMENT,
-    cedula_usuario   BIGINT        NOT NULL,
+    id_usuario       INT           NOT NULL,
     tipo             VARCHAR(50)   NOT NULL,
     mensaje          VARCHAR(500)  NOT NULL,
     fecha            DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
     leida            TINYINT(1)    NOT NULL DEFAULT 0,
     CONSTRAINT notificacion_pk PRIMARY KEY (id_notificacion),
-    CONSTRAINT notificacion_usuario_fk FOREIGN KEY (cedula_usuario) REFERENCES usuario (cedula),
+    CONSTRAINT notificacion_usuario_fk FOREIGN KEY (id_usuario) REFERENCES usuario (id_usuario),
     CONSTRAINT ck_notificacion_leida CHECK (leida IN (0, 1))
 ) ENGINE = InnoDB;
 
 CREATE TABLE evento_auditoria (
     id_evento         INT            NOT NULL AUTO_INCREMENT,
-    cedula_usuario    BIGINT,        -- NULL para eventos sin usuario (ej. login fallido de un correo inexistente)
+    id_usuario        INT,           -- NULL para eventos sin usuario (ej. login fallido de un correo inexistente)
     operacion         VARCHAR(50)    NOT NULL,
     entidad_afectada  VARCHAR(50)    NOT NULL,
     id_entidad        INT,
@@ -79,7 +82,7 @@ CREATE TABLE evento_auditoria (
     resultado         VARCHAR(50)    NOT NULL,
     detalle           VARCHAR(1000),
     CONSTRAINT evento_auditoria_pk PRIMARY KEY (id_evento),
-    CONSTRAINT evento_auditoria_usuario_fk FOREIGN KEY (cedula_usuario) REFERENCES usuario (cedula)
+    CONSTRAINT evento_auditoria_usuario_fk FOREIGN KEY (id_usuario) REFERENCES usuario (id_usuario)
 ) ENGINE = InnoDB;
 
 -- =====================================================================
@@ -113,61 +116,44 @@ CREATE TABLE servicio_adicional (
 ) ENGINE = InnoDB;
 
 -- =====================================================================
---  ALOJAMIENTO Y PUBLICACIÓN
+--  PUBLICACIÓN (incluye los datos del alojamiento)
 -- =====================================================================
 
-CREATE TABLE alojamiento (
-    id_alojamiento     INT           NOT NULL AUTO_INCREMENT,
-    ubicacion_textual  VARCHAR(100)  NOT NULL,
-    ciudad             VARCHAR(50)   NOT NULL,
-    tipo_alojamiento   VARCHAR(20)   NOT NULL,
-    capacidad          INT           NOT NULL,
-    cedula_anfitrion   BIGINT        NOT NULL,
-    CONSTRAINT alojamiento_pk PRIMARY KEY (id_alojamiento),
-    CONSTRAINT alojamiento_anfitrion_fk FOREIGN KEY (cedula_anfitrion) REFERENCES anfitrion (cedula),
-    CONSTRAINT ck_alojamiento_capacidad CHECK (capacidad > 0)
-) ENGINE = InnoDB;
-
--- Antes: Tener
-CREATE TABLE alojamiento_servicio (
-    id_alojamiento  INT NOT NULL,
-    id_servicio     INT NOT NULL,
-    CONSTRAINT alojamiento_servicio_pk PRIMARY KEY (id_alojamiento, id_servicio),
-    CONSTRAINT alojamiento_servicio_alojamiento_fk FOREIGN KEY (id_alojamiento)
-        REFERENCES alojamiento (id_alojamiento) ON DELETE CASCADE,
-    CONSTRAINT alojamiento_servicio_servicio_fk FOREIGN KEY (id_servicio)
-        REFERENCES servicio (id_servicio) ON DELETE CASCADE
-) ENGINE = InnoDB;
-
-CREATE TABLE regla_alojamiento (
-    id_regla           INT           NOT NULL AUTO_INCREMENT,
-    nombre_regla       VARCHAR(50)   NOT NULL,
-    descripcion_regla  VARCHAR(500)  NOT NULL,
-    id_alojamiento     INT           NOT NULL,
-    CONSTRAINT regla_alojamiento_pk PRIMARY KEY (id_regla),
-    CONSTRAINT regla_alojamiento_alojamiento_fk FOREIGN KEY (id_alojamiento)
-        REFERENCES alojamiento (id_alojamiento) ON DELETE CASCADE
-) ENGINE = InnoDB;
-
 CREATE TABLE publicacion (
-    id_publicacion   INT            NOT NULL AUTO_INCREMENT,
-    titulo           VARCHAR(52)    NOT NULL,
-    descripcion      VARCHAR(500)   NOT NULL,
-    precio_noche     DECIMAL(12,2)  NOT NULL,
-    tarifa_limpieza  DECIMAL(12,2)  NOT NULL DEFAULT 0,
-    estado           VARCHAR(30)    NOT NULL DEFAULT 'BORRADOR',
-    modo_aceptacion  VARCHAR(30)    NOT NULL,
-    motivo_bloqueo   VARCHAR(500),
-    id_alojamiento   INT            NOT NULL,
-    id_politica      INT            NOT NULL,
+    id_publicacion     INT            NOT NULL AUTO_INCREMENT,
+    titulo             VARCHAR(52)    NOT NULL,
+    descripcion        VARCHAR(500)   NOT NULL,
+    ubicacion_textual  VARCHAR(100)   NOT NULL,
+    ciudad             VARCHAR(50)    NOT NULL,
+    tipo_alojamiento   VARCHAR(20)    NOT NULL,
+    capacidad          INT            NOT NULL,
+    precio_noche       DECIMAL(12,2)  NOT NULL,
+    tarifa_limpieza    DECIMAL(12,2)  NOT NULL DEFAULT 0,
+    reglas             VARCHAR(1000),
+    estado             VARCHAR(30)    NOT NULL DEFAULT 'BORRADOR',
+    modo_aceptacion    VARCHAR(30)    NOT NULL,
+    motivo_bloqueo     VARCHAR(500),
+    id_anfitrion       INT            NOT NULL,
+    id_politica        INT            NOT NULL,
     CONSTRAINT publicacion_pk PRIMARY KEY (id_publicacion),
-    CONSTRAINT publicacion_alojamiento_un UNIQUE (id_alojamiento),
-    CONSTRAINT publicacion_alojamiento_fk FOREIGN KEY (id_alojamiento) REFERENCES alojamiento (id_alojamiento),
+    CONSTRAINT publicacion_anfitrion_fk FOREIGN KEY (id_anfitrion) REFERENCES anfitrion (id_usuario),
     CONSTRAINT publicacion_politica_fk FOREIGN KEY (id_politica) REFERENCES politica_cancelacion (id_politica),
+    CONSTRAINT ck_publicacion_capacidad CHECK (capacidad > 0),
     CONSTRAINT ck_publicacion_precio_noche CHECK (precio_noche > 0),
     CONSTRAINT ck_publicacion_tarifa_limpieza CHECK (tarifa_limpieza >= 0),
     CONSTRAINT ck_publicacion_estado CHECK (estado IN ('BORRADOR', 'PENDIENTE_REVISION', 'ACTIVA', 'PAUSADA', 'BLOQUEADA')),
     CONSTRAINT ck_publicacion_modo_aceptacion CHECK (modo_aceptacion IN ('INMEDIATA', 'CON_APROBACION'))
+) ENGINE = InnoDB;
+
+-- Antes: alojamiento_servicio (Tener)
+CREATE TABLE publicacion_servicio (
+    id_publicacion  INT NOT NULL,
+    id_servicio     INT NOT NULL,
+    CONSTRAINT publicacion_servicio_pk PRIMARY KEY (id_publicacion, id_servicio),
+    CONSTRAINT publicacion_servicio_publicacion_fk FOREIGN KEY (id_publicacion)
+        REFERENCES publicacion (id_publicacion) ON DELETE CASCADE,
+    CONSTRAINT publicacion_servicio_servicio_fk FOREIGN KEY (id_servicio)
+        REFERENCES servicio (id_servicio) ON DELETE CASCADE
 ) ENGINE = InnoDB;
 
 -- Antes: Tenerv1
@@ -234,13 +220,13 @@ CREATE TABLE reserva (
     fecha_salida        DATE          NOT NULL,
     num_huespedes       INT           NOT NULL,
     clave_idempotencia  VARCHAR(100)  NOT NULL,
-    cedula_huesped      BIGINT        NOT NULL,
+    id_huesped          INT           NOT NULL,
     id_publicacion      INT           NOT NULL,
     id_cotizacion       INT           NOT NULL,
     CONSTRAINT reserva_pk PRIMARY KEY (id_reserva),
     CONSTRAINT reserva_clave_idempotencia_un UNIQUE (clave_idempotencia),
     CONSTRAINT reserva_cotizacion_un UNIQUE (id_cotizacion),
-    CONSTRAINT reserva_huesped_fk FOREIGN KEY (cedula_huesped) REFERENCES huesped (cedula),
+    CONSTRAINT reserva_huesped_fk FOREIGN KEY (id_huesped) REFERENCES huesped (id_usuario),
     CONSTRAINT reserva_publicacion_fk FOREIGN KEY (id_publicacion) REFERENCES publicacion (id_publicacion),
     CONSTRAINT reserva_cotizacion_fk FOREIGN KEY (id_cotizacion) REFERENCES cotizacion (id_cotizacion),
     CONSTRAINT ck_reserva_fechas CHECK (fecha_salida > fecha_llegada),
@@ -280,7 +266,7 @@ CREATE TABLE pago (
 CREATE TABLE cancelacion (
     id_cancelacion     INT            NOT NULL AUTO_INCREMENT,
     id_reserva         INT            NOT NULL,
-    cedula_usuario     BIGINT         NOT NULL,  -- quien cancela (huésped o anfitrión)
+    id_usuario         INT            NOT NULL,  -- quien cancela (huésped o anfitrión)
     fecha              DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     motivo             VARCHAR(500)   NOT NULL,
     valor_devolucion   DECIMAL(12,2)  NOT NULL DEFAULT 0,
@@ -288,7 +274,7 @@ CREATE TABLE cancelacion (
     CONSTRAINT cancelacion_pk PRIMARY KEY (id_cancelacion),
     CONSTRAINT cancelacion_reserva_un UNIQUE (id_reserva),
     CONSTRAINT cancelacion_reserva_fk FOREIGN KEY (id_reserva) REFERENCES reserva (id_reserva),
-    CONSTRAINT cancelacion_usuario_fk FOREIGN KEY (cedula_usuario) REFERENCES usuario (cedula),
+    CONSTRAINT cancelacion_usuario_fk FOREIGN KEY (id_usuario) REFERENCES usuario (id_usuario),
     CONSTRAINT ck_cancelacion_valor_devolucion CHECK (valor_devolucion >= 0),
     CONSTRAINT ck_cancelacion_estado_devolucion CHECK (estado_devolucion IN ('DEVUELTA', 'SIN_DEVOLUCION'))
 ) ENGINE = InnoDB;
@@ -314,25 +300,25 @@ CREATE TABLE resena (
 
 CREATE TABLE accion_moderacion (
     id_accion         INT           NOT NULL AUTO_INCREMENT,
-    cedula_admin      BIGINT        NOT NULL,
+    id_admin          INT           NOT NULL,
     tipo_accion       VARCHAR(30)   NOT NULL,
     entidad_afectada  VARCHAR(50)   NOT NULL,
     id_entidad        INT           NOT NULL,
     motivo            VARCHAR(500)  NOT NULL,
     fecha             DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT accion_moderacion_pk PRIMARY KEY (id_accion),
-    CONSTRAINT accion_moderacion_admin_fk FOREIGN KEY (cedula_admin) REFERENCES admin (cedula),
+    CONSTRAINT accion_moderacion_admin_fk FOREIGN KEY (id_admin) REFERENCES admin (id_usuario),
     CONSTRAINT ck_accion_moderacion_tipo CHECK (tipo_accion IN ('BLOQUEO_PUBLICACION', 'RESTRICCION_USUARIO', 'OCULTAMIENTO_REVIEW'))
 ) ENGINE = InnoDB;
 
 CREATE TABLE reporte_exportado (
     id_reporte    INT          NOT NULL AUTO_INCREMENT,
-    cedula_admin  BIGINT       NOT NULL,
+    id_admin      INT          NOT NULL,
     tipo          VARCHAR(30)  NOT NULL,
     formato       VARCHAR(10)  NOT NULL,
     fecha         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT reporte_exportado_pk PRIMARY KEY (id_reporte),
-    CONSTRAINT reporte_exportado_admin_fk FOREIGN KEY (cedula_admin) REFERENCES admin (cedula),
+    CONSTRAINT reporte_exportado_admin_fk FOREIGN KEY (id_admin) REFERENCES admin (id_usuario),
     CONSTRAINT ck_reporte_tipo CHECK (tipo IN ('USUARIOS', 'PUBLICACIONES', 'RESERVAS', 'INGRESOS_ESTIMADOS', 'DEMANDA')),
     CONSTRAINT ck_reporte_formato CHECK (formato IN ('PDF', 'EXCEL'))
 ) ENGINE = InnoDB;

@@ -1,9 +1,9 @@
-package co.edu.unbosque.marketplace.controlador;
+package co.edu.unbosque.marketplace.controller;
 
-import co.edu.unbosque.marketplace.modelo.dto.MensajeResponseDTO;
-import co.edu.unbosque.marketplace.modelo.dto.RecuperarContrasenaRequestDTO;
-import co.edu.unbosque.marketplace.modelo.dto.RestablecerContrasenaRequestDTO;
-import co.edu.unbosque.marketplace.servicio.UsuarioService;
+import co.edu.unbosque.marketplace.model.dto.MensajeResponseDTO;
+import co.edu.unbosque.marketplace.model.dto.RecuperarContrasenaRequestDTO;
+import co.edu.unbosque.marketplace.model.dto.RestablecerContrasenaRequestDTO;
+import co.edu.unbosque.marketplace.service.UsuarioService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,7 +30,7 @@ public class UsuarioController {
      * <p>Genera un código de 6 dígitos, válido por 15 minutos, y lo envía al correo.
      * Pedir otro código invalida el anterior.</p>
      * <p>Pide (body JSON):</p>
-     * <pre>{ "email": "ana@correo.com" }</pre>
+     * <pre>{ "correo": "ana@correo.com" }</pre>
      * <p>Retorna:</p>
      * <ul>
      *   <li><b>200</b> siempre con el mismo mensaje, exista o no el correo (por seguridad no se revela
@@ -55,9 +55,9 @@ public class UsuarioController {
      * <p>Pide (body JSON):</p>
      * <pre>
      * {
-     *   "email": "ana@correo.com",
+     *   "correo": "ana@correo.com",
      *   "codigo": "483920",                // 6 dígitos, el que llegó al correo
-     *   "nuevaContrasena": "NuevaClave1"   // 8 a 64 caracteres, mínimo una letra y un número
+     *   "nuevaPassword": "NuevaClave1"     // 8 a 64 caracteres, mínimo una letra y un número
      * }
      * </pre>
      * <p>Retorna:</p>

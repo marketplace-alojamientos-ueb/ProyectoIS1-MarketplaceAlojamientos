@@ -1,6 +1,6 @@
-package co.edu.unbosque.marketplace.servicio.impl;
+package co.edu.unbosque.marketplace.service.impl;
 
-import co.edu.unbosque.marketplace.servicio.CorreoService;
+import co.edu.unbosque.marketplace.service.CorreoService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;

@@ -1,4 +1,4 @@
-package co.edu.unbosque.marketplace.modelo.enums;
+package co.edu.unbosque.marketplace.model.enums;
 
 public enum EstadoCuenta {
     ACTIVA,

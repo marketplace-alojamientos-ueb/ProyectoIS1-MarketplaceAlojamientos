@@ -1,11 +1,11 @@
-package co.edu.unbosque.marketplace.servicio.impl;
+package co.edu.unbosque.marketplace.service.impl;
 
-import co.edu.unbosque.marketplace.modelo.dto.RecuperarContrasenaRequestDTO;
-import co.edu.unbosque.marketplace.modelo.dto.RestablecerContrasenaRequestDTO;
-import co.edu.unbosque.marketplace.modelo.entidad.Usuario;
-import co.edu.unbosque.marketplace.repositorio.UsuarioRepository;
-import co.edu.unbosque.marketplace.servicio.CorreoService;
-import co.edu.unbosque.marketplace.servicio.UsuarioService;
+import co.edu.unbosque.marketplace.model.dto.RecuperarContrasenaRequestDTO;
+import co.edu.unbosque.marketplace.model.dto.RestablecerContrasenaRequestDTO;
+import co.edu.unbosque.marketplace.model.entity.Usuario;
+import co.edu.unbosque.marketplace.repository.UsuarioRepository;
+import co.edu.unbosque.marketplace.service.CorreoService;
+import co.edu.unbosque.marketplace.service.UsuarioService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -33,7 +33,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     private final PasswordEncoder passwordEncoder;
     private final long minutosExpiracion;
     private final SecureRandom random = new SecureRandom();
-    private final Map<String, CodigoRecuperacion> codigosPorEmail = new ConcurrentHashMap<>();
+    private final Map<String, CodigoRecuperacion> codigosPorCorreo = new ConcurrentHashMap<>();
 
     public UsuarioServiceImpl(UsuarioRepository usuarioRepository,
                               CorreoService correoService,
@@ -49,40 +49,40 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Transactional(readOnly = true)
     public void solicitarRecuperacion(RecuperarContrasenaRequestDTO dto) {
         // Si el correo no es de un usuario activo no se hace nada, para no revelar qué correos existen.
-        String email = AnfitrionServiceImpl.normalizarEmail(dto.getEmail());
-        usuarioRepository.findByEmail(email)
+        String correo = AnfitrionServiceImpl.normalizarCorreo(dto.getCorreo());
+        usuarioRepository.findByCorreo(correo)
                 .filter(Usuario::estaActiva)
                 .ifPresent(usuario -> {
                     String codigo = String.format("%06d", random.nextInt(1_000_000));
                     // Guardar uno nuevo reemplaza el anterior del mismo correo.
-                    codigosPorEmail.put(email, new CodigoRecuperacion(codigo, LocalDateTime.now().plusMinutes(minutosExpiracion)));
-                    correoService.enviarCodigoRecuperacion(usuario.getEmail(), usuario.getPrimerNombre(), codigo, minutosExpiracion);
+                    codigosPorCorreo.put(correo, new CodigoRecuperacion(codigo, LocalDateTime.now().plusMinutes(minutosExpiracion)));
+                    correoService.enviarCodigoRecuperacion(usuario.getCorreo(), usuario.getPrimerNombre(), codigo, minutosExpiracion);
                 });
     }
 
     @Override
     public void restablecerContrasena(RestablecerContrasenaRequestDTO dto) {
-        String email = AnfitrionServiceImpl.normalizarEmail(dto.getEmail());
-        CodigoRecuperacion guardado = codigosPorEmail.get(email);
+        String correo = AnfitrionServiceImpl.normalizarCorreo(dto.getCorreo());
+        CodigoRecuperacion guardado = codigosPorCorreo.get(correo);
 
         if (guardado == null || LocalDateTime.now().isAfter(guardado.expiracion)) {
-            codigosPorEmail.remove(email);
+            codigosPorCorreo.remove(correo);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, MENSAJE_CODIGO_INVALIDO);
         }
         if (!guardado.codigo.equals(dto.getCodigo())) {
             guardado.intentos++;
             if (guardado.intentos >= MAX_INTENTOS_CODIGO) {
-                codigosPorEmail.remove(email);
+                codigosPorCorreo.remove(correo);
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Demasiados intentos fallidos, solicita un código nuevo");
             }
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, MENSAJE_CODIGO_INVALIDO);
         }
 
-        Usuario usuario = usuarioRepository.findByEmail(email)
+        Usuario usuario = usuarioRepository.findByCorreo(correo)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, MENSAJE_CODIGO_INVALIDO));
-        usuario.setContrasena(passwordEncoder.encode(dto.getNuevaContrasena()));
+        usuario.setPassword(passwordEncoder.encode(dto.getNuevaPassword()));
         usuarioRepository.save(usuario);
-        codigosPorEmail.remove(email);
+        codigosPorCorreo.remove(correo);
     }
 
     /** Código enviado al correo, su fecha de vencimiento y los intentos fallidos. */

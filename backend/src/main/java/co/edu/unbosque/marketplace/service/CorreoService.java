@@ -1,4 +1,4 @@
-package co.edu.unbosque.marketplace.servicio;
+package co.edu.unbosque.marketplace.service;
 
 public interface CorreoService {
 

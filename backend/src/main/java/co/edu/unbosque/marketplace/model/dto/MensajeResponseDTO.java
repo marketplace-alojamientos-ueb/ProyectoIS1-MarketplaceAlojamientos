@@ -1,4 +1,4 @@
-package co.edu.unbosque.marketplace.modelo.dto;
+package co.edu.unbosque.marketplace.model.dto;
 
 /** Respuesta simple con un mensaje para mostrar al usuario. */
 public class MensajeResponseDTO {

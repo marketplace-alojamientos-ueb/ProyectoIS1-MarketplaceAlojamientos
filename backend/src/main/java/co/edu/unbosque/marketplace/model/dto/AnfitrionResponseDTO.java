@@ -1,24 +1,28 @@
-package co.edu.unbosque.marketplace.modelo.dto;
+package co.edu.unbosque.marketplace.model.dto;
 
-import co.edu.unbosque.marketplace.modelo.enums.EstadoCuenta;
+import co.edu.unbosque.marketplace.model.enums.EstadoCuenta;
 
 /** Datos del anfitrión que el backend devuelve al front (nunca incluye la contraseña). */
 public class AnfitrionResponseDTO {
 
-    private Long cedula;
+    private Integer idUsuario;
+    private String cedula;
     private String primerNombre;
     private String segundoNombre;
     private String primerApellido;
     private String segundoApellido;
     private String nombreCompleto;
-    private String email;
+    private String correo;
     private EstadoCuenta estadoCuenta;
     private Boolean restringido;
 
     public AnfitrionResponseDTO() {}
 
-    public Long getCedula() { return cedula; }
-    public void setCedula(Long cedula) { this.cedula = cedula; }
+    public Integer getIdUsuario() { return idUsuario; }
+    public void setIdUsuario(Integer idUsuario) { this.idUsuario = idUsuario; }
+
+    public String getCedula() { return cedula; }
+    public void setCedula(String cedula) { this.cedula = cedula; }
 
     public String getPrimerNombre() { return primerNombre; }
     public void setPrimerNombre(String primerNombre) { this.primerNombre = primerNombre; }
@@ -35,8 +39,8 @@ public class AnfitrionResponseDTO {
     public String getNombreCompleto() { return nombreCompleto; }
     public void setNombreCompleto(String nombreCompleto) { this.nombreCompleto = nombreCompleto; }
 
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
+    public String getCorreo() { return correo; }
+    public void setCorreo(String correo) { this.correo = correo; }
 
     public EstadoCuenta getEstadoCuenta() { return estadoCuenta; }
     public void setEstadoCuenta(EstadoCuenta estadoCuenta) { this.estadoCuenta = estadoCuenta; }

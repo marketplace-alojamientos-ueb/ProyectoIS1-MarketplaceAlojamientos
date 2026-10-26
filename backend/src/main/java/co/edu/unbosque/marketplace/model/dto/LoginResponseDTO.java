@@ -1,4 +1,4 @@
-package co.edu.unbosque.marketplace.modelo.dto;
+package co.edu.unbosque.marketplace.model.dto;
 
 /**
  * Respuesta de un inicio de sesión correcto.
@@ -6,28 +6,28 @@ package co.edu.unbosque.marketplace.modelo.dto;
  */
 public class LoginResponseDTO {
 
-    private Long cedula;
+    private Integer idUsuario;
     private String nombreCompleto;
-    private String email;
+    private String correo;
     private String rol;
 
     public LoginResponseDTO() {}
 
-    public LoginResponseDTO(Long cedula, String nombreCompleto, String email, String rol) {
-        this.cedula = cedula;
+    public LoginResponseDTO(Integer idUsuario, String nombreCompleto, String correo, String rol) {
+        this.idUsuario = idUsuario;
         this.nombreCompleto = nombreCompleto;
-        this.email = email;
+        this.correo = correo;
         this.rol = rol;
     }
 
-    public Long getCedula() { return cedula; }
-    public void setCedula(Long cedula) { this.cedula = cedula; }
+    public Integer getIdUsuario() { return idUsuario; }
+    public void setIdUsuario(Integer idUsuario) { this.idUsuario = idUsuario; }
 
     public String getNombreCompleto() { return nombreCompleto; }
     public void setNombreCompleto(String nombreCompleto) { this.nombreCompleto = nombreCompleto; }
 
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
+    public String getCorreo() { return correo; }
+    public void setCorreo(String correo) { this.correo = correo; }
 
     public String getRol() { return rol; }
     public void setRol(String rol) { this.rol = rol; }

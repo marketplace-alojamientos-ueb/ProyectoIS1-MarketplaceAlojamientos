@@ -1,7 +1,7 @@
-package co.edu.unbosque.marketplace.servicio;
+package co.edu.unbosque.marketplace.service;
 
-import co.edu.unbosque.marketplace.modelo.dto.RecuperarContrasenaRequestDTO;
-import co.edu.unbosque.marketplace.modelo.dto.RestablecerContrasenaRequestDTO;
+import co.edu.unbosque.marketplace.model.dto.RecuperarContrasenaRequestDTO;
+import co.edu.unbosque.marketplace.model.dto.RestablecerContrasenaRequestDTO;
 
 /** Lo común a cualquier usuario (tabla USUARIO), sin importar si es anfitrión, huésped o admin. */
 public interface UsuarioService {

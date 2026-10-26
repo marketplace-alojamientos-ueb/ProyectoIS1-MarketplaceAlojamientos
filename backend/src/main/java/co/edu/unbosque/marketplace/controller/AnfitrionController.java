@@ -1,11 +1,11 @@
-package co.edu.unbosque.marketplace.controlador;
+package co.edu.unbosque.marketplace.controller;
 
-import co.edu.unbosque.marketplace.modelo.dto.AnfitrionActualizarDTO;
-import co.edu.unbosque.marketplace.modelo.dto.AnfitrionRequestDTO;
-import co.edu.unbosque.marketplace.modelo.dto.AnfitrionResponseDTO;
-import co.edu.unbosque.marketplace.modelo.dto.LoginRequestDTO;
-import co.edu.unbosque.marketplace.modelo.dto.LoginResponseDTO;
-import co.edu.unbosque.marketplace.servicio.AnfitrionService;
+import co.edu.unbosque.marketplace.model.dto.AnfitrionActualizarDTO;
+import co.edu.unbosque.marketplace.model.dto.AnfitrionRequestDTO;
+import co.edu.unbosque.marketplace.model.dto.AnfitrionResponseDTO;
+import co.edu.unbosque.marketplace.model.dto.LoginRequestDTO;
+import co.edu.unbosque.marketplace.model.dto.LoginResponseDTO;
+import co.edu.unbosque.marketplace.service.AnfitrionService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,19 +18,20 @@ import java.util.List;
  * <p>Todas las respuestas son JSON. El objeto <b>AnfitrionResponseDTO</b> que devuelven es:</p>
  * <pre>
  * {
- *   "cedula": 1012345678,
+ *   "idUsuario": 7,
+ *   "cedula": "1012345678",
  *   "primerNombre": "Ana",
  *   "segundoNombre": "María",          // puede ser null
  *   "primerApellido": "Gómez",
  *   "segundoApellido": "Rojas",
  *   "nombreCompleto": "Ana María Gómez Rojas",
- *   "email": "ana@correo.com",
+ *   "correo": "ana@correo.com",
  *   "estadoCuenta": "ACTIVA",          // ACTIVA | DESACTIVADA
  *   "restringido": false
  * }
  * </pre>
  * <p>Los errores llegan con el formato por defecto de Spring; el texto para mostrar está en
- * <code>"message"</code>, ej. <code>{ "status": 404, "error": "Not Found", "message": "Anfitrión no encontrado con cédula: 1", ... }</code>.
+ * <code>"message"</code>, ej. <code>{ "status": 404, "error": "Not Found", "message": "Anfitrión no encontrado con id: 1", ... }</code>.
  * Los de validación (400) traen además <code>"errors"</code> con el campo y el mensaje de cada input inválido.</p>
  */
 @RestController
@@ -56,20 +57,20 @@ public class AnfitrionController {
     }
 
     /**
-     * <b>GET /api/anfitriones/{cedula}</b> — Consulta un anfitrión por su cédula.
+     * <b>GET /api/anfitriones/{idUsuario}</b> — Consulta un anfitrión por su id.
      *
-     * <p>Pide: la cédula en la URL, ej. <code>/api/anfitriones/1012345678</code>.</p>
+     * <p>Pide: el idUsuario en la URL, ej. <code>/api/anfitriones/7</code>.</p>
      * <p>Retorna:</p>
      * <ul>
      *   <li><b>200</b> con el AnfitrionResponseDTO.</li>
-     *   <li><b>404</b> si no existe un anfitrión con esa cédula.</li>
-     *   <li><b>400</b> si la cédula no es un número.</li>
+     *   <li><b>404</b> si no existe un anfitrión con ese id.</li>
+     *   <li><b>400</b> si el id no es un número.</li>
      * </ul>
-     * <p>Uso en el front: cargar la pantalla "Mi perfil" con la cédula guardada al iniciar sesión.</p>
+     * <p>Uso en el front: cargar la pantalla "Mi perfil" con el idUsuario guardado al iniciar sesión.</p>
      */
-    @GetMapping("/{cedula}")
-    public ResponseEntity<AnfitrionResponseDTO> buscarPorCedula(@PathVariable Long cedula) {
-        return ResponseEntity.ok(anfitrionService.buscarPorCedula(cedula));
+    @GetMapping("/{idUsuario}")
+    public ResponseEntity<AnfitrionResponseDTO> buscarPorId(@PathVariable Integer idUsuario) {
+        return ResponseEntity.ok(anfitrionService.buscarPorId(idUsuario));
     }
 
     /**
@@ -78,13 +79,13 @@ public class AnfitrionController {
      * <p>Pide (body JSON):</p>
      * <pre>
      * {
-     *   "cedula": 1012345678,              // obligatorio, número de máx. 10 dígitos
+     *   "cedula": "1012345678",            // obligatorio, texto de 6 a 10 dígitos
      *   "primerNombre": "Ana",             // obligatorio, máx. 50
      *   "segundoNombre": "María",          // opcional, máx. 50
      *   "primerApellido": "Gómez",         // obligatorio, máx. 50
      *   "segundoApellido": "Rojas",        // obligatorio, máx. 50
-     *   "email": "ana@correo.com",         // obligatorio, formato de correo, máx. 200
-     *   "contrasena": "Clave1234"          // obligatorio, 8 a 64 caracteres, mínimo una letra y un número
+     *   "correo": "ana@correo.com",         // obligatorio, formato de correo, máx. 200
+     *   "password": "Clave1234"            // obligatorio, 8 a 64 caracteres, mínimo una letra y un número
      * }
      * </pre>
      * <p>Retorna:</p>
@@ -102,16 +103,16 @@ public class AnfitrionController {
     }
 
     /**
-     * <b>PUT /api/anfitriones/{cedula}</b> — Actualiza los datos personales del anfitrión.
+     * <b>PUT /api/anfitriones/{idUsuario}</b> — Actualiza los datos personales del anfitrión.
      *
-     * <p>Pide: la cédula en la URL y en el body todos los campos editables (se reemplazan todos):</p>
+     * <p>Pide: el idUsuario en la URL y en el body todos los campos editables (se reemplazan todos):</p>
      * <pre>
      * {
      *   "primerNombre": "Ana",
      *   "segundoNombre": null,
      *   "primerApellido": "Gómez",
      *   "segundoApellido": "Rojas",
-     *   "email": "nuevo@correo.com"
+     *   "correo": "nuevo@correo.com"
      * }
      * </pre>
      * <p>No cambia la cédula ni la contraseña.</p>
@@ -124,18 +125,18 @@ public class AnfitrionController {
      * </ul>
      * <p>Uso en el front: botón "Guardar" de la pantalla "Editar perfil".</p>
      */
-    @PutMapping("/{cedula}")
-    public ResponseEntity<AnfitrionResponseDTO> actualizar(@PathVariable Long cedula,
+    @PutMapping("/{idUsuario}")
+    public ResponseEntity<AnfitrionResponseDTO> actualizar(@PathVariable Integer idUsuario,
                                                            @Valid @RequestBody AnfitrionActualizarDTO dto) {
-        return ResponseEntity.ok(anfitrionService.actualizar(cedula, dto));
+        return ResponseEntity.ok(anfitrionService.actualizar(idUsuario, dto));
     }
 
     /**
-     * <b>DELETE /api/anfitriones/{cedula}</b> — Desactiva la cuenta del anfitrión (borrado lógico).
+     * <b>DELETE /api/anfitriones/{idUsuario}</b> — Desactiva la cuenta del anfitrión (borrado lógico).
      *
      * <p>No borra el registro de la base de datos: deja <code>estadoCuenta = DESACTIVADA</code>, así se
      * conservan sus alojamientos y reservas, y ya no podrá iniciar sesión.</p>
-     * <p>Pide: la cédula en la URL.</p>
+     * <p>Pide: el idUsuario en la URL.</p>
      * <p>Retorna:</p>
      * <ul>
      *   <li><b>204</b> sin contenido si se desactivó.</li>
@@ -143,9 +144,9 @@ public class AnfitrionController {
      * </ul>
      * <p>Uso en el front: opción "Eliminar mi cuenta" (pedir confirmación antes) y luego cerrar sesión.</p>
      */
-    @DeleteMapping("/{cedula}")
-    public ResponseEntity<Void> desactivar(@PathVariable Long cedula) {
-        anfitrionService.desactivar(cedula);
+    @DeleteMapping("/{idUsuario}")
+    public ResponseEntity<Void> desactivar(@PathVariable Integer idUsuario) {
+        anfitrionService.desactivar(idUsuario);
         return ResponseEntity.noContent().build();
     }
 
@@ -154,12 +155,12 @@ public class AnfitrionController {
      *
      * <p>Pide (body JSON):</p>
      * <pre>
-     * { "email": "ana@correo.com", "contrasena": "Clave1234" }
+     * { "correo": "ana@correo.com", "password": "Clave1234" }
      * </pre>
      * <p>Retorna:</p>
      * <ul>
      *   <li><b>200</b> con:
-     *     <pre>{ "cedula": 1012345678, "nombreCompleto": "Ana María Gómez Rojas", "email": "ana@correo.com", "rol": "ANFITRION" }</pre>
+     *     <pre>{ "idUsuario": 7, "nombreCompleto": "Ana María Gómez Rojas", "correo": "ana@correo.com", "rol": "ANFITRION" }</pre>
      *   </li>
      *   <li><b>400</b> si falta el correo o la contraseña, o el correo no tiene formato válido.</li>
      *   <li><b>401</b> si el correo no es de un anfitrión o la contraseña es incorrecta
@@ -167,7 +168,7 @@ public class AnfitrionController {
      *   <li><b>403</b> si la cuenta está desactivada o restringida por un administrador.</li>
      * </ul>
      * <p>Uso en el front: formulario de login del anfitrión. Guardar la respuesta (ej. en sessionStorage)
-     * para saber quién está conectado y usar la <code>cedula</code> en los demás endpoints.
+     * para saber quién está conectado y usar el <code>idUsuario</code> en los demás endpoints.
      * Provisional: todavía no se entrega token (JWT); cuando se agregue vendrá en esta misma respuesta.</p>
      */
     @PostMapping("/login")

@@ -1,14 +1,12 @@
-package co.edu.unbosque.marketplace.modelo.dto;
+package co.edu.unbosque.marketplace.model.dto;
 
 import jakarta.validation.constraints.*;
 
-/** Datos que envía el front para registrar un anfitrión nuevo. */
-public class AnfitrionRequestDTO {
-
-    @NotNull(message = "La cédula es obligatoria")
-    @Positive(message = "La cédula debe ser un número positivo")
-    @Digits(integer = 10, fraction = 0, message = "La cédula debe tener máximo 10 dígitos")
-    private Long cedula;
+/**
+ * Datos editables del perfil del anfitrión.
+ * La cédula no se puede cambiar y la contraseña se cambia con el flujo de recuperación.
+ */
+public class AnfitrionActualizarDTO {
 
     @NotBlank(message = "El primer nombre es obligatorio")
     @Size(max = 50, message = "El primer nombre admite máximo 50 caracteres")
@@ -28,28 +26,18 @@ public class AnfitrionRequestDTO {
     @NotBlank(message = "El correo es obligatorio")
     @Email(message = "El correo no tiene un formato válido")
     @Size(max = 200, message = "El correo admite máximo 200 caracteres")
-    private String email;
+    private String correo;
 
-    @NotBlank(message = "La contraseña es obligatoria")
-    @Size(min = 8, max = 64, message = "La contraseña debe tener entre 8 y 64 caracteres")
-    @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d).+$", message = "La contraseña debe tener al menos una letra y un número")
-    private String contrasena;
+    public AnfitrionActualizarDTO() {}
 
-    public AnfitrionRequestDTO() {}
-
-    public AnfitrionRequestDTO(Long cedula, String primerNombre, String segundoNombre, String primerApellido,
-                               String segundoApellido, String email, String contrasena) {
-        this.cedula = cedula;
+    public AnfitrionActualizarDTO(String primerNombre, String segundoNombre, String primerApellido,
+                                  String segundoApellido, String correo) {
         this.primerNombre = primerNombre;
         this.segundoNombre = segundoNombre;
         this.primerApellido = primerApellido;
         this.segundoApellido = segundoApellido;
-        this.email = email;
-        this.contrasena = contrasena;
+        this.correo = correo;
     }
-
-    public Long getCedula() { return cedula; }
-    public void setCedula(Long cedula) { this.cedula = cedula; }
 
     public String getPrimerNombre() { return primerNombre; }
     public void setPrimerNombre(String primerNombre) { this.primerNombre = primerNombre; }
@@ -63,9 +51,6 @@ public class AnfitrionRequestDTO {
     public String getSegundoApellido() { return segundoApellido; }
     public void setSegundoApellido(String segundoApellido) { this.segundoApellido = segundoApellido; }
 
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
-
-    public String getContrasena() { return contrasena; }
-    public void setContrasena(String contrasena) { this.contrasena = contrasena; }
+    public String getCorreo() { return correo; }
+    public void setCorreo(String correo) { this.correo = correo; }
 }
