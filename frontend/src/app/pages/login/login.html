@@ -1,0 +1,9 @@
+<app-plantilla-autenticacion
+  titulo="Inicia sesión"
+  subtitulo="Ingresa como anfitrión para administrar tus alojamientos"
+>
+  @if (mensaje()) {
+    <app-alerta tipo="info">{{ mensaje() }}</app-alerta>
+  }
+  <app-formulario-login (enviar)="iniciarSesion($event)" />
+</app-plantilla-autenticacion>

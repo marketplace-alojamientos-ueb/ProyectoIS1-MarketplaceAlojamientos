@@ -1,0 +1,12 @@
+.olvido {
+  text-align: right;
+  margin: -0.25rem 0 1.25rem;
+  font-size: 0.9rem;
+}
+
+.pie {
+  text-align: center;
+  margin: 1.5rem 0 0;
+  font-size: 0.92rem;
+  color: var(--color-texto-suave);
+}

@@ -1,0 +1,87 @@
+<form [formGroup]="form" (ngSubmit)="enviarFormulario()" novalidate>
+  <h2 class="seccion">Datos personales</h2>
+
+  <app-campo-formulario
+    id="registro-cedula"
+    etiqueta="Cédula"
+    modoTeclado="numeric"
+    placeholder="1012345678"
+    ayuda="Entre 6 y 10 dígitos, solo números"
+    [control]="form.controls.cedula"
+    [error]="error(form.controls.cedula, 'La cédula debe tener entre 6 y 10 dígitos, solo números')"
+  />
+
+  <div class="fila">
+    <app-campo-formulario
+      id="registro-primer-nombre"
+      etiqueta="Primer nombre"
+      autocomplete="given-name"
+      [control]="form.controls.primerNombre"
+      [error]="error(form.controls.primerNombre)"
+    />
+    <app-campo-formulario
+      id="registro-segundo-nombre"
+      etiqueta="Segundo nombre"
+      [opcional]="true"
+      [control]="form.controls.segundoNombre"
+      [error]="error(form.controls.segundoNombre)"
+    />
+  </div>
+
+  <div class="fila">
+    <app-campo-formulario
+      id="registro-primer-apellido"
+      etiqueta="Primer apellido"
+      autocomplete="family-name"
+      [control]="form.controls.primerApellido"
+      [error]="error(form.controls.primerApellido)"
+    />
+    <app-campo-formulario
+      id="registro-segundo-apellido"
+      etiqueta="Segundo apellido"
+      [control]="form.controls.segundoApellido"
+      [error]="error(form.controls.segundoApellido)"
+    />
+  </div>
+
+  <h2 class="seccion">Datos de acceso</h2>
+
+  <app-campo-formulario
+    id="registro-correo"
+    etiqueta="Correo electrónico"
+    tipo="email"
+    modoTeclado="email"
+    autocomplete="email"
+    placeholder="tucorreo@ejemplo.com"
+    [control]="form.controls.correo"
+    [error]="error(form.controls.correo)"
+  />
+
+  <div class="fila">
+    <app-campo-formulario
+      id="registro-password"
+      etiqueta="Contraseña"
+      tipo="password"
+      autocomplete="new-password"
+      ayuda="8 a 64 caracteres, con al menos una letra y un número"
+      [control]="form.controls.password"
+      [error]="error(form.controls.password, 'Debe tener al menos una letra y un número')"
+    />
+    <app-campo-formulario
+      id="registro-confirmar-password"
+      etiqueta="Confirmar contraseña"
+      tipo="password"
+      autocomplete="new-password"
+      [control]="form.controls.confirmarPassword"
+      [error]="errorConfirmacion()"
+    />
+  </div>
+
+  <app-boton tipo="submit" [completo]="true" [deshabilitado]="cargando()">
+    {{ cargando() ? 'Creando cuenta…' : 'Crear cuenta' }}
+  </app-boton>
+
+  <p class="pie">
+    ¿Ya tienes cuenta? <a routerLink="/login">Inicia sesión</a>
+  </p>
+</form>
