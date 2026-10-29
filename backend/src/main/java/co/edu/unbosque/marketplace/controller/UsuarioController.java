@@ -45,7 +45,7 @@ public class UsuarioController {
     @PostMapping("/recuperar-contrasena")
     public ResponseEntity<MensajeResponseDTO> solicitarRecuperacion(@Valid @RequestBody RecuperarContrasenaRequestDTO dto) {
         usuarioService.solicitarRecuperacion(dto);
-        return ResponseEntity.ok(new MensajeResponseDTO(
+        return ResponseEntity.ok(crearMensaje(
                 "Si el correo está registrado, recibirás un código para restablecer tu contraseña"));
     }
 
@@ -72,6 +72,12 @@ public class UsuarioController {
     @PostMapping("/restablecer-contrasena")
     public ResponseEntity<MensajeResponseDTO> restablecerContrasena(@Valid @RequestBody RestablecerContrasenaRequestDTO dto) {
         usuarioService.restablecerContrasena(dto);
-        return ResponseEntity.ok(new MensajeResponseDTO("Contraseña actualizada correctamente"));
+        return ResponseEntity.ok(crearMensaje("Contraseña actualizada correctamente"));
+    }
+
+    private static MensajeResponseDTO crearMensaje(String texto) {
+        MensajeResponseDTO respuesta = new MensajeResponseDTO();
+        respuesta.setMensaje(texto);
+        return respuesta;
     }
 }

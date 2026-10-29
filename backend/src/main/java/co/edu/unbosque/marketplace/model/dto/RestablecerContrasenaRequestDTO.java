@@ -18,14 +18,6 @@ public class RestablecerContrasenaRequestDTO {
     @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d).+$", message = "La contraseña debe tener al menos una letra y un número")
     private String nuevaPassword;
 
-    public RestablecerContrasenaRequestDTO() {}
-
-    public RestablecerContrasenaRequestDTO(String correo, String codigo, String nuevaPassword) {
-        this.correo = correo;
-        this.codigo = codigo;
-        this.nuevaPassword = nuevaPassword;
-    }
-
     public String getCorreo() { return correo; }
     public void setCorreo(String correo) { this.correo = correo; }
 

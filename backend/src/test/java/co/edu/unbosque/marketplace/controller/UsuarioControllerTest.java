@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import static co.edu.unbosque.marketplace.DatosDePrueba.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -26,7 +27,7 @@ class UsuarioControllerTest {
 
     @Test
     void solicitarRecuperacionResponde200ConMensaje() {
-        RecuperarContrasenaRequestDTO dto = new RecuperarContrasenaRequestDTO("ana@correo.com");
+        RecuperarContrasenaRequestDTO dto = recuperar("ana@correo.com");
 
         ResponseEntity<MensajeResponseDTO> respuesta = controller.solicitarRecuperacion(dto);
 
@@ -37,7 +38,7 @@ class UsuarioControllerTest {
 
     @Test
     void restablecerContrasenaResponde200ConMensaje() {
-        RestablecerContrasenaRequestDTO dto = new RestablecerContrasenaRequestDTO("ana@correo.com", "123456", "NuevaClave1");
+        RestablecerContrasenaRequestDTO dto = restablecer("ana@correo.com", "123456", "NuevaClave1");
 
         ResponseEntity<MensajeResponseDTO> respuesta = controller.restablecerContrasena(dto);
 

@@ -13,13 +13,6 @@ public class LoginRequestDTO {
     @Size(max = 64, message = "La contraseña admite máximo 64 caracteres")
     private String password;
 
-    public LoginRequestDTO() {}
-
-    public LoginRequestDTO(String correo, String password) {
-        this.correo = correo;
-        this.password = password;
-    }
-
     public String getCorreo() { return correo; }
     public void setCorreo(String correo) { this.correo = correo; }
 

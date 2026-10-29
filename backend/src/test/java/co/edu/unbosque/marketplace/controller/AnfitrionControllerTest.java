@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import java.util.List;
 
+import static co.edu.unbosque.marketplace.DatosDePrueba.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -81,8 +82,8 @@ class AnfitrionControllerTest {
 
     @Test
     void iniciarSesionResponde200() {
-        LoginRequestDTO dto = new LoginRequestDTO("ana@correo.com", "Clave1234");
-        LoginResponseDTO login = new LoginResponseDTO(7, "Ana Gómez Rojas", "ana@correo.com", "ANFITRION");
+        LoginRequestDTO dto = login("ana@correo.com", "Clave1234");
+        LoginResponseDTO login = respuestaLogin(7, "Ana Gómez Rojas", "ana@correo.com", "ANFITRION");
         when(anfitrionService.iniciarSesion(dto)).thenReturn(login);
 
         ResponseEntity<LoginResponseDTO> respuesta = controller.iniciarSesion(dto);

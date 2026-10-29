@@ -11,15 +11,6 @@ public class LoginResponseDTO {
     private String correo;
     private String rol;
 
-    public LoginResponseDTO() {}
-
-    public LoginResponseDTO(Integer idUsuario, String nombreCompleto, String correo, String rol) {
-        this.idUsuario = idUsuario;
-        this.nombreCompleto = nombreCompleto;
-        this.correo = correo;
-        this.rol = rol;
-    }
-
     public Integer getIdUsuario() { return idUsuario; }
     public void setIdUsuario(Integer idUsuario) { this.idUsuario = idUsuario; }
 

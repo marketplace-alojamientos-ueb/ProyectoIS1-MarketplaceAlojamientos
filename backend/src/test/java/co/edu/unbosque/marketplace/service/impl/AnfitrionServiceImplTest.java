@@ -19,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 import java.util.Optional;
 
+import static co.edu.unbosque.marketplace.DatosDePrueba.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -87,7 +88,7 @@ class AnfitrionServiceImplTest {
 
     @Test
     void registrarGuardaElAnfitrionConCorreoEnMinusculasYPasswordCifrada() {
-        AnfitrionRequestDTO dto = new AnfitrionRequestDTO("1012345678", " Ana ", "  ", "Gómez", "Rojas",
+        AnfitrionRequestDTO dto = registro("1012345678", " Ana ", "  ", "Gómez", "Rojas",
                 " ANA@Correo.com ", "Clave1234");
 
         AnfitrionResponseDTO respuesta = servicio.registrar(dto);
@@ -101,7 +102,7 @@ class AnfitrionServiceImplTest {
     @Test
     void registrarConCedulaRepetidaDa409() {
         when(usuarioRepository.existsByCedula("1012345678")).thenReturn(true);
-        AnfitrionRequestDTO dto = new AnfitrionRequestDTO("1012345678", "Ana", null, "Gómez", "Rojas",
+        AnfitrionRequestDTO dto = registro("1012345678", "Ana", null, "Gómez", "Rojas",
                 "ana@correo.com", "Clave1234");
 
         ResponseStatusException error = assertThrows(ResponseStatusException.class, () -> servicio.registrar(dto));
@@ -112,7 +113,7 @@ class AnfitrionServiceImplTest {
     @Test
     void registrarConCorreoRepetidoDa409() {
         when(usuarioRepository.existsByCorreo("ana@correo.com")).thenReturn(true);
-        AnfitrionRequestDTO dto = new AnfitrionRequestDTO("1012345678", "Ana", null, "Gómez", "Rojas",
+        AnfitrionRequestDTO dto = registro("1012345678", "Ana", null, "Gómez", "Rojas",
                 "ana@correo.com", "Clave1234");
 
         ResponseStatusException error = assertThrows(ResponseStatusException.class, () -> servicio.registrar(dto));
@@ -125,7 +126,7 @@ class AnfitrionServiceImplTest {
     @Test
     void actualizarCambiaLosDatos() {
         when(anfitrionRepository.findById(7)).thenReturn(Optional.of(crearAnfitrion()));
-        AnfitrionActualizarDTO dto = new AnfitrionActualizarDTO("Laura", null, "Pérez", "Díaz", "laura@correo.com");
+        AnfitrionActualizarDTO dto = actualizacion("Laura", null, "Pérez", "Díaz", "laura@correo.com");
 
         AnfitrionResponseDTO respuesta = servicio.actualizar(7, dto);
 
@@ -137,7 +138,7 @@ class AnfitrionServiceImplTest {
     void actualizarConCorreoDeOtroUsuarioDa409() {
         when(anfitrionRepository.findById(7)).thenReturn(Optional.of(crearAnfitrion()));
         when(usuarioRepository.existsByCorreoAndIdUsuarioNot("otro@correo.com", 7)).thenReturn(true);
-        AnfitrionActualizarDTO dto = new AnfitrionActualizarDTO("Ana", null, "Gómez", "Rojas", "otro@correo.com");
+        AnfitrionActualizarDTO dto = actualizacion("Ana", null, "Gómez", "Rojas", "otro@correo.com");
 
         ResponseStatusException error = assertThrows(ResponseStatusException.class, () -> servicio.actualizar(7, dto));
 
@@ -162,7 +163,7 @@ class AnfitrionServiceImplTest {
     void iniciarSesionConDatosCorrectos() {
         when(anfitrionRepository.findByUsuario_Correo("ana@correo.com")).thenReturn(Optional.of(crearAnfitrion()));
 
-        LoginResponseDTO respuesta = servicio.iniciarSesion(new LoginRequestDTO("ana@correo.com", "Clave1234"));
+        LoginResponseDTO respuesta = servicio.iniciarSesion(login("ana@correo.com", "Clave1234"));
 
         assertEquals(7, respuesta.getIdUsuario());
         assertEquals("ANFITRION", respuesta.getRol());
@@ -171,7 +172,7 @@ class AnfitrionServiceImplTest {
     @Test
     void iniciarSesionConPasswordIncorrectaDa401() {
         when(anfitrionRepository.findByUsuario_Correo("ana@correo.com")).thenReturn(Optional.of(crearAnfitrion()));
-        LoginRequestDTO dto = new LoginRequestDTO("ana@correo.com", "OtraClave1");
+        LoginRequestDTO dto = login("ana@correo.com", "OtraClave1");
 
         ResponseStatusException error = assertThrows(ResponseStatusException.class, () -> servicio.iniciarSesion(dto));
 
@@ -181,7 +182,7 @@ class AnfitrionServiceImplTest {
     @Test
     void iniciarSesionConCorreoQueNoExisteDa401() {
         when(anfitrionRepository.findByUsuario_Correo("nadie@correo.com")).thenReturn(Optional.empty());
-        LoginRequestDTO dto = new LoginRequestDTO("nadie@correo.com", "Clave1234");
+        LoginRequestDTO dto = login("nadie@correo.com", "Clave1234");
 
         ResponseStatusException error = assertThrows(ResponseStatusException.class, () -> servicio.iniciarSesion(dto));
 
@@ -193,7 +194,7 @@ class AnfitrionServiceImplTest {
         Anfitrion anfitrion = crearAnfitrion();
         anfitrion.getUsuario().desactivarCuenta();
         when(anfitrionRepository.findByUsuario_Correo("ana@correo.com")).thenReturn(Optional.of(anfitrion));
-        LoginRequestDTO dto = new LoginRequestDTO("ana@correo.com", "Clave1234");
+        LoginRequestDTO dto = login("ana@correo.com", "Clave1234");
 
         ResponseStatusException error = assertThrows(ResponseStatusException.class, () -> servicio.iniciarSesion(dto));
 
@@ -205,7 +206,7 @@ class AnfitrionServiceImplTest {
         Anfitrion anfitrion = crearAnfitrion();
         anfitrion.getUsuario().setRestringido(true);
         when(anfitrionRepository.findByUsuario_Correo("ana@correo.com")).thenReturn(Optional.of(anfitrion));
-        LoginRequestDTO dto = new LoginRequestDTO("ana@correo.com", "Clave1234");
+        LoginRequestDTO dto = login("ana@correo.com", "Clave1234");
 
         ResponseStatusException error = assertThrows(ResponseStatusException.class, () -> servicio.iniciarSesion(dto));
 

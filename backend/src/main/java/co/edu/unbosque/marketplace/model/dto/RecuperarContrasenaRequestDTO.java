@@ -9,12 +9,6 @@ public class RecuperarContrasenaRequestDTO {
     @Size(max = 200, message = "El correo admite máximo 200 caracteres")
     private String correo;
 
-    public RecuperarContrasenaRequestDTO() {}
-
-    public RecuperarContrasenaRequestDTO(String correo) {
-        this.correo = correo;
-    }
-
     public String getCorreo() { return correo; }
     public void setCorreo(String correo) { this.correo = correo; }
 }

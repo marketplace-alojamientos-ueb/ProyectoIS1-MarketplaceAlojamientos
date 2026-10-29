@@ -14,6 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
 import java.util.Optional;
 
+import static co.edu.unbosque.marketplace.DatosDePrueba.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -47,7 +48,7 @@ class UsuarioServiceImplTest {
 
     /** Pide un código y devuelve el que se "envió" por correo. */
     private String pedirCodigo(UsuarioServiceImpl servicio) {
-        servicio.solicitarRecuperacion(new RecuperarContrasenaRequestDTO(CORREO));
+        servicio.solicitarRecuperacion(recuperar(CORREO));
         ArgumentCaptor<String> codigo = ArgumentCaptor.forClass(String.class);
         verify(correoService).enviarCodigoRecuperacion(eq(CORREO), eq("Ana"), codigo.capture(), anyLong());
         return codigo.getValue();
@@ -66,7 +67,7 @@ class UsuarioServiceImplTest {
     void solicitarRecuperacionConCorreoQueNoExisteNoEnviaNada() {
         when(usuarioRepository.findByCorreo("nadie@correo.com")).thenReturn(Optional.empty());
 
-        crearServicio(15).solicitarRecuperacion(new RecuperarContrasenaRequestDTO("nadie@correo.com"));
+        crearServicio(15).solicitarRecuperacion(recuperar("nadie@correo.com"));
 
         verify(correoService, never()).enviarCodigoRecuperacion(anyString(), anyString(), anyString(), anyLong());
     }
@@ -75,7 +76,7 @@ class UsuarioServiceImplTest {
     void solicitarRecuperacionConCuentaDesactivadaNoEnviaNada() {
         usuario.desactivarCuenta();
 
-        crearServicio(15).solicitarRecuperacion(new RecuperarContrasenaRequestDTO(CORREO));
+        crearServicio(15).solicitarRecuperacion(recuperar(CORREO));
 
         verify(correoService, never()).enviarCodigoRecuperacion(anyString(), anyString(), anyString(), anyLong());
     }
@@ -87,7 +88,7 @@ class UsuarioServiceImplTest {
         UsuarioServiceImpl servicio = crearServicio(15);
         String codigo = pedirCodigo(servicio);
 
-        servicio.restablecerContrasena(new RestablecerContrasenaRequestDTO(CORREO, codigo, "NuevaClave1"));
+        servicio.restablecerContrasena(restablecer(CORREO, codigo, "NuevaClave1"));
 
         assertTrue(passwordEncoder.matches("NuevaClave1", usuario.getPassword()));
         verify(usuarioRepository).save(usuario);
@@ -96,7 +97,7 @@ class UsuarioServiceImplTest {
     @Test
     void restablecerSinHaberPedidoCodigoDa400() {
         UsuarioServiceImpl servicio = crearServicio(15);
-        RestablecerContrasenaRequestDTO dto = new RestablecerContrasenaRequestDTO(CORREO, "123456", "NuevaClave1");
+        RestablecerContrasenaRequestDTO dto = restablecer(CORREO, "123456", "NuevaClave1");
 
         ResponseStatusException error = assertThrows(ResponseStatusException.class, () -> servicio.restablecerContrasena(dto));
 
@@ -107,7 +108,7 @@ class UsuarioServiceImplTest {
     void restablecerConCodigoVencidoDa400() {
         UsuarioServiceImpl servicio = crearServicio(-1);
         String codigo = pedirCodigo(servicio);
-        RestablecerContrasenaRequestDTO dto = new RestablecerContrasenaRequestDTO(CORREO, codigo, "NuevaClave1");
+        RestablecerContrasenaRequestDTO dto = restablecer(CORREO, codigo, "NuevaClave1");
 
         ResponseStatusException error = assertThrows(ResponseStatusException.class, () -> servicio.restablecerContrasena(dto));
 
@@ -118,7 +119,7 @@ class UsuarioServiceImplTest {
     void restablecerConCodigoIncorrectoDa400() {
         UsuarioServiceImpl servicio = crearServicio(15);
         pedirCodigo(servicio);
-        RestablecerContrasenaRequestDTO dto = new RestablecerContrasenaRequestDTO(CORREO, "codigo-malo", "NuevaClave1");
+        RestablecerContrasenaRequestDTO dto = restablecer(CORREO, "codigo-malo", "NuevaClave1");
 
         ResponseStatusException error = assertThrows(ResponseStatusException.class, () -> servicio.restablecerContrasena(dto));
 
@@ -129,7 +130,7 @@ class UsuarioServiceImplTest {
     void despuesDe5IntentosFallidosElCodigoSeAnula() {
         UsuarioServiceImpl servicio = crearServicio(15);
         String codigo = pedirCodigo(servicio);
-        RestablecerContrasenaRequestDTO malo = new RestablecerContrasenaRequestDTO(CORREO, "codigo-malo", "NuevaClave1");
+        RestablecerContrasenaRequestDTO malo = restablecer(CORREO, "codigo-malo", "NuevaClave1");
 
         for (int i = 0; i < 4; i++) {
             assertThrows(ResponseStatusException.class, () -> servicio.restablecerContrasena(malo));
@@ -138,7 +139,7 @@ class UsuarioServiceImplTest {
         assertEquals("Demasiados intentos fallidos, solicita un código nuevo", quinto.getReason());
 
         // Ni siquiera el código correcto sirve ya
-        RestablecerContrasenaRequestDTO bueno = new RestablecerContrasenaRequestDTO(CORREO, codigo, "NuevaClave1");
+        RestablecerContrasenaRequestDTO bueno = restablecer(CORREO, codigo, "NuevaClave1");
         assertThrows(ResponseStatusException.class, () -> servicio.restablecerContrasena(bueno));
     }
 
@@ -147,7 +148,7 @@ class UsuarioServiceImplTest {
         UsuarioServiceImpl servicio = crearServicio(15);
         String codigo = pedirCodigo(servicio);
         when(usuarioRepository.findByCorreo(CORREO)).thenReturn(Optional.empty());
-        RestablecerContrasenaRequestDTO dto = new RestablecerContrasenaRequestDTO(CORREO, codigo, "NuevaClave1");
+        RestablecerContrasenaRequestDTO dto = restablecer(CORREO, codigo, "NuevaClave1");
 
         assertThrows(ResponseStatusException.class, () -> servicio.restablecerContrasena(dto));
         verify(usuarioRepository, never()).save(any());

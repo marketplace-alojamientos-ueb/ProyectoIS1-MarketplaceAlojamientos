@@ -113,7 +113,12 @@ public class AnfitrionServiceImpl implements AnfitrionService {
         if (Boolean.TRUE.equals(usuario.getRestringido())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "La cuenta está restringida por un administrador");
         }
-        return new LoginResponseDTO(usuario.getIdUsuario(), usuario.getNombreCompleto(), usuario.getCorreo(), "ANFITRION");
+        LoginResponseDTO respuesta = new LoginResponseDTO();
+        respuesta.setIdUsuario(usuario.getIdUsuario());
+        respuesta.setNombreCompleto(usuario.getNombreCompleto());
+        respuesta.setCorreo(usuario.getCorreo());
+        respuesta.setRol("ANFITRION");
+        return respuesta;
     }
 
     private Anfitrion obtenerAnfitrion(Integer idUsuario) {
