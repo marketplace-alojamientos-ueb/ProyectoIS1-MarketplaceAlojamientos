@@ -1,5 +1,6 @@
 package co.edu.unbosque.marketplace.service.impl;
 
+import co.edu.unbosque.marketplace.model.dto.HuespedActualizarDTO;
 import co.edu.unbosque.marketplace.model.dto.HuespedRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.HuespedResponseDTO;
 import co.edu.unbosque.marketplace.model.dto.LoginRequestDTO;
@@ -14,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import java.util.List;
 import java.util.Locale;
 
 @Service
@@ -33,7 +35,16 @@ public class HuespedServiceImpl implements HuespedService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<HuespedResponseDTO> listarTodos() {
+        return huespedRepository.findAll().stream()
+                .map(this::toResponseDTO)
+                .toList();
+    }
+
+    @Override
     public HuespedResponseDTO registrar(HuespedRequestDTO dto) {
+        // La cédula y el correo son únicos en toda la plataforma (tabla USUARIO), sin importar el rol.
         String correo = normalizarCorreo(dto.getCorreo());
         if (usuarioRepository.existsByCedula(dto.getCedula())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe un usuario registrado con esa cédula");
@@ -59,14 +70,40 @@ public class HuespedServiceImpl implements HuespedService {
     @Override
     @Transactional(readOnly = true)
     public HuespedResponseDTO buscarPorId(Integer idUsuario) {
-        return toResponseDTO(huespedRepository.findById(idUsuario)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "Huésped no encontrado con id: " + idUsuario)));
+        return toResponseDTO(obtenerHuesped(idUsuario));
+    }
+
+    @Override
+    public HuespedResponseDTO actualizar(Integer idUsuario, HuespedActualizarDTO dto) {
+        Huesped huesped = obtenerHuesped(idUsuario);
+        String correo = normalizarCorreo(dto.getCorreo());
+        if (usuarioRepository.existsByCorreoAndIdUsuarioNot(correo, idUsuario)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Ya existe un usuario registrado con el correo: " + correo);
+        }
+
+        Usuario usuario = huesped.getUsuario();
+        usuario.setPrimerNombre(dto.getPrimerNombre().trim());
+        usuario.setSegundoNombre(limpiarOpcional(dto.getSegundoNombre()));
+        usuario.setPrimerApellido(dto.getPrimerApellido().trim());
+        usuario.setSegundoApellido(dto.getSegundoApellido().trim());
+        usuario.setCorreo(correo);
+        usuarioRepository.save(usuario);
+        return toResponseDTO(huesped);
+    }
+
+    @Override
+    public void desactivar(Integer idUsuario) {
+        Usuario usuario = obtenerHuesped(idUsuario).getUsuario();
+        usuario.desactivarCuenta();
+        usuarioRepository.save(usuario);
     }
 
     @Override
     @Transactional(readOnly = true)
     public LoginResponseDTO iniciarSesion(LoginRequestDTO dto) {
+        // Mismo mensaje si el correo no existe, no es de un huésped o la contraseña está mal,
+        // para no revelar qué correos están registrados.
         Usuario usuario = huespedRepository.findByUsuario_Correo(normalizarCorreo(dto.getCorreo()))
                 .map(Huesped::getUsuario)
                 .filter(u -> passwordEncoder.matches(dto.getPassword(), u.getPassword()))
@@ -84,6 +121,12 @@ public class HuespedServiceImpl implements HuespedService {
         respuesta.setCorreo(usuario.getCorreo());
         respuesta.setRol("HUESPED");
         return respuesta;
+    }
+
+    private Huesped obtenerHuesped(Integer idUsuario) {
+        return huespedRepository.findById(idUsuario)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Huésped no encontrado con id: " + idUsuario));
     }
 
     private static String normalizarCorreo(String correo) {

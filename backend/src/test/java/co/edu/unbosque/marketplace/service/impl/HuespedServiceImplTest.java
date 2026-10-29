@@ -1,5 +1,6 @@
 package co.edu.unbosque.marketplace.service.impl;
 
+import co.edu.unbosque.marketplace.model.dto.HuespedActualizarDTO;
 import co.edu.unbosque.marketplace.model.dto.HuespedRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.HuespedResponseDTO;
 import co.edu.unbosque.marketplace.model.dto.LoginRequestDTO;
@@ -16,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -54,6 +56,17 @@ class HuespedServiceImplTest {
         dto.setSegundoApellido("Pérez");
         dto.setCorreo(correo);
         dto.setPassword(password);
+        return dto;
+    }
+
+    private HuespedActualizarDTO crearActualizacion(String primerNombre, String segundoNombre,
+                                                    String primerApellido, String segundoApellido, String correo) {
+        HuespedActualizarDTO dto = new HuespedActualizarDTO();
+        dto.setPrimerNombre(primerNombre);
+        dto.setSegundoNombre(segundoNombre);
+        dto.setPrimerApellido(primerApellido);
+        dto.setSegundoApellido(segundoApellido);
+        dto.setCorreo(correo);
         return dto;
     }
 
@@ -149,6 +162,80 @@ class HuespedServiceImplTest {
         ResponseStatusException error = assertThrows(ResponseStatusException.class, () -> servicio.buscarPorId(99));
 
         assertEquals(HttpStatus.NOT_FOUND, error.getStatusCode());
+    }
+
+    // ---------- listar ----------
+
+    @Test
+    void listarTodosDevuelveLosHuespedes() {
+        when(huespedRepository.findAll()).thenReturn(List.of(crearHuesped()));
+
+        List<HuespedResponseDTO> lista = servicio.listarTodos();
+
+        assertEquals(1, lista.size());
+        assertEquals("Laura Sofía Gómez Pérez", lista.get(0).getNombreCompleto());
+    }
+
+    // ---------- actualizar ----------
+
+    @Test
+    void actualizarCambiaLosDatosYNormalizaElCorreo() {
+        Huesped huesped = crearHuesped();
+        when(huespedRepository.findById(12)).thenReturn(Optional.of(huesped));
+        HuespedActualizarDTO dto = crearActualizacion(" María ", "  ", "Rojas", " Díaz ", " NUEVO@Correo.com ");
+
+        HuespedResponseDTO respuesta = servicio.actualizar(12, dto);
+
+        assertEquals("María Rojas Díaz", respuesta.getNombreCompleto());
+        assertNull(respuesta.getSegundoNombre());
+        assertEquals("nuevo@correo.com", respuesta.getCorreo());
+        assertEquals("1012345678", respuesta.getCedula()); // la cédula no cambia
+        verify(usuarioRepository).save(huesped.getUsuario());
+    }
+
+    @Test
+    void actualizarConCorreoDeOtroUsuarioDa409() {
+        when(huespedRepository.findById(12)).thenReturn(Optional.of(crearHuesped()));
+        when(usuarioRepository.existsByCorreoAndIdUsuarioNot("otro@correo.com", 12)).thenReturn(true);
+        HuespedActualizarDTO dto = crearActualizacion("Laura", null, "Gómez", "Pérez", "otro@correo.com");
+
+        ResponseStatusException error = assertThrows(ResponseStatusException.class, () -> servicio.actualizar(12, dto));
+
+        assertEquals(HttpStatus.CONFLICT, error.getStatusCode());
+        verify(usuarioRepository, never()).save(any(Usuario.class));
+    }
+
+    @Test
+    void actualizarHuespedQueNoExisteDa404() {
+        when(huespedRepository.findById(99)).thenReturn(Optional.empty());
+        HuespedActualizarDTO dto = crearActualizacion("Laura", null, "Gómez", "Pérez", "laura@correo.com");
+
+        ResponseStatusException error = assertThrows(ResponseStatusException.class, () -> servicio.actualizar(99, dto));
+
+        assertEquals(HttpStatus.NOT_FOUND, error.getStatusCode());
+    }
+
+    // ---------- desactivar ----------
+
+    @Test
+    void desactivarDejaLaCuentaDesactivada() {
+        Huesped huesped = crearHuesped();
+        when(huespedRepository.findById(12)).thenReturn(Optional.of(huesped));
+
+        servicio.desactivar(12);
+
+        assertEquals(EstadoCuenta.DESACTIVADA, huesped.getUsuario().getEstadoCuenta());
+        verify(usuarioRepository).save(huesped.getUsuario());
+    }
+
+    @Test
+    void desactivarHuespedQueNoExisteDa404() {
+        when(huespedRepository.findById(99)).thenReturn(Optional.empty());
+
+        ResponseStatusException error = assertThrows(ResponseStatusException.class, () -> servicio.desactivar(99));
+
+        assertEquals(HttpStatus.NOT_FOUND, error.getStatusCode());
+        verify(usuarioRepository, never()).save(any(Usuario.class));
     }
 
     // ---------- iniciarSesion (Escenario 2) ----------

@@ -1,5 +1,6 @@
 package co.edu.unbosque.marketplace.controller;
 
+import co.edu.unbosque.marketplace.model.dto.HuespedActualizarDTO;
 import co.edu.unbosque.marketplace.model.dto.HuespedRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.HuespedResponseDTO;
 import co.edu.unbosque.marketplace.model.dto.LoginRequestDTO;
@@ -9,9 +10,10 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 /**
- * Registro, consulta e inicio de sesión del huésped. Base: <b>/api/huespedes</b>
+ * CRUD del huésped. Base: <b>/api/huespedes</b>
  *
  * <p>El objeto <b>HuespedResponseDTO</b> que devuelven es:</p>
  * <pre>
@@ -40,6 +42,18 @@ public class HuespedController {
 
     public HuespedController(HuespedService huespedService) {
         this.huespedService = huespedService;
+    }
+
+    /**
+     * <b>GET /api/huespedes</b> — Lista todos los huéspedes (activos y desactivados).
+     *
+     * <p>Pide: nada.</p>
+     * <p>Retorna: <b>200</b> con un arreglo de HuespedResponseDTO (vacío <code>[]</code> si no hay ninguno).</p>
+     * <p>Uso en el front: tablas de administración o pruebas; no es para la vista del huésped.</p>
+     */
+    @GetMapping
+    public ResponseEntity<List<HuespedResponseDTO>> listarTodos() {
+        return ResponseEntity.ok(huespedService.listarTodos());
     }
 
     /**
@@ -79,6 +93,49 @@ public class HuespedController {
     @GetMapping("/{idUsuario}")
     public ResponseEntity<HuespedResponseDTO> buscarPorId(@PathVariable Integer idUsuario) {
         return ResponseEntity.ok(huespedService.buscarPorId(idUsuario));
+    }
+
+    /**
+     * <b>PUT /api/huespedes/{idUsuario}</b> — Actualiza los datos personales del huésped.
+     *
+     * <p>Pide: el idUsuario en la URL y en el body todos los campos editables (se reemplazan todos):</p>
+     * <pre>
+     * {
+     *   "primerNombre": "Laura",
+     *   "segundoNombre": null,
+     *   "primerApellido": "Gómez",
+     *   "segundoApellido": "Pérez",
+     *   "correo": "nuevo@correo.com"
+     * }
+     * </pre>
+     * <p>No cambia la cédula ni la contraseña.</p>
+     * <p>Retorna:</p>
+     * <ul>
+     *   <li><b>200</b> con el HuespedResponseDTO actualizado.</li>
+     *   <li><b>400</b> si algún campo no cumple las validaciones.</li>
+     *   <li><b>404</b> si no existe el huésped.</li>
+     *   <li><b>409</b> si el correo nuevo ya lo usa otro usuario.</li>
+     * </ul>
+     * <p>Uso en el front: botón "Guardar" de la pantalla "Editar perfil".</p>
+     */
+    @PutMapping("/{idUsuario}")
+    public ResponseEntity<HuespedResponseDTO> actualizar(@PathVariable Integer idUsuario,
+                                                         @Valid @RequestBody HuespedActualizarDTO dto) {
+        return ResponseEntity.ok(huespedService.actualizar(idUsuario, dto));
+    }
+
+    /**
+     * <b>DELETE /api/huespedes/{idUsuario}</b> — Desactiva la cuenta del huésped (borrado lógico).
+     *
+     * <p>No borra el registro de la base de datos: deja <code>estadoCuenta = DESACTIVADA</code>, así se
+     * conservan sus reservas y ya no podrá iniciar sesión.</p>
+     * <p>Retorna: <b>204</b> sin contenido si se desactivó, <b>404</b> si no existe el huésped.</p>
+     * <p>Uso en el front: opción "Eliminar mi cuenta" (pedir confirmación antes) y luego cerrar sesión.</p>
+     */
+    @DeleteMapping("/{idUsuario}")
+    public ResponseEntity<Void> desactivar(@PathVariable Integer idUsuario) {
+        huespedService.desactivar(idUsuario);
+        return ResponseEntity.noContent().build();
     }
 
     /**

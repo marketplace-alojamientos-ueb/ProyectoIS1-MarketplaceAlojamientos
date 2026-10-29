@@ -1,5 +1,6 @@
 package co.edu.unbosque.marketplace.controller;
 
+import co.edu.unbosque.marketplace.model.dto.HuespedActualizarDTO;
 import co.edu.unbosque.marketplace.model.dto.HuespedRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.HuespedResponseDTO;
 import co.edu.unbosque.marketplace.model.dto.LoginRequestDTO;
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -25,6 +27,16 @@ class HuespedControllerTest {
         huespedService = mock(HuespedService.class);
         controller = new HuespedController(huespedService);
         huesped.setIdUsuario(12);
+    }
+
+    @Test
+    void listarTodosResponde200() {
+        when(huespedService.listarTodos()).thenReturn(List.of(huesped));
+
+        ResponseEntity<List<HuespedResponseDTO>> respuesta = controller.listarTodos();
+
+        assertEquals(HttpStatus.OK, respuesta.getStatusCode());
+        assertEquals(1, respuesta.getBody().size());
     }
 
     @Test
@@ -46,6 +58,25 @@ class HuespedControllerTest {
 
         assertEquals(HttpStatus.OK, respuesta.getStatusCode());
         assertEquals(12, respuesta.getBody().getIdUsuario());
+    }
+
+    @Test
+    void actualizarResponde200() {
+        HuespedActualizarDTO dto = new HuespedActualizarDTO();
+        when(huespedService.actualizar(12, dto)).thenReturn(huesped);
+
+        ResponseEntity<HuespedResponseDTO> respuesta = controller.actualizar(12, dto);
+
+        assertEquals(HttpStatus.OK, respuesta.getStatusCode());
+        assertEquals(huesped, respuesta.getBody());
+    }
+
+    @Test
+    void desactivarResponde204() {
+        ResponseEntity<Void> respuesta = controller.desactivar(12);
+
+        assertEquals(HttpStatus.NO_CONTENT, respuesta.getStatusCode());
+        verify(huespedService).desactivar(12);
     }
 
     @Test
