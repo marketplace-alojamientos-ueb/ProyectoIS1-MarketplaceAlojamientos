@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
-import java.util.Locale;
 
 @Service
 @Transactional
@@ -50,44 +49,14 @@ public class AnfitrionServiceImpl implements AnfitrionService {
 
     @Override
     public AnfitrionResponseDTO registrar(AnfitrionRequestDTO dto) {
-        String correo = normalizarCorreo(dto.getCorreo());
-        if (usuarioRepository.existsByCedula(dto.getCedula())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe un usuario registrado con esa cédula");
-        }
-        if (usuarioRepository.existsByCorreo(correo)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "Ya existe un usuario registrado con el correo: " + correo);
-        }
-
-        Usuario usuario = new Usuario(
-                dto.getCedula(),
-                dto.getPrimerNombre().trim(),
-                limpiarOpcional(dto.getSegundoNombre()),
-                dto.getPrimerApellido().trim(),
-                dto.getSegundoApellido().trim(),
-                correo,
-                passwordEncoder.encode(dto.getPassword()));
-        Usuario usuarioGuardado = usuarioRepository.save(usuario);
-
-        return toResponseDTO(anfitrionRepository.save(new Anfitrion(usuarioGuardado)));
+        Usuario usuario = CuentaUsuario.registrar(usuarioRepository, passwordEncoder, dto);
+        return toResponseDTO(anfitrionRepository.save(new Anfitrion(usuario)));
     }
 
     @Override
     public AnfitrionResponseDTO actualizar(Integer idUsuario, AnfitrionActualizarDTO dto) {
         Anfitrion anfitrion = obtenerAnfitrion(idUsuario);
-        String correo = normalizarCorreo(dto.getCorreo());
-        if (usuarioRepository.existsByCorreoAndIdUsuarioNot(correo, idUsuario)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "Ya existe un usuario registrado con el correo: " + correo);
-        }
-
-        Usuario usuario = anfitrion.getUsuario();
-        usuario.setPrimerNombre(dto.getPrimerNombre().trim());
-        usuario.setSegundoNombre(limpiarOpcional(dto.getSegundoNombre()));
-        usuario.setPrimerApellido(dto.getPrimerApellido().trim());
-        usuario.setSegundoApellido(dto.getSegundoApellido().trim());
-        usuario.setCorreo(correo);
-        usuarioRepository.save(usuario);
+        CuentaUsuario.actualizarDatos(usuarioRepository, anfitrion.getUsuario(), idUsuario, dto);
         return toResponseDTO(anfitrion);
     }
 
@@ -101,24 +70,9 @@ public class AnfitrionServiceImpl implements AnfitrionService {
     @Override
     @Transactional(readOnly = true)
     public LoginResponseDTO iniciarSesion(LoginRequestDTO dto) {
-        // Mismo mensaje si el correo no existe o la contraseña está mal, para no revelar qué correos existen.
-        Usuario usuario = anfitrionRepository.findByUsuario_Correo(normalizarCorreo(dto.getCorreo()))
-                .map(Anfitrion::getUsuario)
-                .filter(u -> passwordEncoder.matches(dto.getPassword(), u.getPassword()))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Correo o contraseña incorrectos"));
-
-        if (!usuario.estaActiva()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "La cuenta está desactivada");
-        }
-        if (Boolean.TRUE.equals(usuario.getRestringido())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "La cuenta está restringida por un administrador");
-        }
-        LoginResponseDTO respuesta = new LoginResponseDTO();
-        respuesta.setIdUsuario(usuario.getIdUsuario());
-        respuesta.setNombreCompleto(usuario.getNombreCompleto());
-        respuesta.setCorreo(usuario.getCorreo());
-        respuesta.setRol("ANFITRION");
-        return respuesta;
+        return CuentaUsuario.iniciarSesion(
+                anfitrionRepository.findByUsuario_Correo(normalizarCorreo(dto.getCorreo())).map(Anfitrion::getUsuario),
+                passwordEncoder, dto, "ANFITRION");
     }
 
     private Anfitrion obtenerAnfitrion(Integer idUsuario) {
@@ -128,26 +82,10 @@ public class AnfitrionServiceImpl implements AnfitrionService {
     }
 
     static String normalizarCorreo(String correo) {
-        return correo.trim().toLowerCase(Locale.ROOT);
-    }
-
-    private static String limpiarOpcional(String valor) {
-        return (valor == null || valor.isBlank()) ? null : valor.trim();
+        return CuentaUsuario.normalizarCorreo(correo);
     }
 
     private AnfitrionResponseDTO toResponseDTO(Anfitrion anfitrion) {
-        Usuario u = anfitrion.getUsuario();
-        AnfitrionResponseDTO dto = new AnfitrionResponseDTO();
-        dto.setIdUsuario(u.getIdUsuario());
-        dto.setCedula(u.getCedula());
-        dto.setPrimerNombre(u.getPrimerNombre());
-        dto.setSegundoNombre(u.getSegundoNombre());
-        dto.setPrimerApellido(u.getPrimerApellido());
-        dto.setSegundoApellido(u.getSegundoApellido());
-        dto.setNombreCompleto(u.getNombreCompleto());
-        dto.setCorreo(u.getCorreo());
-        dto.setEstadoCuenta(u.getEstadoCuenta());
-        dto.setRestringido(u.getRestringido());
-        return dto;
+        return CuentaUsuario.aRespuesta(anfitrion.getUsuario(), new AnfitrionResponseDTO());
     }
 }

@@ -6,7 +6,7 @@ import jakarta.validation.constraints.*;
  * Nombres, apellidos y correo: los datos personales que comparten los DTOs del anfitrión.
  * Las validaciones solo se aplican a los DTOs que llegan en un body con @Valid (registro y actualización).
  */
-public abstract class DatosPersonalesDTO {
+public class DatosPersonalesDTO {
 
     @NotBlank(message = "El primer nombre es obligatorio")
     @Size(max = 50, message = "El primer nombre admite máximo 50 caracteres")
