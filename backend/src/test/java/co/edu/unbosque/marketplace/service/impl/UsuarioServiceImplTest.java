@@ -22,7 +22,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-/** Pruebas de la recuperación de contraseña. El repositorio y el envío de correo son simulados. */
+/** Pruebas de la recuperación de contraseña y la reactivación de cuenta. El repositorio y el correo son simulados. */
 class UsuarioServiceImplTest {
 
     private static final String CORREO = "ana@correo.com";
@@ -141,6 +141,57 @@ class UsuarioServiceImplTest {
         // Ni siquiera el código correcto sirve ya
         RestablecerContrasenaRequestDTO bueno = restablecer(CORREO, codigo, "NuevaClave1");
         assertThrows(ResponseStatusException.class, () -> servicio.restablecerContrasena(bueno));
+    }
+
+    // ---------- activar cuenta ----------
+
+    @Test
+    void activarCuentaDesactivadaLaDejaActiva() {
+        usuario.setPassword(passwordEncoder.encode("Clave1234"));
+        usuario.desactivarCuenta();
+
+        crearServicio(15).activarCuenta(login(" ANA@correo.com ", "Clave1234"));
+
+        assertTrue(usuario.estaActiva());
+        verify(usuarioRepository).save(usuario);
+    }
+
+    @Test
+    void activarCuentaConPasswordIncorrectaDa401() {
+        usuario.setPassword(passwordEncoder.encode("Clave1234"));
+        usuario.desactivarCuenta();
+        UsuarioServiceImpl servicio = crearServicio(15);
+
+        ResponseStatusException error = assertThrows(ResponseStatusException.class,
+                () -> servicio.activarCuenta(login(CORREO, "Otra1234")));
+
+        assertEquals(HttpStatus.UNAUTHORIZED, error.getStatusCode());
+        assertFalse(usuario.estaActiva());
+        verify(usuarioRepository, never()).save(any());
+    }
+
+    @Test
+    void activarCuentaConCorreoQueNoExisteDa401() {
+        when(usuarioRepository.findByCorreo("nadie@correo.com")).thenReturn(Optional.empty());
+        UsuarioServiceImpl servicio = crearServicio(15);
+
+        ResponseStatusException error = assertThrows(ResponseStatusException.class,
+                () -> servicio.activarCuenta(login("nadie@correo.com", "Clave1234")));
+
+        assertEquals(HttpStatus.UNAUTHORIZED, error.getStatusCode());
+        verify(usuarioRepository, never()).save(any());
+    }
+
+    @Test
+    void activarCuentaQueYaEstaActivaDa409() {
+        usuario.setPassword(passwordEncoder.encode("Clave1234"));
+        UsuarioServiceImpl servicio = crearServicio(15);
+
+        ResponseStatusException error = assertThrows(ResponseStatusException.class,
+                () -> servicio.activarCuenta(login(CORREO, "Clave1234")));
+
+        assertEquals(HttpStatus.CONFLICT, error.getStatusCode());
+        verify(usuarioRepository, never()).save(any());
     }
 
     @Test

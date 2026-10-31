@@ -1,5 +1,6 @@
 package co.edu.unbosque.marketplace.service.impl;
 
+import co.edu.unbosque.marketplace.model.dto.LoginRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.RecuperarContrasenaRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.RestablecerContrasenaRequestDTO;
 import co.edu.unbosque.marketplace.model.entity.Usuario;
@@ -18,8 +19,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Recuperación de contraseña. Como en la BD no hay tabla para los códigos, se guardan en memoria
- * (un Map correo -> código) mientras el backend esté encendido; si se reinicia, hay que pedir otro código.
+ * Recuperación de contraseña y reactivación de cuenta. Como en la BD no hay tabla para los códigos de
+ * recuperación, se guardan en memoria (un Map correo -> código) mientras el backend esté encendido; si se
+ * reinicia, hay que pedir otro código.
  */
 @Service
 @Transactional
@@ -83,6 +85,19 @@ public class UsuarioServiceImpl implements UsuarioService {
         usuario.setPassword(passwordEncoder.encode(dto.getNuevaPassword()));
         usuarioRepository.save(usuario);
         codigosPorCorreo.remove(correo);
+    }
+
+    @Override
+    public void activarCuenta(LoginRequestDTO dto) {
+        // Mismo mensaje si el correo no existe o la contraseña es incorrecta, para no revelar qué correos hay.
+        Usuario usuario = usuarioRepository.findByCorreo(CuentaUsuario.normalizarCorreo(dto.getCorreo()))
+                .filter(u -> passwordEncoder.matches(dto.getPassword(), u.getPassword()))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Correo o contraseña incorrectos"));
+        if (usuario.estaActiva()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "La cuenta ya está activa");
+        }
+        usuario.activarCuenta();
+        usuarioRepository.save(usuario);
     }
 
     /** Código enviado al correo, su fecha de vencimiento y los intentos fallidos. */

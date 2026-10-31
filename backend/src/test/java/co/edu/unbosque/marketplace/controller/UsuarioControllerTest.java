@@ -1,5 +1,6 @@
 package co.edu.unbosque.marketplace.controller;
 
+import co.edu.unbosque.marketplace.model.dto.LoginRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.MensajeResponseDTO;
 import co.edu.unbosque.marketplace.model.dto.RecuperarContrasenaRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.RestablecerContrasenaRequestDTO;
@@ -13,7 +14,7 @@ import static co.edu.unbosque.marketplace.DatosDePrueba.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-/** Pruebas del controller de recuperación de contraseña. */
+/** Pruebas del controller de recuperación de contraseña y reactivación de cuenta. */
 class UsuarioControllerTest {
 
     private UsuarioService usuarioService;
@@ -45,5 +46,16 @@ class UsuarioControllerTest {
         assertEquals(HttpStatus.OK, respuesta.getStatusCode());
         assertEquals("Contraseña actualizada correctamente", respuesta.getBody().getMensaje());
         verify(usuarioService).restablecerContrasena(dto);
+    }
+
+    @Test
+    void activarCuentaResponde200ConMensaje() {
+        LoginRequestDTO dto = login("ana@correo.com", "Clave1234");
+
+        ResponseEntity<MensajeResponseDTO> respuesta = controller.activarCuenta(dto);
+
+        assertEquals(HttpStatus.OK, respuesta.getStatusCode());
+        assertEquals("Cuenta activada correctamente", respuesta.getBody().getMensaje());
+        verify(usuarioService).activarCuenta(dto);
     }
 }
