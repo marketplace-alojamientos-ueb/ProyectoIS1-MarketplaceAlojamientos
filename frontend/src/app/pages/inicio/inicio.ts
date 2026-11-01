@@ -20,6 +20,6 @@ export class Inicio {
 
   protected cerrarSesion(): void {
     this.sesion.cerrar();
-    this.router.navigate(['/login']);
+    void this.router.navigate(['/login']);
   }
 }

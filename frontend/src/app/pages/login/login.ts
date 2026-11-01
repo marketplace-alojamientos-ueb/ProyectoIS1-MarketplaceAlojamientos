@@ -54,7 +54,7 @@ export class Login {
       .subscribe({
         next: (usuario) => {
           this.sesion.iniciar(usuario);
-          this.router.navigate(['/inicio']);
+          void this.router.navigate(['/inicio']);
         },
         error: (e: HttpErrorResponse) => {
           this.error.set(mensajeDelBack(e));

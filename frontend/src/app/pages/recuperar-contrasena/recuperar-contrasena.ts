@@ -67,6 +67,6 @@ export class RecuperarContrasena {
   }
 
   protected irALogin(): void {
-    this.router.navigate(['/login']);
+    void this.router.navigate(['/login']);
   }
 }
