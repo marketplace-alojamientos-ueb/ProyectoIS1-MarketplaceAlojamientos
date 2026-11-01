@@ -1,0 +1,9 @@
+@if (sesion.usuario(); as usuario) {
+  <app-plantilla-autenticacion
+    [titulo]="'Hola, ' + usuario.nombreCompleto"
+    [subtitulo]="usuario.rol === 'ANFITRION' ? 'Ingresaste como anfitrión' : 'Ingresaste como huésped'"
+  >
+    <app-alerta tipo="exito">Iniciaste sesión con {{ usuario.correo }}.</app-alerta>
+    <app-boton variante="secundario" [completo]="true" (click)="cerrarSesion()">Cerrar sesión</app-boton>
+  </app-plantilla-autenticacion>
+}

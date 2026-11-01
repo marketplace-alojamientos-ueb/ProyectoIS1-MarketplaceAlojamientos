@@ -1,15 +1,14 @@
-<app-plantilla-autenticacion
-  titulo="Regístrate como anfitrión"
-  subtitulo="Crea tu cuenta para empezar a publicar alojamientos"
-  [amplia]="true"
->
+<app-plantilla-autenticacion [titulo]="titulo()" [subtitulo]="subtitulo()" [amplia]="true">
   @if (registrado()) {
     <app-alerta tipo="exito">
       ¡Listo, {{ registrado() }}! Tu cuenta fue creada. Ahora inicia sesión.
-      (Prototipo: no se guardó en el back.)
     </app-alerta>
     <app-boton [completo]="true" (click)="irALogin()">Ir a iniciar sesión</app-boton>
   } @else {
-    <app-formulario-registro (enviar)="registrar($event)" />
+    <app-selector-rol id="registro-rol" [rol]="rol()" (rolChange)="cambiarRol($event)" />
+    @if (error()) {
+      <app-alerta tipo="error">{{ error() }}</app-alerta>
+    }
+    <app-formulario-registro [cargando]="cargando()" (enviar)="registrar($event)" />
   }
 </app-plantilla-autenticacion>

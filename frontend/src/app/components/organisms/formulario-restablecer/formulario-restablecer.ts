@@ -2,6 +2,7 @@ import { Component, input, output } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   camposIguales,
+  mensajeConfirmacion,
   mensajeError,
   PATRON_CODIGO,
   validadoresPassword
@@ -37,12 +38,7 @@ export class FormularioRestablecer {
   protected readonly error = mensajeError;
 
   protected errorConfirmacion(): string {
-    const control = this.form.controls.confirmarPassword;
-    const mensaje = mensajeError(control);
-    if (mensaje) {
-      return mensaje;
-    }
-    return control.touched && this.form.hasError('noCoinciden') ? 'Las contraseñas no coinciden' : '';
+    return mensajeConfirmacion(this.form, 'confirmarPassword');
   }
 
   protected enviarFormulario(): void {

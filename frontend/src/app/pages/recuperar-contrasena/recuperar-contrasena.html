@@ -4,7 +4,14 @@
       titulo="¿Olvidaste tu contraseña?"
       subtitulo="Paso 1 de 2 · Escribe el correo con el que te registraste"
     >
-      <app-formulario-solicitar-codigo [correoInicial]="correo()" (enviar)="solicitarCodigo($event)" />
+      @if (error()) {
+        <app-alerta tipo="error">{{ error() }}</app-alerta>
+      }
+      <app-formulario-solicitar-codigo
+        [correoInicial]="correo()"
+        [cargando]="cargando()"
+        (enviar)="solicitarCodigo($event)"
+      />
     </app-plantilla-autenticacion>
   }
   @case (2) {
@@ -12,21 +19,22 @@
       titulo="Crea una nueva contraseña"
       subtitulo="Paso 2 de 2 · Revisa tu correo e ingresa el código"
     >
-      <app-alerta tipo="info">
-        Si el correo está registrado, recibirás un código para restablecer tu contraseña.
-      </app-alerta>
+      @if (error()) {
+        <app-alerta tipo="error">{{ error() }}</app-alerta>
+      } @else {
+        <app-alerta tipo="info">{{ mensaje() }}</app-alerta>
+      }
       <app-formulario-restablecer
         [correo]="correo()"
+        [cargando]="cargando()"
         (enviar)="restablecer($event)"
-        (cambiarCorreo)="paso.set(1)"
+        (cambiarCorreo)="volverAlPaso1()"
       />
     </app-plantilla-autenticacion>
   }
   @case ('listo') {
     <app-plantilla-autenticacion titulo="Contraseña actualizada">
-      <app-alerta tipo="exito">
-        Contraseña actualizada correctamente. (Prototipo: no se cambió en el back.)
-      </app-alerta>
+      <app-alerta tipo="exito">{{ mensaje() }}</app-alerta>
       <app-boton [completo]="true" (click)="irALogin()">Ir a iniciar sesión</app-boton>
     </app-plantilla-autenticacion>
   }

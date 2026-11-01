@@ -19,6 +19,16 @@ export function camposIguales(campo: string, confirmacion: string): ValidatorFn 
     grupo.get(campo)?.value === grupo.get(confirmacion)?.value ? null : { noCoinciden: true };
 }
 
+/** Error del campo de confirmación: el suyo propio o que no coincida con la contraseña. */
+export function mensajeConfirmacion(grupo: AbstractControl, confirmacion: string): string {
+  const control = grupo.get(confirmacion)!;
+  const mensaje = mensajeError(control);
+  if (mensaje) {
+    return mensaje;
+  }
+  return control.touched && grupo.hasError('noCoinciden') ? 'Las contraseñas no coinciden' : '';
+}
+
 /** Texto del primer error de un campo, solo si el usuario ya lo tocó. */
 export function mensajeError(control: AbstractControl, mensajePatron = 'El formato no es válido'): string {
   if (!control.touched || !control.errors) {

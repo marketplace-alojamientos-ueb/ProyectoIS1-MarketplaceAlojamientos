@@ -1,9 +1,10 @@
 import { Component, input, output } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { AnfitrionRequest } from '../../../models/anfitrion.model';
+import { RegistroUsuarioRequest } from '../../../models/usuario.model';
 import {
   camposIguales,
+  mensajeConfirmacion,
   mensajeError,
   PATRON_CEDULA,
   validadoresCorreo,
@@ -20,7 +21,7 @@ import { CampoFormulario } from '../../molecules/campo-formulario/campo-formular
 })
 export class FormularioRegistro {
   readonly cargando = input(false);
-  readonly enviar = output<AnfitrionRequest>();
+  readonly enviar = output<RegistroUsuarioRequest>();
 
   protected readonly form = new FormGroup(
     {
@@ -51,12 +52,7 @@ export class FormularioRegistro {
   protected readonly error = mensajeError;
 
   protected errorConfirmacion(): string {
-    const control = this.form.controls.confirmarPassword;
-    const mensaje = mensajeError(control);
-    if (mensaje) {
-      return mensaje;
-    }
-    return control.touched && this.form.hasError('noCoinciden') ? 'Las contraseñas no coinciden' : '';
+    return mensajeConfirmacion(this.form, 'confirmarPassword');
   }
 
   protected enviarFormulario(): void {

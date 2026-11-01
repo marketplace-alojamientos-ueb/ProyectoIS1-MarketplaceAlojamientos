@@ -1,9 +1,11 @@
-/** Igual a los DTO de anfitrión del back (rama MA-111). */
+/** Igual a los DTO de anfitrión y huésped del back: los dos tipos de usuario usan los mismos campos. */
+
+export type Rol = 'ANFITRION' | 'HUESPED';
 
 export type EstadoCuenta = 'ACTIVA' | 'DESACTIVADA';
 
-/** POST /api/anfitriones */
-export interface AnfitrionRequest {
+/** POST /api/anfitriones y POST /api/huespedes */
+export interface RegistroUsuarioRequest {
   cedula: string;
   primerNombre: string;
   segundoNombre: string | null;
@@ -13,8 +15,8 @@ export interface AnfitrionRequest {
   password: string;
 }
 
-/** PUT /api/anfitriones/{idUsuario} */
-export interface AnfitrionActualizar {
+/** PUT /api/anfitriones/{idUsuario} y PUT /api/huespedes/{idUsuario} */
+export interface DatosPersonales {
   primerNombre: string;
   segundoNombre: string | null;
   primerApellido: string;
@@ -22,8 +24,8 @@ export interface AnfitrionActualizar {
   correo: string;
 }
 
-/** Lo que devuelve el back de un anfitrión. */
-export interface AnfitrionResponse {
+/** Lo que devuelve el back de un anfitrión o de un huésped. */
+export interface UsuarioResponse {
   idUsuario: number;
   cedula: string;
   primerNombre: string;
