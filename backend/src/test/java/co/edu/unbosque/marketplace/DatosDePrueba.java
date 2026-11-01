@@ -4,8 +4,10 @@ import co.edu.unbosque.marketplace.model.dto.AnfitrionActualizarDTO;
 import co.edu.unbosque.marketplace.model.dto.AnfitrionRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.LoginRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.LoginResponseDTO;
+import co.edu.unbosque.marketplace.model.dto.PublicacionRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.RecuperarContrasenaRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.RestablecerContrasenaRequestDTO;
+import co.edu.unbosque.marketplace.model.enums.ModoAceptacion;
 
 /** Arma los DTOs que usan las pruebas, llenándolos con sus setters. */
 public final class DatosDePrueba {
@@ -64,6 +66,22 @@ public final class DatosDePrueba {
         dto.setCorreo(correo);
         dto.setCodigo(codigo);
         dto.setNuevaPassword(nuevaPassword);
+        return dto;
+    }
+
+    /** Solicitud de publicación completa y válida: sin tarifa de limpieza ni reglas, que son opcionales. */
+    public static PublicacionRequestDTO publicacion(Integer idAnfitrion) {
+        PublicacionRequestDTO dto = new PublicacionRequestDTO();
+        dto.setIdAnfitrion(idAnfitrion);
+        dto.setTitulo("Apartamento con vista al mar");
+        dto.setDescripcion("Apartamento cómodo cerca de la playa");
+        dto.setUbicacion("Calle 10 # 5-20, El Rodadero");
+        dto.setCiudad("Santa Marta");
+        dto.setTipoAlojamiento("Apartamento");
+        dto.setCapacidad(4);
+        dto.setPrecioPorNoche(180000.0);
+        dto.setModoAceptacion(ModoAceptacion.INMEDIATA);
+        dto.setPoliticaCancelacion("FLEXIBLE");
         return dto;
     }
 }
