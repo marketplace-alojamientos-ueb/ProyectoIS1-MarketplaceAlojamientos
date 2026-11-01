@@ -1,0 +1,17 @@
+<div class="campo">
+  <app-etiqueta [para]="id()" [opcional]="opcional()">{{ etiqueta() }}</app-etiqueta>
+  <app-entrada
+    [id]="id()"
+    [control]="control()"
+    [tipo]="tipo()"
+    [placeholder]="placeholder()"
+    [autocomplete]="autocomplete()"
+    [modoTeclado]="modoTeclado()"
+    [invalida]="!!error()"
+  />
+  @if (error()) {
+    <small [id]="id() + '-texto'" class="error">{{ error() }}</small>
+  } @else if (ayuda()) {
+    <small [id]="id() + '-texto'" class="ayuda">{{ ayuda() }}</small>
+  }
+</div>

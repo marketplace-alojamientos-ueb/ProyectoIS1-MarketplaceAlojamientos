@@ -1,0 +1,19 @@
+<app-plantilla-autenticacion titulo="Inicia sesión" [subtitulo]="subtitulo()">
+  <app-selector-rol id="login-rol" [rol]="rol()" (rolChange)="cambiarRol($event)" />
+
+  @if (exito()) {
+    <app-alerta tipo="exito">{{ exito() }}</app-alerta>
+  }
+  @if (error()) {
+    <app-alerta tipo="error">
+      {{ error() }}
+      @if (cuentaDesactivada()) {
+        <p>¿Quieres volver a activarla con estas mismas credenciales?</p>
+        <app-boton variante="secundario" [deshabilitado]="cargando()" (click)="activarCuenta()">
+          Activar mi cuenta
+        </app-boton>
+      }
+    </app-alerta>
+  }
+  <app-formulario-login [cargando]="cargando()" (enviar)="iniciarSesion($event)" />
+</app-plantilla-autenticacion>

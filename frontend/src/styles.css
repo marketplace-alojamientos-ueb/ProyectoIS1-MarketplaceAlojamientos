@@ -1,1 +1,38 @@
-/* You can add global styles to this file, and also import other style files */
+/* Estilos globales: colores, tipografía y reset básico. Cada componente tiene su propio .css. */
+:root {
+  --color-primario: #0f766e;
+  --color-primario-hover: #115e59;
+  --color-foco: rgb(15 118 110 / 25%);
+  --color-texto: #1f2937;
+  --color-texto-suave: #6b7280;
+  --color-borde: #d1d5db;
+  --color-fondo: #f4f7f6;
+  --color-error: #b91c1c;
+  --color-exito: #15803d;
+  --color-info: #1d4ed8;
+  --radio: 8px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--color-texto);
+  background: var(--color-fondo);
+}
+
+a {
+  color: var(--color-primario);
+  font-weight: 600;
+}
+
+a:hover {
+  color: var(--color-primario-hover);
+}

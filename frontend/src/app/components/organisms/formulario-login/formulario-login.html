@@ -1,0 +1,33 @@
+<form [formGroup]="form" (ngSubmit)="enviarFormulario()" novalidate>
+  <app-campo-formulario
+    id="login-correo"
+    etiqueta="Correo electrónico"
+    tipo="email"
+    modoTeclado="email"
+    autocomplete="email"
+    placeholder="tucorreo@ejemplo.com"
+    [control]="form.controls.correo"
+    [error]="error(form.controls.correo)"
+  />
+  <app-campo-formulario
+    id="login-password"
+    etiqueta="Contraseña"
+    tipo="password"
+    autocomplete="current-password"
+    placeholder="Tu contraseña"
+    [control]="form.controls.password"
+    [error]="error(form.controls.password)"
+  />
+
+  <p class="olvido">
+    <a routerLink="/recuperar-contrasena">¿Olvidaste tu contraseña?</a>
+  </p>
+
+  <app-boton tipo="submit" [completo]="true" [deshabilitado]="cargando()">
+    {{ cargando() ? 'Ingresando…' : 'Iniciar sesión' }}
+  </app-boton>
+
+  <p class="pie">
+    ¿Aún no tienes cuenta? <a routerLink="/registro">Regístrate</a>
+  </p>
+</form>
