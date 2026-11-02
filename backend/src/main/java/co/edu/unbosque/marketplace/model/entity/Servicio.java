@@ -2,6 +2,8 @@ package co.edu.unbosque.marketplace.model.entity;
 
 import jakarta.persistence.*;
 import java.util.Objects;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Servicio (amenity) que puede ofrecer un alojamiento, como wifi o parqueadero (tabla SERVICIO).
@@ -9,6 +11,8 @@ import java.util.Objects;
  */
 @Entity
 @Table(name = "servicio")
+@Getter
+@Setter
 public class Servicio {
 
     @Id
@@ -30,10 +34,4 @@ public class Servicio {
 
     @Override
     public int hashCode() { return Objects.hashCode(idServicio); }
-
-    public Integer getIdServicio() { return idServicio; }
-    public void setIdServicio(Integer idServicio) { this.idServicio = idServicio; }
-
-    public String getNombre() { return nombre; }
-    public void setNombre(String nombre) { this.nombre = nombre; }
 }

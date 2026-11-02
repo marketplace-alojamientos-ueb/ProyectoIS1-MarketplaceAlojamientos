@@ -4,10 +4,14 @@ import co.edu.unbosque.marketplace.model.enums.TipoPeriodo;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.util.Objects;
+import lombok.Getter;
+import lombok.Setter;
 
 /** Rango de fechas de una publicación, disponible, bloqueado o reservado (tabla PERIODO_DISPONIBILIDAD). */
 @Entity
 @Table(name = "periodo_disponibilidad")
+@Getter
+@Setter
 public class PeriodoDisponibilidad {
 
     @Id
@@ -36,16 +40,4 @@ public class PeriodoDisponibilidad {
 
     @Override
     public int hashCode() { return Objects.hashCode(idPeriodo); }
-
-    public Integer getIdPeriodo() { return idPeriodo; }
-    public void setIdPeriodo(Integer idPeriodo) { this.idPeriodo = idPeriodo; }
-
-    public LocalDate getFechaInicio() { return fechaInicio; }
-    public void setFechaInicio(LocalDate fechaInicio) { this.fechaInicio = fechaInicio; }
-
-    public LocalDate getFechaFin() { return fechaFin; }
-    public void setFechaFin(LocalDate fechaFin) { this.fechaFin = fechaFin; }
-
-    public TipoPeriodo getTipo() { return tipo; }
-    public void setTipo(TipoPeriodo tipo) { this.tipo = tipo; }
 }

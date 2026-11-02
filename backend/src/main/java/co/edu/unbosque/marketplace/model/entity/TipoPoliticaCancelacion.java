@@ -6,6 +6,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 import java.util.Objects;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Fila del catálogo de políticas de cancelación (tabla POLITICA_CANCELACION). Solo se lee: sirve para mostrar el
@@ -13,6 +15,8 @@ import java.util.Objects;
  */
 @Entity
 @Table(name = "politica_cancelacion")
+@Getter
+@Setter
 public class TipoPoliticaCancelacion {
 
     @Id
@@ -38,29 +42,5 @@ public class TipoPoliticaCancelacion {
     @Override
     public int hashCode() {
         return Objects.hashCode(codigo);
-    }
-
-    public String getCodigo() {
-        return codigo;
-    }
-
-    public void setCodigo(String codigo) {
-        this.codigo = codigo;
-    }
-
-    public String getNombre() {
-        return nombre;
-    }
-
-    public void setNombre(String nombre) {
-        this.nombre = nombre;
-    }
-
-    public String getDescripcion() {
-        return descripcion;
-    }
-
-    public void setDescripcion(String descripcion) {
-        this.descripcion = descripcion;
     }
 }

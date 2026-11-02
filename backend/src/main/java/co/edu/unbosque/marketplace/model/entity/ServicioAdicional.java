@@ -2,6 +2,8 @@ package co.edu.unbosque.marketplace.model.entity;
 
 import jakarta.persistence.*;
 import java.util.Objects;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Servicio adicional con costo que el huésped puede escoger al reservar, como transporte o desayuno
@@ -9,6 +11,8 @@ import java.util.Objects;
  */
 @Entity
 @Table(name = "servicio_adicional")
+@Getter
+@Setter
 public class ServicioAdicional {
 
     @Id
@@ -33,13 +37,4 @@ public class ServicioAdicional {
 
     @Override
     public int hashCode() { return Objects.hashCode(idServicioAdicional); }
-
-    public Integer getIdServicioAdicional() { return idServicioAdicional; }
-    public void setIdServicioAdicional(Integer idServicioAdicional) { this.idServicioAdicional = idServicioAdicional; }
-
-    public String getNombre() { return nombre; }
-    public void setNombre(String nombre) { this.nombre = nombre; }
-
-    public Double getCosto() { return costo; }
-    public void setCosto(Double costo) { this.costo = costo; }
 }

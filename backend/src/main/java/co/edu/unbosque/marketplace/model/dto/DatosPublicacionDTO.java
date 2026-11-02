@@ -2,12 +2,16 @@ package co.edu.unbosque.marketplace.model.dto;
 
 import co.edu.unbosque.marketplace.model.enums.ModoAceptacion;
 import jakarta.validation.constraints.*;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Datos del alojamiento que comparten la solicitud y la respuesta de una publicación. Los límites de texto
  * coinciden con las columnas de la tabla PUBLICACION. Las validaciones solo se aplican a los DTOs que llegan en un
  * body con @Valid (la solicitud). Servicios, imágenes y disponibilidad se agregan en otras historias.
  */
+@Getter
+@Setter
 public class DatosPublicacionDTO {
 
     @NotBlank(message = "El título es obligatorio")
@@ -51,37 +55,4 @@ public class DatosPublicacionDTO {
     /** Código de la política, uno de los que devuelve PublicacionService.listarPoliticas(). */
     @NotBlank(message = "La política de cancelación es obligatoria")
     private String politicaCancelacion;
-
-    public String getTitulo() { return titulo; }
-    public void setTitulo(String titulo) { this.titulo = titulo; }
-
-    public String getDescripcion() { return descripcion; }
-    public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
-
-    public String getUbicacion() { return ubicacion; }
-    public void setUbicacion(String ubicacion) { this.ubicacion = ubicacion; }
-
-    public String getCiudad() { return ciudad; }
-    public void setCiudad(String ciudad) { this.ciudad = ciudad; }
-
-    public String getTipoAlojamiento() { return tipoAlojamiento; }
-    public void setTipoAlojamiento(String tipoAlojamiento) { this.tipoAlojamiento = tipoAlojamiento; }
-
-    public Integer getCapacidad() { return capacidad; }
-    public void setCapacidad(Integer capacidad) { this.capacidad = capacidad; }
-
-    public Double getPrecioPorNoche() { return precioPorNoche; }
-    public void setPrecioPorNoche(Double precioPorNoche) { this.precioPorNoche = precioPorNoche; }
-
-    public double getTarifaLimpieza() { return tarifaLimpieza; }
-    public void setTarifaLimpieza(double tarifaLimpieza) { this.tarifaLimpieza = tarifaLimpieza; }
-
-    public String getReglas() { return reglas; }
-    public void setReglas(String reglas) { this.reglas = reglas; }
-
-    public ModoAceptacion getModoAceptacion() { return modoAceptacion; }
-    public void setModoAceptacion(ModoAceptacion modoAceptacion) { this.modoAceptacion = modoAceptacion; }
-
-    public String getPoliticaCancelacion() { return politicaCancelacion; }
-    public void setPoliticaCancelacion(String politicaCancelacion) { this.politicaCancelacion = politicaCancelacion; }
 }

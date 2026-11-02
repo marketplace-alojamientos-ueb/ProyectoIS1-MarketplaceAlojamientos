@@ -9,10 +9,13 @@ import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "publicacion")
+@Getter
+@Setter
 public class Publicacion {
 
     @Id
@@ -65,7 +68,6 @@ public class Publicacion {
     @JoinColumn(name = "id_anfitrion", nullable = false)
     private Anfitrion anfitrion;
 
-
     @Convert(converter = PoliticaCancelacionConverter.class)
     @Column(name = "politica_cancelacion", nullable = false, length = 30)
     private PoliticaCancelacion politicaCancelacion;
@@ -107,157 +109,5 @@ public class Publicacion {
     @Override
     public int hashCode() {
         return Objects.hashCode(idPublicacion);
-    }
-
-    public Integer getIdPublicacion() {
-        return idPublicacion;
-    }
-
-    public void setIdPublicacion(Integer idPublicacion) {
-        this.idPublicacion = idPublicacion;
-    }
-
-    public String getTitulo() {
-        return titulo;
-    }
-
-    public void setTitulo(String titulo) {
-        this.titulo = titulo;
-    }
-
-    public String getDescripcion() {
-        return descripcion;
-    }
-
-    public void setDescripcion(String descripcion) {
-        this.descripcion = descripcion;
-    }
-
-    public String getUbicacion() {
-        return ubicacion;
-    }
-
-    public void setUbicacion(String ubicacion) {
-        this.ubicacion = ubicacion;
-    }
-
-    public String getCiudad() {
-        return ciudad;
-    }
-
-    public void setCiudad(String ciudad) {
-        this.ciudad = ciudad;
-    }
-
-    public String getTipoAlojamiento() {
-        return tipoAlojamiento;
-    }
-
-    public void setTipoAlojamiento(String tipoAlojamiento) {
-        this.tipoAlojamiento = tipoAlojamiento;
-    }
-
-    public Integer getCapacidad() {
-        return capacidad;
-    }
-
-    public void setCapacidad(Integer capacidad) {
-        this.capacidad = capacidad;
-    }
-
-    public Double getPrecioPorNoche() {
-        return precioPorNoche;
-    }
-
-    public void setPrecioPorNoche(Double precioPorNoche) {
-        this.precioPorNoche = precioPorNoche;
-    }
-
-    public Double getTarifaLimpieza() {
-        return tarifaLimpieza;
-    }
-
-    public void setTarifaLimpieza(Double tarifaLimpieza) {
-        this.tarifaLimpieza = tarifaLimpieza;
-    }
-
-    public String getReglas() {
-        return reglas;
-    }
-
-    public void setReglas(String reglas) {
-        this.reglas = reglas;
-    }
-
-    public EstadoPublicacion getEstado() {
-        return estado;
-    }
-
-    public void setEstado(EstadoPublicacion estado) {
-        this.estado = estado;
-    }
-
-    public ModoAceptacion getModoAceptacion() {
-        return modoAceptacion;
-    }
-
-    public void setModoAceptacion(ModoAceptacion modoAceptacion) {
-        this.modoAceptacion = modoAceptacion;
-    }
-
-    public String getMotivoBloqueo() {
-        return motivoBloqueo;
-    }
-
-    public void setMotivoBloqueo(String motivoBloqueo) {
-        this.motivoBloqueo = motivoBloqueo;
-    }
-
-    public Anfitrion getAnfitrion() {
-        return anfitrion;
-    }
-
-    public void setAnfitrion(Anfitrion anfitrion) {
-        this.anfitrion = anfitrion;
-    }
-
-    public PoliticaCancelacion getPoliticaCancelacion() {
-        return politicaCancelacion;
-    }
-
-    public void setPoliticaCancelacion(PoliticaCancelacion politicaCancelacion) {
-        this.politicaCancelacion = politicaCancelacion;
-    }
-
-    public List<Servicio> getServicios() {
-        return servicios;
-    }
-
-    public void setServicios(List<Servicio> servicios) {
-        this.servicios = servicios;
-    }
-
-    public List<ServicioAdicional> getServiciosAdicionales() {
-        return serviciosAdicionales;
-    }
-
-    public void setServiciosAdicionales(List<ServicioAdicional> serviciosAdicionales) {
-        this.serviciosAdicionales = serviciosAdicionales;
-    }
-
-    public List<Imagen> getImagenes() {
-        return imagenes;
-    }
-
-    public void setImagenes(List<Imagen> imagenes) {
-        this.imagenes = imagenes;
-    }
-
-    public List<PeriodoDisponibilidad> getPeriodos() {
-        return periodos;
-    }
-
-    public void setPeriodos(List<PeriodoDisponibilidad> periodos) {
-        this.periodos = periodos;
     }
 }

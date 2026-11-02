@@ -2,6 +2,8 @@ package co.edu.unbosque.marketplace.model.entity;
 
 import jakarta.persistence.*;
 import java.util.Objects;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Imagen de una publicación (tabla REFERENCIA_IMAGEN). Por ahora guarda solo la ruta o URL, como el diagrama.
@@ -9,6 +11,8 @@ import java.util.Objects;
  */
 @Entity
 @Table(name = "referencia_imagen")
+@Getter
+@Setter
 public class Imagen {
 
     @Id
@@ -30,10 +34,4 @@ public class Imagen {
 
     @Override
     public int hashCode() { return Objects.hashCode(idImagen); }
-
-    public Integer getIdImagen() { return idImagen; }
-    public void setIdImagen(Integer idImagen) { this.idImagen = idImagen; }
-
-    public String getRuta() { return ruta; }
-    public void setRuta(String ruta) { this.ruta = ruta; }
 }
