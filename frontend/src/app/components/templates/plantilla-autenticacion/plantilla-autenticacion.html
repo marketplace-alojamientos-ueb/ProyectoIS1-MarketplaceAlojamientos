@@ -1,0 +1,24 @@
+<div class="plantilla">
+  <aside class="marca">
+    <app-logo [claro]="true" />
+    <div class="mensaje-marca">
+      <h2>Comparte tu espacio con viajeros de todo el país</h2>
+      <p>Publica tus alojamientos, recibe reservas y administra todo desde un solo lugar.</p>
+    </div>
+  </aside>
+
+  <main class="contenido">
+    <div class="logo-movil">
+      <app-logo />
+    </div>
+    <section class="tarjeta" [class.amplia]="amplia()">
+      <header>
+        <h1>{{ titulo() }}</h1>
+        @if (subtitulo()) {
+          <p>{{ subtitulo() }}</p>
+        }
+      </header>
+      <ng-content />
+    </section>
+  </main>
+</div>

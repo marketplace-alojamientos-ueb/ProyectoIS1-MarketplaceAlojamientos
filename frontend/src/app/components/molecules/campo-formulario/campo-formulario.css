@@ -1,0 +1,17 @@
+.campo {
+  margin-bottom: 1rem;
+}
+
+small {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.82rem;
+}
+
+.error {
+  color: var(--color-error);
+}
+
+.ayuda {
+  color: var(--color-texto-suave);
+}

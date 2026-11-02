@@ -1,0 +1,21 @@
+<form [formGroup]="form" (ngSubmit)="enviarFormulario()" novalidate>
+  <app-campo-formulario
+    id="recuperar-correo"
+    etiqueta="Correo electrónico"
+    tipo="email"
+    modoTeclado="email"
+    autocomplete="email"
+    placeholder="tucorreo@ejemplo.com"
+    ayuda="Te enviaremos un código de 6 dígitos válido por 15 minutos"
+    [control]="form.controls.correo"
+    [error]="error(form.controls.correo)"
+  />
+
+  <app-boton tipo="submit" [completo]="true" [deshabilitado]="cargando()">
+    {{ cargando() ? 'Enviando…' : 'Enviar código' }}
+  </app-boton>
+
+  <p class="pie">
+    <a routerLink="/login">Volver a iniciar sesión</a>
+  </p>
+</form>

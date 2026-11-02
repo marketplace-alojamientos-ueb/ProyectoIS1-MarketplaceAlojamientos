@@ -1,0 +1,15 @@
+<fieldset class="selector">
+  <legend>Tipo de cuenta</legend>
+  @for (opcion of opciones; track opcion.valor) {
+    <label [class.activa]="rol() === opcion.valor">
+      <input
+        type="radio"
+        [name]="id()"
+        [value]="opcion.valor"
+        [checked]="rol() === opcion.valor"
+        (change)="rol.set(opcion.valor)"
+      />
+      {{ opcion.texto }}
+    </label>
+  }
+</fieldset>

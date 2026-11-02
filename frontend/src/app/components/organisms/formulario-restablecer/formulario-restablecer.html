@@ -1,0 +1,37 @@
+<form [formGroup]="form" (ngSubmit)="enviarFormulario()" novalidate>
+  <p class="destino">
+    Código enviado a <strong>{{ correo() }}</strong>
+    <button type="button" class="cambiar" (click)="cambiarCorreo.emit()">Cambiar correo</button>
+  </p>
+
+  <app-campo-formulario
+    id="restablecer-codigo"
+    etiqueta="Código de verificación"
+    modoTeclado="numeric"
+    autocomplete="one-time-code"
+    placeholder="000000"
+    [control]="form.controls.codigo"
+    [error]="error(form.controls.codigo, 'El código debe tener 6 dígitos')"
+  />
+  <app-campo-formulario
+    id="restablecer-password"
+    etiqueta="Nueva contraseña"
+    tipo="password"
+    autocomplete="new-password"
+    ayuda="8 a 64 caracteres, con al menos una letra y un número"
+    [control]="form.controls.nuevaPassword"
+    [error]="error(form.controls.nuevaPassword, 'Debe tener al menos una letra y un número')"
+  />
+  <app-campo-formulario
+    id="restablecer-confirmar"
+    etiqueta="Confirmar nueva contraseña"
+    tipo="password"
+    autocomplete="new-password"
+    [control]="form.controls.confirmarPassword"
+    [error]="errorConfirmacion()"
+  />
+
+  <app-boton tipo="submit" [completo]="true" [deshabilitado]="cargando()">
+    {{ cargando() ? 'Guardando…' : 'Cambiar contraseña' }}
+  </app-boton>
+</form>

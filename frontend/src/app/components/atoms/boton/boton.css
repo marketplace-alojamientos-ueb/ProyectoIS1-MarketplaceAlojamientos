@@ -1,0 +1,48 @@
+:host {
+  display: inline-block;
+}
+
+:host(.completo),
+:host(.completo) button {
+  display: block;
+  width: 100%;
+}
+
+button {
+  font: inherit;
+  font-weight: 600;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radio);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+button:focus-visible {
+  outline: 3px solid var(--color-foco);
+  outline-offset: 2px;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.primario {
+  background: var(--color-primario);
+  color: #fff;
+}
+
+.primario:hover:not(:disabled) {
+  background: var(--color-primario-hover);
+}
+
+.secundario {
+  background: transparent;
+  color: var(--color-primario);
+  border-color: var(--color-borde);
+}
+
+.secundario:hover:not(:disabled) {
+  border-color: var(--color-primario);
+}
