@@ -1,0 +1,13 @@
+<app-barra-navegacion />
+
+<main class="contenido">
+  @if (titulo()) {
+    <header>
+      <h1>{{ titulo() }}</h1>
+      @if (subtitulo()) {
+        <p>{{ subtitulo() }}</p>
+      }
+    </header>
+  }
+  <ng-content />
+</main>

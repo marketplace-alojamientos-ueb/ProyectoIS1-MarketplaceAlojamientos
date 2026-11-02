@@ -1,0 +1,21 @@
+<app-plantilla-principal titulo="Encuentra tu próximo alojamiento" subtitulo="Explora los espacios disponibles en todo el país">
+  <label class="buscador">
+    <span class="oculto">Buscar alojamientos</span>
+    <input
+      type="search"
+      placeholder="Buscar por ciudad o nombre…"
+      [value]="busqueda()"
+      (input)="buscar($event)"
+    />
+  </label>
+
+  @if (resultados().length) {
+    <div class="grilla">
+      @for (publicacion of resultados(); track publicacion.idPublicacion) {
+        <app-tarjeta-publicacion [publicacion]="publicacion" />
+      }
+    </div>
+  } @else {
+    <app-alerta tipo="info">No encontramos alojamientos para "{{ busqueda() }}".</app-alerta>
+  }
+</app-plantilla-principal>

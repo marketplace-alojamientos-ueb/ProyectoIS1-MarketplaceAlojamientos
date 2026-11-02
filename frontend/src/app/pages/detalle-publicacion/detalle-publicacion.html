@@ -1,0 +1,38 @@
+<app-plantilla-principal>
+  <a routerLink="/explorar" class="volver">← Volver a explorar</a>
+
+  @if (publicacion(); as p) {
+    <img class="portada" [src]="p.imagen" [alt]="p.titulo" />
+
+    <div class="columnas">
+      <section class="tarjeta">
+        <h1>{{ p.titulo }}</h1>
+        <p class="sub">{{ p.ciudad }} · ★ {{ p.calificacion }}</p>
+        <p>Hasta {{ p.capacidad }} huéspedes · {{ p.habitaciones }} habitaciones · {{ p.banos }} baños</p>
+        <p>{{ p.descripcion }}</p>
+
+        <h2>Servicios</h2>
+        <ul class="servicios">
+          @for (servicio of p.servicios; track servicio) {
+            <li>{{ servicio }}</li>
+          }
+        </ul>
+
+        <h2>Anfitrión</h2>
+        <p>{{ p.nombreAnfitrion }}</p>
+      </section>
+
+      <aside class="tarjeta">
+        <p class="precio">
+          <strong>{{ p.precioNoche | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong> / noche
+        </p>
+        <app-boton [completo]="true" (click)="reservar()">Reservar</app-boton>
+        @if (mensaje()) {
+          <app-alerta tipo="info">{{ mensaje() }}</app-alerta>
+        }
+      </aside>
+    </div>
+  } @else {
+    <app-alerta tipo="error">No encontramos este alojamiento.</app-alerta>
+  }
+</app-plantilla-principal>

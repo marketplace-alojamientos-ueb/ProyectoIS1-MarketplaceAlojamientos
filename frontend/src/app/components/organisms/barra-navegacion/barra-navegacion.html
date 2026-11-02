@@ -1,0 +1,18 @@
+<header class="barra">
+  <a routerLink="/explorar" class="inicio" aria-label="Ir a explorar alojamientos">
+    <app-logo />
+  </a>
+
+  <nav aria-label="Menú principal">
+    <a routerLink="/explorar" routerLinkActive="activo">Explorar</a>
+  </nav>
+
+  <div class="sesion">
+    @if (sesion.usuario(); as usuario) {
+      <span class="nombre">{{ usuario.nombreCompleto }}</span>
+      <app-boton variante="secundario" (click)="cerrarSesion()">Cerrar sesión</app-boton>
+    } @else {
+      <a routerLink="/login">Iniciar sesión</a>
+    }
+  </div>
+</header>

@@ -1,0 +1,14 @@
+<a class="tarjeta" [routerLink]="['/publicaciones', publicacion().idPublicacion]">
+  <img [src]="publicacion().imagen" [alt]="publicacion().titulo" />
+  <div class="info">
+    <div class="fila">
+      <span>{{ publicacion().ciudad }}</span>
+      <span class="calificacion">★ {{ publicacion().calificacion }}</span>
+    </div>
+    <h3>{{ publicacion().titulo }}</h3>
+    <p class="detalle">Hasta {{ publicacion().capacidad }} huéspedes · {{ publicacion().habitaciones }} habitaciones</p>
+    <p class="precio">
+      <strong>{{ publicacion().precioNoche | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong> / noche
+    </p>
+  </div>
+</a>
