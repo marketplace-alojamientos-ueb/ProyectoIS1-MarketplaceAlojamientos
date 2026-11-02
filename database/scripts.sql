@@ -89,17 +89,6 @@ CREATE TABLE evento_auditoria (
 --  CATÁLOGOS
 -- =====================================================================
 
--- Catálogo de políticas (patrón estrategia: el código indica qué
--- implementación de PoliticaCancelacion usar, ej. 'FLEXIBLE').
-CREATE TABLE politica_cancelacion (
-    id_politica           INT            NOT NULL AUTO_INCREMENT,
-    codigo                VARCHAR(30)    NOT NULL,
-    titulo_politica       VARCHAR(50)    NOT NULL,
-    descripcion_politica  VARCHAR(1000)  NOT NULL,
-    CONSTRAINT politica_cancelacion_pk PRIMARY KEY (id_politica),
-    CONSTRAINT politica_cancelacion_codigo_un UNIQUE (codigo)
-) ENGINE = InnoDB;
-
 CREATE TABLE servicio (
     id_servicio      INT          NOT NULL AUTO_INCREMENT,
     nombre_servicio  VARCHAR(50)  NOT NULL,
@@ -119,6 +108,18 @@ CREATE TABLE servicio_adicional (
 --  PUBLICACIÓN (incluye los datos del alojamiento)
 -- =====================================================================
 
+-- Catálogo de políticas de cancelación. Cada código debe tener su clase en model/politica y estar registrado en
+-- PoliticasCancelacion. Al agregar una política nueva: crear su clase, registrarla ahí e insertar su fila aquí.
+CREATE TABLE politica_cancelacion (
+    codigo       VARCHAR(30)   NOT NULL,
+    nombre       VARCHAR(50)   NOT NULL,
+    descripcion  VARCHAR(500)  NOT NULL,
+    CONSTRAINT politica_cancelacion_pk PRIMARY KEY (codigo)
+) ENGINE = InnoDB;
+
+INSERT INTO politica_cancelacion (codigo, nombre, descripcion) VALUES
+    ('FLEXIBLE', 'Flexible', 'Cancelacion flexible: el huesped puede cancelar y recibir una devolucion segun las condiciones de esta politica.');
+
 CREATE TABLE publicacion (
     id_publicacion     INT            NOT NULL AUTO_INCREMENT,
     titulo             VARCHAR(52)    NOT NULL,
@@ -134,10 +135,10 @@ CREATE TABLE publicacion (
     modo_aceptacion    VARCHAR(30)    NOT NULL,
     motivo_bloqueo     VARCHAR(500),
     id_anfitrion       INT            NOT NULL,
-    id_politica        INT            NOT NULL,
+    politica_cancelacion  VARCHAR(30)  NOT NULL,
     CONSTRAINT publicacion_pk PRIMARY KEY (id_publicacion),
     CONSTRAINT publicacion_anfitrion_fk FOREIGN KEY (id_anfitrion) REFERENCES anfitrion (id_usuario),
-    CONSTRAINT publicacion_politica_fk FOREIGN KEY (id_politica) REFERENCES politica_cancelacion (id_politica),
+    CONSTRAINT publicacion_politica_fk FOREIGN KEY (politica_cancelacion) REFERENCES politica_cancelacion (codigo),
     CONSTRAINT ck_publicacion_capacidad CHECK (capacidad > 0),
     CONSTRAINT ck_publicacion_precio_noche CHECK (precio_noche > 0),
     CONSTRAINT ck_publicacion_tarifa_limpieza CHECK (tarifa_limpieza >= 0),
