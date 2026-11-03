@@ -27,11 +27,14 @@ final class CuentaUsuario {
                              RegistroUsuarioRequestDTO dto) {
         String correo = normalizarCorreo(dto.getCorreo());
         if (usuarioRepository.existsByCedula(dto.getCedula())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe un usuario registrado con esa cédula");
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "No se pudo completar el registro: la cédula " + dto.getCedula()
+                            + " ya está registrada en otra cuenta. Si es tuya, inicia sesión o recupera tu contraseña.");
         }
         if (usuarioRepository.existsByCorreo(correo)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "Ya existe un usuario registrado con el correo: " + correo);
+                    "No se pudo completar el registro: el correo " + correo
+                            + " ya está registrado en otra cuenta. Si es tuyo, inicia sesión o usa otro correo.");
         }
 
         Usuario usuario = new Usuario(
@@ -51,7 +54,7 @@ final class CuentaUsuario {
         String correo = normalizarCorreo(dto.getCorreo());
         if (usuarioRepository.existsByCorreoAndIdUsuarioNot(correo, idUsuario)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "Ya existe un usuario registrado con el correo: " + correo);
+                    "No se pudo actualizar: el correo " + correo + " ya lo usa otra cuenta. Elige un correo diferente.");
         }
 
         usuario.setPrimerNombre(dto.getPrimerNombre().trim());

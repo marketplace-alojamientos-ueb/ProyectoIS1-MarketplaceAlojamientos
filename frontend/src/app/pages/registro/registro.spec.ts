@@ -57,7 +57,7 @@ describe('Registro', () => {
 
   it('muestra el error si la cédula o el correo ya existen', () => {
     anfitrion.registrar.mockReturnValue(
-      throwError(() => new HttpErrorResponse({ status: 409, error: { message: 'Ya existe un usuario registrado con esa cédula' } }))
+      throwError(() => new HttpErrorResponse({ status: 409, error: { message: 'No se pudo completar el registro: la cédula 1012345678 ya está registrada en otra cuenta. Si es tuya, inicia sesión o recupera tu contraseña.' } }))
     );
     const { fixture, registro } = crear();
 
@@ -65,7 +65,7 @@ describe('Registro', () => {
     fixture.detectChanges();
 
     expect(anfitrion.registrar).toHaveBeenCalledWith(datos);
-    expect(fixture.nativeElement.textContent).toContain('Ya existe un usuario registrado con esa cédula');
+    expect(fixture.nativeElement.textContent).toContain('No se pudo completar el registro: la cédula 1012345678 ya está registrada en otra cuenta. Si es tuya, inicia sesión o recupera tu contraseña.');
     expect(registro['cargando']()).toBe(false);
   });
 });
