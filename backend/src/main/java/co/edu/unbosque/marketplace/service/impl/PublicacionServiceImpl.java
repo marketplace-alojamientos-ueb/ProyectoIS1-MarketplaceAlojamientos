@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -62,9 +63,10 @@ public class PublicacionServiceImpl implements PublicacionService {
     @Override
     public PublicacionResponseDTO crear(PublicacionRequestDTO dto) {
         Anfitrion anfitrion = obtenerAnfitrionHabilitado(dto.getIdAnfitrion());
+        boolean conPolitica = !estaVacio(dto.getPoliticaCancelacion());
         // Solo vale una política con clase implementada y con su fila en la tabla (las mismas que lista listarPoliticas)
-        if (!PoliticasCancelacion.existe(dto.getPoliticaCancelacion())
-                || !politicaRepository.existsById(dto.getPoliticaCancelacion())) {
+        if (conPolitica && (!PoliticasCancelacion.existe(dto.getPoliticaCancelacion())
+                || !politicaRepository.existsById(dto.getPoliticaCancelacion()))) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "La política de cancelación no existe: " + dto.getPoliticaCancelacion());
         }
@@ -72,10 +74,37 @@ public class PublicacionServiceImpl implements PublicacionService {
         // El mapper copia los campos que se llaman igual; anfitrion y política se asignan a mano
         Publicacion publicacion = mapper.map(dto, Publicacion.class);
         publicacion.setAnfitrion(anfitrion);
-        publicacion.setPoliticaCancelacion(PoliticasCancelacion.deCodigo(dto.getPoliticaCancelacion()));
-        publicacion.setEstado(EstadoPublicacion.PENDIENTE_REVISION);
+        publicacion.setPoliticaCancelacion(conPolitica ? PoliticasCancelacion.deCodigo(dto.getPoliticaCancelacion()) : null);
 
-        return toResponseDTO(publicacionRepository.save(publicacion));
+        // Incompleta: queda en BORRADOR y se informa qué falta. Completa: pasa a revisión.
+        List<String> faltantes = camposFaltantes(dto);
+        publicacion.setEstado(faltantes.isEmpty() ? EstadoPublicacion.PENDIENTE_REVISION : EstadoPublicacion.BORRADOR);
+
+        PublicacionResponseDTO respuesta = toResponseDTO(publicacionRepository.save(publicacion));
+        respuesta.setCamposFaltantes(faltantes);
+        return respuesta;
+    }
+
+    /**
+     * Campos mínimos que no vienen (null o texto en blanco), con el nombre que se muestra al anfitrión.
+     * Tarifa de limpieza y reglas son opcionales.
+     */
+    private List<String> camposFaltantes(PublicacionRequestDTO dto) {
+        List<String> faltantes = new ArrayList<>();
+        if (estaVacio(dto.getTitulo())) faltantes.add("Título");
+        if (estaVacio(dto.getDescripcion())) faltantes.add("Descripción");
+        if (estaVacio(dto.getUbicacion())) faltantes.add("Ubicación");
+        if (estaVacio(dto.getCiudad())) faltantes.add("Ciudad");
+        if (estaVacio(dto.getTipoAlojamiento())) faltantes.add("Tipo de alojamiento");
+        if (dto.getCapacidad() == null) faltantes.add("Capacidad");
+        if (dto.getPrecioPorNoche() == null) faltantes.add("Precio por noche");
+        if (dto.getModoAceptacion() == null) faltantes.add("Modo de aceptación");
+        if (estaVacio(dto.getPoliticaCancelacion())) faltantes.add("Política de cancelación");
+        return faltantes;
+    }
+
+    private static boolean estaVacio(String valor) {
+        return valor == null || valor.isBlank();
     }
 
     @Override
@@ -100,7 +129,9 @@ public class PublicacionServiceImpl implements PublicacionService {
     private PublicacionResponseDTO toResponseDTO(Publicacion publicacion) {
         PublicacionResponseDTO dto = mapper.map(publicacion, PublicacionResponseDTO.class);
         dto.setAnfitrion(CuentaUsuario.aRespuesta(publicacion.getAnfitrion().getUsuario(), new AnfitrionResponseDTO()));
-        dto.setPoliticaCancelacion(publicacion.getPoliticaCancelacion().codigo());
+        // Un borrador puede no tener política todavía
+        dto.setPoliticaCancelacion(publicacion.getPoliticaCancelacion() == null
+                ? null : publicacion.getPoliticaCancelacion().codigo());
         return dto;
     }
 }

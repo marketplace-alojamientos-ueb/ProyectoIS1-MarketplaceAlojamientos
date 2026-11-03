@@ -92,6 +92,49 @@ class PublicacionServiceImplTest {
         assertEquals("Apartamento con vista al mar", respuesta.getTitulo());
         assertEquals("FLEXIBLE", respuesta.getPoliticaCancelacion());
         assertEquals(EstadoPublicacion.PENDIENTE_REVISION, respuesta.getEstado());
+        assertTrue(respuesta.getCamposFaltantes().isEmpty());
+    }
+
+    @Test
+    void sinCamposMinimosQuedaEnBorradorYSenalaLosFaltantes() {
+        anfitrionExiste(crearAnfitrion());
+        PublicacionRequestDTO dto = publicacion(7);
+        dto.setTitulo("   ");
+        dto.setPrecioPorNoche(null);
+        dto.setModoAceptacion(null);
+
+        PublicacionResponseDTO respuesta = servicio.crear(dto);
+
+        ArgumentCaptor<Publicacion> guardada = ArgumentCaptor.forClass(Publicacion.class);
+        verify(publicacionRepository).save(guardada.capture());
+        assertEquals(EstadoPublicacion.BORRADOR, guardada.getValue().getEstado());
+        assertEquals(EstadoPublicacion.BORRADOR, respuesta.getEstado());
+        assertEquals(List.of("Título", "Precio por noche", "Modo de aceptación"), respuesta.getCamposFaltantes());
+    }
+
+    @Test
+    void sinNingunDatoSenalaTodosLosCamposMinimos() {
+        anfitrionExiste(crearAnfitrion());
+        PublicacionRequestDTO dto = new PublicacionRequestDTO();
+        dto.setIdAnfitrion(7);
+
+        PublicacionResponseDTO respuesta = servicio.crear(dto);
+
+        assertEquals(EstadoPublicacion.BORRADOR, respuesta.getEstado());
+        assertEquals(List.of("Título", "Descripción", "Ubicación", "Ciudad", "Tipo de alojamiento", "Capacidad",
+                "Precio por noche", "Modo de aceptación", "Política de cancelación"), respuesta.getCamposFaltantes());
+        assertNull(respuesta.getPoliticaCancelacion());
+        verify(politicaRepository, never()).existsById(any());
+    }
+
+    @Test
+    void unBorradorConPoliticaInexistenteRecibe400() {
+        anfitrionExiste(crearAnfitrion());
+        PublicacionRequestDTO dto = new PublicacionRequestDTO();
+        dto.setIdAnfitrion(7);
+        dto.setPoliticaCancelacion("INEXISTENTE");
+
+        assertEstado(HttpStatus.BAD_REQUEST, dto);
     }
 
     @Test

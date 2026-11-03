@@ -12,8 +12,9 @@ import java.util.List;
 public interface PublicacionService {
 
     /**
-     * Crea la publicación de un anfitrión con estado inicial PENDIENTE_REVISION. Responde 403 si el id no es de un
-     * anfitrión con la cuenta activa y sin restricciones, y 400 si la política de cancelación no existe.
+     * Crea la publicación de un anfitrión. Si trae todos los campos mínimos queda en PENDIENTE_REVISION; si falta
+     * alguno queda en BORRADOR y la respuesta trae en camposFaltantes cuáles son. Responde 403 si el id no es de un
+     * anfitrión con la cuenta activa y sin restricciones, y 400 si la política de cancelación enviada no existe.
      */
     PublicacionResponseDTO crear(PublicacionRequestDTO dto);
 

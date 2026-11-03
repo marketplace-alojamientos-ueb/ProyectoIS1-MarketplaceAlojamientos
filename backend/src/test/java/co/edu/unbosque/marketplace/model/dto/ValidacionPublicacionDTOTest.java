@@ -27,19 +27,18 @@ class ValidacionPublicacionDTOTest {
     }
 
     @Test
-    void sinDatosMarcaTodosLosCamposObligatorios() {
-        assertEquals(Set.of("idAnfitrion", "titulo", "descripcion", "ubicacion", "ciudad", "tipoAlojamiento",
-                        "capacidad", "precioPorNoche", "modoAceptacion", "politicaCancelacion"),
-                camposInvalidos(new PublicacionRequestDTO()));
+    void sinDatosSoloExigeElAnfitrion() {
+        // Los campos mínimos que falten no son error de validación: la publicación queda en BORRADOR
+        assertEquals(Set.of("idAnfitrion"), camposInvalidos(new PublicacionRequestDTO()));
     }
 
     @Test
-    void textosEnBlancoSonInvalidos() {
+    void textosEnBlancoNoSonErrorDeValidacion() {
         PublicacionRequestDTO dto = publicacion(7);
         dto.setTitulo("   ");
         dto.setPoliticaCancelacion(" ");
 
-        assertEquals(Set.of("titulo", "politicaCancelacion"), camposInvalidos(dto));
+        assertTrue(camposInvalidos(dto).isEmpty());
     }
 
     @Test
