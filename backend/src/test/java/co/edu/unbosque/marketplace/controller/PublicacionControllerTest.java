@@ -1,6 +1,7 @@
 package co.edu.unbosque.marketplace.controller;
 
 import co.edu.unbosque.marketplace.model.dto.PoliticaCancelacionDTO;
+import co.edu.unbosque.marketplace.model.dto.PublicacionEditarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionResponseDTO;
 import co.edu.unbosque.marketplace.service.PublicacionService;
@@ -49,5 +50,31 @@ class PublicacionControllerTest {
 
         assertEquals(HttpStatus.OK, respuesta.getStatusCode());
         assertEquals("FLEXIBLE", respuesta.getBody().get(0).getCodigo());
+    }
+
+    @Test
+    void obtenerParaEditarResponde200() {
+        PublicacionResponseDTO publicacion = new PublicacionResponseDTO();
+        publicacion.setIdPublicacion(15);
+        when(publicacionService.obtenerParaEditar(15, 7)).thenReturn(publicacion);
+
+        ResponseEntity<PublicacionResponseDTO> respuesta = controller.obtenerParaEditar(15, 7);
+
+        assertEquals(HttpStatus.OK, respuesta.getStatusCode());
+        assertEquals(15, respuesta.getBody().getIdPublicacion());
+    }
+
+    @Test
+    void editarResponde200() {
+        PublicacionEditarRequestDTO dto = new PublicacionEditarRequestDTO();
+        PublicacionResponseDTO publicacion = new PublicacionResponseDTO();
+        publicacion.setIdPublicacion(15);
+        when(publicacionService.editar(15, dto)).thenReturn(publicacion);
+
+        ResponseEntity<PublicacionResponseDTO> respuesta = controller.editar(15, dto);
+
+        assertEquals(HttpStatus.OK, respuesta.getStatusCode());
+        assertEquals(15, respuesta.getBody().getIdPublicacion());
+        verify(publicacionService).editar(15, dto);
     }
 }

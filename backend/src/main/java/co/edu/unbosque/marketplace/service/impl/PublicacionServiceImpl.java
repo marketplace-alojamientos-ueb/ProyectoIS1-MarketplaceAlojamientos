@@ -2,12 +2,14 @@ package co.edu.unbosque.marketplace.service.impl;
 
 import co.edu.unbosque.marketplace.model.dto.AnfitrionResponseDTO;
 import co.edu.unbosque.marketplace.model.dto.PoliticaCancelacionDTO;
+import co.edu.unbosque.marketplace.model.dto.PublicacionEditarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionResponseDTO;
 import co.edu.unbosque.marketplace.model.entity.Anfitrion;
 import co.edu.unbosque.marketplace.model.entity.Publicacion;
 import co.edu.unbosque.marketplace.model.entity.politica.PoliticasCancelacion;
 import co.edu.unbosque.marketplace.model.enums.EstadoPublicacion;
+import co.edu.unbosque.marketplace.repository.AdminRepository;
 import co.edu.unbosque.marketplace.repository.AnfitrionRepository;
 import co.edu.unbosque.marketplace.repository.PublicacionRepository;
 import co.edu.unbosque.marketplace.repository.TipoPoliticaCancelacionRepository;
@@ -15,6 +17,7 @@ import co.edu.unbosque.marketplace.service.PublicacionService;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeMap;
 import org.modelmapper.convention.MatchingStrategies;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,14 +32,17 @@ public class PublicacionServiceImpl implements PublicacionService {
     private final PublicacionRepository publicacionRepository;
     private final AnfitrionRepository anfitrionRepository;
     private final TipoPoliticaCancelacionRepository politicaRepository;
+    private final AdminRepository adminRepository;
     private final ModelMapper mapper = new ModelMapper();
 
     public PublicacionServiceImpl(PublicacionRepository publicacionRepository,
                                   AnfitrionRepository anfitrionRepository,
-                                  TipoPoliticaCancelacionRepository politicaRepository) {
+                                  TipoPoliticaCancelacionRepository politicaRepository,
+                                  AdminRepository adminRepository) {
         this.publicacionRepository = publicacionRepository;
         this.anfitrionRepository = anfitrionRepository;
         this.politicaRepository = politicaRepository;
+        this.adminRepository = adminRepository;
 
         // STRICT: solo copia campos con el nombre exacto. Con la estrategia por defecto, Anfitrion.idUsuario y
         // Anfitrion.usuario.idUsuario se confunden entre sí y el mapper falla al arrancar.
@@ -63,11 +69,7 @@ public class PublicacionServiceImpl implements PublicacionService {
     public PublicacionResponseDTO crear(PublicacionRequestDTO dto) {
         Anfitrion anfitrion = obtenerAnfitrionHabilitado(dto.getIdAnfitrion());
         // Solo vale una política con clase implementada y con su fila en la tabla (las mismas que lista listarPoliticas)
-        if (!PoliticasCancelacion.existe(dto.getPoliticaCancelacion())
-                || !politicaRepository.existsById(dto.getPoliticaCancelacion())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "La política de cancelación no existe: " + dto.getPoliticaCancelacion());
-        }
+        exigirPoliticaValida(dto.getPoliticaCancelacion());
 
         // El mapper copia los campos que se llaman igual; anfitrion y política se asignan a mano
         Publicacion publicacion = mapper.map(dto, Publicacion.class);
@@ -85,6 +87,83 @@ public class PublicacionServiceImpl implements PublicacionService {
                 .filter(politica -> PoliticasCancelacion.existe(politica.getCodigo()))
                 .map(politica -> mapper.map(politica, PoliticaCancelacionDTO.class))
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PublicacionResponseDTO obtenerParaEditar(Integer idPublicacion, Integer idUsuario) {
+        return toResponseDTO(obtenerAutorizada(idPublicacion, idUsuario, "Edición no autorizada"));
+    }
+
+    @Override
+    public PublicacionResponseDTO editar(Integer idPublicacion, PublicacionEditarRequestDTO dto) {
+        Publicacion publicacion = obtenerAutorizada(idPublicacion, dto.getIdUsuario(), "Edición no autorizada");
+        exigirPoliticaValida(dto.getPoliticaCancelacion());
+
+        publicacion.setTitulo(dto.getTitulo());
+        publicacion.setDescripcion(dto.getDescripcion());
+        publicacion.setUbicacion(dto.getUbicacion());
+        publicacion.setCiudad(dto.getCiudad());
+        publicacion.setTipoAlojamiento(dto.getTipoAlojamiento());
+        publicacion.setCapacidad(dto.getCapacidad());
+        publicacion.setPrecioPorNoche(dto.getPrecioPorNoche());
+        publicacion.setTarifaLimpieza(dto.getTarifaLimpieza());
+        publicacion.setReglas(dto.getReglas());
+        publicacion.setModoAceptacion(dto.getModoAceptacion());
+        publicacion.setPoliticaCancelacion(PoliticasCancelacion.deCodigo(dto.getPoliticaCancelacion()));
+
+        return toResponseDTO(publicacionRepository.save(publicacion));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PublicacionResponseDTO> listar(Integer idAnfitrion) {
+        List<Publicacion> publicaciones = idAnfitrion == null
+                ? publicacionRepository.findAll()
+                : publicacionRepository.findByAnfitrion_IdUsuario(idAnfitrion);
+        return publicaciones.stream().map(this::toResponseDTO).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PublicacionResponseDTO obtener(Integer idPublicacion) {
+        return toResponseDTO(buscar(idPublicacion));
+    }
+
+    @Override
+    public void eliminar(Integer idPublicacion, Integer idUsuario) {
+        Publicacion publicacion = obtenerAutorizada(idPublicacion, idUsuario, "Eliminación no autorizada");
+        try {
+            publicacionRepository.delete(publicacion);
+            publicacionRepository.flush();
+        } catch (DataIntegrityViolationException e) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "No se puede eliminar la publicación porque tiene datos asociados, como reservas");
+        }
+    }
+
+    private Publicacion buscar(Integer idPublicacion) {
+        return publicacionRepository.findById(idPublicacion)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "La publicación no existe"));
+    }
+
+    private void exigirPoliticaValida(String codigo) {
+        if (!PoliticasCancelacion.existe(codigo) || !politicaRepository.existsById(codigo)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La política de cancelación no existe: " + codigo);
+        }
+    }
+
+    private Publicacion obtenerAutorizada(Integer idPublicacion, Integer idUsuario, String mensajeSiNoAutorizado) {
+        Publicacion publicacion = buscar(idPublicacion);
+
+        Anfitrion propietario = publicacion.getAnfitrion();
+        boolean esPropietario = propietario.getIdUsuario().equals(idUsuario)
+                && propietario.getUsuario().estaActiva()
+                && !Boolean.TRUE.equals(propietario.getUsuario().getRestringido());
+        if (!esPropietario && !adminRepository.existsById(idUsuario)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, mensajeSiNoAutorizado);
+        }
+        return publicacion;
     }
 
     /**

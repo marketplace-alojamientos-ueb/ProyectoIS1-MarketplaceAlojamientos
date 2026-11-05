@@ -1,6 +1,7 @@
 package co.edu.unbosque.marketplace.service;
 
 import co.edu.unbosque.marketplace.model.dto.PoliticaCancelacionDTO;
+import co.edu.unbosque.marketplace.model.dto.PublicacionEditarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionResponseDTO;
 
@@ -22,4 +23,14 @@ public interface PublicacionService {
      * Solo incluye las que tienen una clase implementada.
      */
     List<PoliticaCancelacionDTO> listarPoliticas();
+
+    PublicacionResponseDTO obtenerParaEditar(Integer idPublicacion, Integer idUsuario);
+
+    PublicacionResponseDTO editar(Integer idPublicacion, PublicacionEditarRequestDTO dto);
+
+    List<PublicacionResponseDTO> listar(Integer idAnfitrion);
+
+    PublicacionResponseDTO obtener(Integer idPublicacion);
+
+    void eliminar(Integer idPublicacion, Integer idUsuario);
 }

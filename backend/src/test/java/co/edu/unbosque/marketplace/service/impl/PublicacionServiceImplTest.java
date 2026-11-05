@@ -11,6 +11,7 @@ import co.edu.unbosque.marketplace.model.enums.EstadoCuenta;
 import co.edu.unbosque.marketplace.model.enums.EstadoPublicacion;
 import co.edu.unbosque.marketplace.model.enums.ModoAceptacion;
 import co.edu.unbosque.marketplace.model.entity.politica.PoliticaFlexible;
+import co.edu.unbosque.marketplace.repository.AdminRepository;
 import co.edu.unbosque.marketplace.repository.AnfitrionRepository;
 import co.edu.unbosque.marketplace.repository.PublicacionRepository;
 import co.edu.unbosque.marketplace.repository.TipoPoliticaCancelacionRepository;
@@ -42,7 +43,8 @@ class PublicacionServiceImplTest {
         publicacionRepository = mock(PublicacionRepository.class);
         anfitrionRepository = mock(AnfitrionRepository.class);
         politicaRepository = mock(TipoPoliticaCancelacionRepository.class);
-        servicio = new PublicacionServiceImpl(publicacionRepository, anfitrionRepository, politicaRepository);
+        servicio = new PublicacionServiceImpl(publicacionRepository, anfitrionRepository, politicaRepository,
+                mock(AdminRepository.class));
 
         // La política FLEXIBLE existe en la tabla
         when(politicaRepository.existsById("FLEXIBLE")).thenReturn(true);
