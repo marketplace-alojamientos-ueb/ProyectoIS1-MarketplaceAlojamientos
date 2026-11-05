@@ -25,14 +25,17 @@ import static org.mockito.Mockito.*;
 class PublicacionPausaServiceTest {
 
     private PublicacionRepository publicacionRepository;
+    private AdminRepository adminRepository;
     private PublicacionServiceImpl servicio;
     private Publicacion publicacion;
 
     @BeforeEach
     void setUp() {
         publicacionRepository = mock(PublicacionRepository.class);
+        adminRepository = mock(AdminRepository.class);
         servicio = new PublicacionServiceImpl(publicacionRepository, mock(AnfitrionRepository.class),
-                mock(TipoPoliticaCancelacionRepository.class), mock(AdminRepository.class));
+                mock(TipoPoliticaCancelacionRepository.class), adminRepository);
+        when(adminRepository.existsById(99)).thenReturn(true);
 
         Usuario usuario = new Usuario("1012345678", "Ana", "María", "Gómez", "Rojas", "ana@correo.com", "hash");
         usuario.setIdUsuario(7);
@@ -67,14 +70,28 @@ class PublicacionPausaServiceTest {
     }
 
     @Test
-    void siLaPublicacionNoEstaActivaResponde409YNoLaCambia() {
-        publicacion.setEstado(EstadoPublicacion.BORRADOR);
+    void siLaPublicacionNoEstaActivaResponde409YNoCambiaDeEstado() {
+        EstadoPublicacion[] noActivas = {EstadoPublicacion.BORRADOR, EstadoPublicacion.PENDIENTE_REVISION,
+                EstadoPublicacion.PAUSADA, EstadoPublicacion.BLOQUEADA};
 
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> servicio.pausar(15, 7));
+        for (EstadoPublicacion estado : noActivas) {
+            publicacion.setEstado(estado);
 
-        assertEquals(HttpStatus.CONFLICT, ex.getStatusCode());
-        assertEquals(EstadoPublicacion.BORRADOR, publicacion.getEstado());
+            ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> servicio.pausar(15, 7));
+
+            assertEquals(HttpStatus.CONFLICT, ex.getStatusCode());
+            assertTrue(ex.getReason().contains(estado.name()));
+            assertEquals(estado, publicacion.getEstado());
+        }
         verify(publicacionRepository, never()).save(any());
+    }
+
+    @Test
+    void unAdministradorPuedePausarUnaPublicacionAjenaActiva() {
+        PublicacionResponseDTO respuesta = servicio.pausar(15, 99);
+
+        assertEquals(EstadoPublicacion.PAUSADA, respuesta.getEstado());
+        verify(publicacionRepository).save(publicacion);
     }
 
     @Test
