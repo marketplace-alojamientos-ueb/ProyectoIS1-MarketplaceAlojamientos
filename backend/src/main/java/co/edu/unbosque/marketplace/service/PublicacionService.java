@@ -5,6 +5,7 @@ import co.edu.unbosque.marketplace.model.dto.PublicacionEditarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionResponseDTO;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -35,4 +36,12 @@ public interface PublicacionService {
     PublicacionResponseDTO obtener(Integer idPublicacion);
 
     void eliminar(Integer idPublicacion, Integer idUsuario);
+
+    /**
+     * Marca como RESERVADO el rango de una reserva confirmada; lo que sobre de los períodos disponibles sigue
+     * disponible. No tiene endpoint: lo debe llamar el servicio de reservas dentro de su misma transacción.
+     * Responde 400 si la salida no es posterior a la llegada, 404 si la publicación no existe y 409 si alguna noche del
+     * rango no está disponible.
+     */
+    void bloquearPeriodoReservado(Integer idPublicacion, LocalDate fechaLlegada, LocalDate fechaSalida);
 }

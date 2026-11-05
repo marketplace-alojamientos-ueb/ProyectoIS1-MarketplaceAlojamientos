@@ -152,6 +152,54 @@ public class PublicacionServiceImpl implements PublicacionService {
         }
     }
 
+    @Override
+    public void bloquearPeriodoReservado(Integer idPublicacion, LocalDate fechaLlegada, LocalDate fechaSalida) {
+        if (!fechaSalida.isAfter(fechaLlegada)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "La fecha de salida debe ser posterior a la fecha de llegada");
+        }
+        Publicacion publicacion = publicacionRepository.buscarParaBloquearPeriodos(idPublicacion)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "La publicación no existe"));
+
+        // Los períodos disponibles que tocan el rango, en orden de fecha
+        List<PeriodoDisponibilidad> afectados = publicacion.getPeriodos().stream()
+                .filter(p -> p.getTipo() == TipoPeriodo.DISPONIBLE
+                        && p.getFechaInicio().isBefore(fechaSalida)
+                        && p.getFechaFin().isAfter(fechaLlegada))
+                .sorted(Comparator.comparing(PeriodoDisponibilidad::getFechaInicio))
+                .toList();
+        exigirRangoCubierto(afectados, fechaLlegada, fechaSalida);
+
+        // Cada período afectado se reemplaza por lo que le sobra antes y después del rango reservado
+        publicacion.getPeriodos().removeAll(afectados);
+        for (PeriodoDisponibilidad periodo : afectados) {
+            if (periodo.getFechaInicio().isBefore(fechaLlegada)) {
+                publicacion.getPeriodos().add(
+                        nuevoPeriodo(periodo.getFechaInicio(), fechaLlegada, TipoPeriodo.DISPONIBLE));
+            }
+            if (periodo.getFechaFin().isAfter(fechaSalida)) {
+                publicacion.getPeriodos().add(
+                        nuevoPeriodo(fechaSalida, periodo.getFechaFin(), TipoPeriodo.DISPONIBLE));
+            }
+        }
+        publicacion.getPeriodos().add(nuevoPeriodo(fechaLlegada, fechaSalida, TipoPeriodo.RESERVADO));
+        publicacionRepository.save(publicacion);
+    }
+
+    /** Los períodos, ya ordenados, deben cubrir todas las noches del rango sin dejar huecos. */
+    private void exigirRangoCubierto(List<PeriodoDisponibilidad> periodos, LocalDate fechaLlegada, LocalDate fechaSalida) {
+        LocalDate cubiertoHasta = fechaLlegada;
+        for (PeriodoDisponibilidad periodo : periodos) {
+            if (periodo.getFechaInicio().isAfter(cubiertoHasta)) {
+                break;
+            }
+            cubiertoHasta = periodo.getFechaFin();
+        }
+        if (cubiertoHasta.isBefore(fechaSalida)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Las fechas seleccionadas no están disponibles");
+        }
+    }
+
     private Publicacion buscar(Integer idPublicacion) {
         return publicacionRepository.findById(idPublicacion)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "La publicación no existe"));
@@ -191,10 +239,14 @@ public class PublicacionServiceImpl implements PublicacionService {
     }
 
     private PeriodoDisponibilidad toPeriodoDisponible(PeriodoDisponibilidadRequestDTO dto) {
+        return nuevoPeriodo(dto.getFechaInicio(), dto.getFechaFin(), TipoPeriodo.DISPONIBLE);
+    }
+
+    private PeriodoDisponibilidad nuevoPeriodo(LocalDate fechaInicio, LocalDate fechaFin, TipoPeriodo tipo) {
         PeriodoDisponibilidad periodo = new PeriodoDisponibilidad();
-        periodo.setFechaInicio(dto.getFechaInicio());
-        periodo.setFechaFin(dto.getFechaFin());
-        periodo.setTipo(TipoPeriodo.DISPONIBLE);
+        periodo.setFechaInicio(fechaInicio);
+        periodo.setFechaFin(fechaFin);
+        periodo.setTipo(tipo);
         return periodo;
     }
 
