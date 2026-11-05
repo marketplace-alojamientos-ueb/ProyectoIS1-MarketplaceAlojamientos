@@ -33,4 +33,6 @@ public interface PublicacionService {
     PublicacionResponseDTO obtener(Integer idPublicacion);
 
     void eliminar(Integer idPublicacion, Integer idUsuario);
+
+    PublicacionResponseDTO pausar(Integer idPublicacion, Integer idUsuario);
 }

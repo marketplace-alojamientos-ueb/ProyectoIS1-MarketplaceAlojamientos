@@ -142,6 +142,19 @@ public class PublicacionServiceImpl implements PublicacionService {
         }
     }
 
+    @Override
+    public PublicacionResponseDTO pausar(Integer idPublicacion, Integer idUsuario) {
+        Publicacion publicacion = obtenerAutorizada(idPublicacion, idUsuario,
+                "Solo el anfitrión propietario o un administrador puede pausar la publicación");
+        if (publicacion.getEstado() != EstadoPublicacion.ACTIVA) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "No se puede pausar una publicación en estado " + publicacion.getEstado()
+                            + ": solo se pueden pausar las publicaciones ACTIVAS");
+        }
+        publicacion.setEstado(EstadoPublicacion.PAUSADA);
+        return toResponseDTO(publicacionRepository.save(publicacion));
+    }
+
     private Publicacion buscar(Integer idPublicacion) {
         return publicacionRepository.findById(idPublicacion)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "La publicación no existe"));
@@ -156,14 +169,17 @@ public class PublicacionServiceImpl implements PublicacionService {
     private Publicacion obtenerAutorizada(Integer idPublicacion, Integer idUsuario, String mensajeSiNoAutorizado) {
         Publicacion publicacion = buscar(idPublicacion);
 
-        Anfitrion propietario = publicacion.getAnfitrion();
-        boolean esPropietario = propietario.getIdUsuario().equals(idUsuario)
-                && propietario.getUsuario().estaActiva()
-                && !Boolean.TRUE.equals(propietario.getUsuario().getRestringido());
-        if (!esPropietario && !adminRepository.existsById(idUsuario)) {
+        if (!esPropietario(publicacion, idUsuario) && !adminRepository.existsById(idUsuario)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, mensajeSiNoAutorizado);
         }
         return publicacion;
+    }
+
+    private boolean esPropietario(Publicacion publicacion, Integer idUsuario) {
+        Anfitrion propietario = publicacion.getAnfitrion();
+        return propietario.getIdUsuario().equals(idUsuario)
+                && propietario.getUsuario().estaActiva()
+                && !Boolean.TRUE.equals(propietario.getUsuario().getRestringido());
     }
 
     /**
