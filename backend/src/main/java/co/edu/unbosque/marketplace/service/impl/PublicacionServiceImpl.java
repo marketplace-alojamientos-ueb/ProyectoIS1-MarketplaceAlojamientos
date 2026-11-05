@@ -144,13 +144,12 @@ public class PublicacionServiceImpl implements PublicacionService {
 
     @Override
     public PublicacionResponseDTO pausar(Integer idPublicacion, Integer idUsuario) {
-        Publicacion publicacion = buscar(idPublicacion);
-        if (!esPropietario(publicacion, idUsuario)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "Solo el anfitrión propietario puede pausar la publicación");
-        }
+        Publicacion publicacion = obtenerAutorizada(idPublicacion, idUsuario,
+                "Solo el anfitrión propietario o un administrador puede pausar la publicación");
         if (publicacion.getEstado() != EstadoPublicacion.ACTIVA) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Solo se puede pausar una publicación ACTIVA");
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "No se puede pausar una publicación en estado " + publicacion.getEstado()
+                            + ": solo se pueden pausar las publicaciones ACTIVAS");
         }
         publicacion.setEstado(EstadoPublicacion.PAUSADA);
         return toResponseDTO(publicacionRepository.save(publicacion));
