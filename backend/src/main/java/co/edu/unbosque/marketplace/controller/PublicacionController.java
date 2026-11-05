@@ -194,4 +194,26 @@ public class PublicacionController {
         publicacionService.eliminar(id, idUsuario);
         return ResponseEntity.noContent().build();
     }
+
+    /**
+     * <b>POST /api/publicaciones/{id}/pausar?idUsuario=7</b> — Pausa una publicación ACTIVA para dejar de recibir
+     * nuevas reservas de forma temporal.
+     *
+     * <p>Pide: el id de la publicación en la ruta y, como parámetro <code>idUsuario</code>, el id del anfitrión
+     * propietario que confirma la pausa. Sin body.</p>
+     * <p>Retorna:</p>
+     * <ul>
+     *   <li><b>200</b> con el PublicacionResponseDTO, ya con estado <code>PAUSADA</code>.</li>
+     *   <li><b>403</b> si el usuario no es el anfitrión propietario (con la cuenta activa y sin restricciones).</li>
+     *   <li><b>404</b> si la publicación no existe.</li>
+     *   <li><b>409</b> si la publicación no está ACTIVA ("Solo se puede pausar una publicación ACTIVA").</li>
+     * </ul>
+     * <p>Uso en el front: pedir la confirmación al anfitrión y llamar a este endpoint solo si confirma. Si cancela, no
+     * se llama y la publicación sigue ACTIVA. Las búsquedas y las reservas deben ignorar las publicaciones que no estén
+     * ACTIVAS.</p>
+     */
+    @PostMapping("/{id}/pausar")
+    public ResponseEntity<PublicacionResponseDTO> pausar(@PathVariable Integer id, @RequestParam Integer idUsuario) {
+        return ResponseEntity.ok(publicacionService.pausar(id, idUsuario));
+    }
 }

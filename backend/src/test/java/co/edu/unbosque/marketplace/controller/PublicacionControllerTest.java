@@ -65,6 +65,18 @@ class PublicacionControllerTest {
     }
 
     @Test
+    void pausarResponde200() {
+        PublicacionResponseDTO publicacion = new PublicacionResponseDTO();
+        publicacion.setIdPublicacion(15);
+        when(publicacionService.pausar(15, 7)).thenReturn(publicacion);
+
+        ResponseEntity<PublicacionResponseDTO> respuesta = controller.pausar(15, 7);
+
+        assertEquals(HttpStatus.OK, respuesta.getStatusCode());
+        assertEquals(15, respuesta.getBody().getIdPublicacion());
+    }
+
+    @Test
     void editarResponde200() {
         PublicacionEditarRequestDTO dto = new PublicacionEditarRequestDTO();
         PublicacionResponseDTO publicacion = new PublicacionResponseDTO();
