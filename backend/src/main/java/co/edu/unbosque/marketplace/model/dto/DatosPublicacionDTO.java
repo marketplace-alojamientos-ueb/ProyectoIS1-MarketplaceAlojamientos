@@ -8,7 +8,8 @@ import lombok.Setter;
 /**
  * Datos del alojamiento que comparten la solicitud y la respuesta de una publicación. Los límites de texto
  * coinciden con las columnas de la tabla PUBLICACION. Las validaciones solo se aplican a los DTOs que llegan en un
- * body con @Valid (la solicitud). Servicios, imágenes y disponibilidad se agregan en otras historias.
+ * body con @Valid (la solicitud). Servicios e imágenes se agregan en otras historias. Los períodos de disponibilidad
+ * no van aquí porque solo se envían al crear: la edición (que hereda de esta clase) no los modifica.
  */
 @Getter
 @Setter

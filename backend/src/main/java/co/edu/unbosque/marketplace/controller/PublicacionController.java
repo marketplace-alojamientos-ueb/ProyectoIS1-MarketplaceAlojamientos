@@ -34,7 +34,10 @@ import java.util.List;
  *     "idUsuario": 7, "cedula": "1012345678", "primerNombre": "Ana", "segundoNombre": "María",
  *     "primerApellido": "Gómez", "segundoApellido": "Rojas", "nombreCompleto": "Ana María Gómez Rojas",
  *     "correo": "ana@correo.com", "estadoCuenta": "ACTIVA", "restringido": false
- *   }
+ *   },
+ *   "periodos": [                        // fechas en formato AAAA-MM-DD
+ *     { "idPeriodo": 3, "fechaInicio": "2026-12-01", "fechaFin": "2026-12-15", "tipo": "DISPONIBLE" }
+ *   ]                                    // tipo: DISPONIBLE | BLOQUEADO | RESERVADO
  * }
  * </pre>
  * <p>Los errores llegan con el formato por defecto de Spring; el texto para mostrar está en
@@ -67,14 +70,18 @@ public class PublicacionController {
      *   "tarifaLimpieza": 30000,               // opcional, 0 o más (si no se envía queda en 0)
      *   "reglas": "No se permiten fiestas",    // opcional, máx. 1000
      *   "modoAceptacion": "INMEDIATA",         // obligatorio: INMEDIATA o CON_APROBACION
-     *   "politicaCancelacion": "FLEXIBLE"      // obligatorio, un código de GET /api/publicaciones/politicas-cancelacion
+     *   "politicaCancelacion": "FLEXIBLE",     // obligatorio, un código de GET /api/publicaciones/politicas-cancelacion
+     *   "periodos": [                          // obligatorio, al menos uno; fechas en formato AAAA-MM-DD
+     *     { "fechaInicio": "2026-12-01", "fechaFin": "2026-12-15" }
+     *   ]
      * }
      * </pre>
      * <p>Retorna:</p>
      * <ul>
      *   <li><b>201</b> con el PublicacionResponseDTO creado, con estado <code>PENDIENTE_REVISION</code>.</li>
      *   <li><b>400</b> si falta algún campo o no cumple las validaciones (en <code>"errors"</code> viene cada campo
-     *       con su mensaje), o si la política de cancelación no existe.</li>
+     *       con su mensaje), si la política de cancelación no existe, o si un período es inválido: la fecha de fin
+     *       no es posterior a la de inicio, la de inicio está en el pasado o se cruza con otro período.</li>
      *   <li><b>403</b> si el id no es de un anfitrión, o su cuenta está desactivada o restringida
      *       ("Solo un anfitrión puede crear publicaciones").</li>
      * </ul>

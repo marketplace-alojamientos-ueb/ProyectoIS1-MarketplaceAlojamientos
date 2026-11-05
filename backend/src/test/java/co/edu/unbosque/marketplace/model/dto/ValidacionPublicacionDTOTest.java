@@ -4,6 +4,8 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import org.junit.jupiter.api.Test;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -29,8 +31,32 @@ class ValidacionPublicacionDTOTest {
     @Test
     void sinDatosMarcaTodosLosCamposObligatorios() {
         assertEquals(Set.of("idAnfitrion", "titulo", "descripcion", "ubicacion", "ciudad", "tipoAlojamiento",
-                        "capacidad", "precioPorNoche", "modoAceptacion", "politicaCancelacion"),
+                        "capacidad", "precioPorNoche", "modoAceptacion", "politicaCancelacion", "periodos"),
                 camposInvalidos(new PublicacionRequestDTO()));
+    }
+
+    @Test
+    void sinPeriodosEsInvalido() {
+        PublicacionRequestDTO dto = publicacion(7);
+        dto.setPeriodos(List.of());
+
+        assertEquals(Set.of("periodos"), camposInvalidos(dto));
+    }
+
+    @Test
+    void unPeriodoSinFechasEsInvalido() {
+        PublicacionRequestDTO dto = publicacion(7);
+        dto.setPeriodos(List.of(new PeriodoDisponibilidadRequestDTO()));
+
+        assertEquals(Set.of("periodos[0].fechaInicio", "periodos[0].fechaFin"), camposInvalidos(dto));
+    }
+
+    @Test
+    void unPeriodoNuloEsInvalido() {
+        PublicacionRequestDTO dto = publicacion(7);
+        dto.setPeriodos(Collections.singletonList(null));
+
+        assertFalse(camposInvalidos(dto).isEmpty());
     }
 
     @Test

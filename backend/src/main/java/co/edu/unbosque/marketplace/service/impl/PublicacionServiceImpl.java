@@ -1,14 +1,18 @@
 package co.edu.unbosque.marketplace.service.impl;
 
 import co.edu.unbosque.marketplace.model.dto.AnfitrionResponseDTO;
+import co.edu.unbosque.marketplace.model.dto.PeriodoDisponibilidadRequestDTO;
+import co.edu.unbosque.marketplace.model.dto.PeriodoDisponibilidadResponseDTO;
 import co.edu.unbosque.marketplace.model.dto.PoliticaCancelacionDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionEditarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionResponseDTO;
 import co.edu.unbosque.marketplace.model.entity.Anfitrion;
+import co.edu.unbosque.marketplace.model.entity.PeriodoDisponibilidad;
 import co.edu.unbosque.marketplace.model.entity.Publicacion;
 import co.edu.unbosque.marketplace.model.entity.politica.PoliticasCancelacion;
 import co.edu.unbosque.marketplace.model.enums.EstadoPublicacion;
+import co.edu.unbosque.marketplace.model.enums.TipoPeriodo;
 import co.edu.unbosque.marketplace.repository.AdminRepository;
 import co.edu.unbosque.marketplace.repository.AnfitrionRepository;
 import co.edu.unbosque.marketplace.repository.PublicacionRepository;
@@ -23,6 +27,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -49,10 +55,11 @@ public class PublicacionServiceImpl implements PublicacionService {
         mapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
 
         // El mapper no toca lo que cambia de tipo (política: String en el DTO y objeto en la entidad) ni al
-        // anfitrión (entidad en un lado y DTO en el otro): eso se asigna a mano.
+        // anfitrión y los períodos (entidad en un lado y DTO en el otro): eso se asigna a mano.
         mapper.typeMap(PublicacionRequestDTO.class, Publicacion.class).addMappings(m -> {
             m.skip(Publicacion::setAnfitrion);
             m.skip(Publicacion::setPoliticaCancelacion);
+            m.skip(Publicacion::setPeriodos);
         });
         // Aquí se crea el mapa vacío, se marcan los campos a omitir y solo después se piden los mapeos automáticos.
         // Con typeMap(...) los mapeos automáticos se hacen primero, ya cubren anfitrion.idUsuario y skip() falla.
@@ -61,6 +68,7 @@ public class PublicacionServiceImpl implements PublicacionService {
         aRespuesta.addMappings(m -> {
             m.skip(PublicacionResponseDTO::setAnfitrion);
             m.skip(PublicacionResponseDTO::setPoliticaCancelacion);
+            m.skip(PublicacionResponseDTO::setPeriodos);
         });
         aRespuesta.implicitMappings();
     }
@@ -70,12 +78,14 @@ public class PublicacionServiceImpl implements PublicacionService {
         Anfitrion anfitrion = obtenerAnfitrionHabilitado(dto.getIdAnfitrion());
         // Solo vale una política con clase implementada y con su fila en la tabla (las mismas que lista listarPoliticas)
         exigirPoliticaValida(dto.getPoliticaCancelacion());
+        exigirPeriodosValidos(dto.getPeriodos());
 
-        // El mapper copia los campos que se llaman igual; anfitrion y política se asignan a mano
+        // El mapper copia los campos que se llaman igual; anfitrion, política y períodos se asignan a mano
         Publicacion publicacion = mapper.map(dto, Publicacion.class);
         publicacion.setAnfitrion(anfitrion);
         publicacion.setPoliticaCancelacion(PoliticasCancelacion.deCodigo(dto.getPoliticaCancelacion()));
         publicacion.setEstado(EstadoPublicacion.PENDIENTE_REVISION);
+        dto.getPeriodos().forEach(periodo -> publicacion.getPeriodos().add(toPeriodoDisponible(periodo)));
 
         return toResponseDTO(publicacionRepository.save(publicacion));
     }
@@ -153,6 +163,41 @@ public class PublicacionServiceImpl implements PublicacionService {
         }
     }
 
+    /**
+     * Cada rango debe terminar después de empezar y no estar en el pasado, y los rangos no se pueden cruzar. Dos rangos
+     * pueden compartir un día: la fecha de fin es la de salida, así que esa noche ya no hace parte del primero.
+     */
+    private void exigirPeriodosValidos(List<PeriodoDisponibilidadRequestDTO> periodos) {
+        LocalDate hoy = LocalDate.now();
+        for (PeriodoDisponibilidadRequestDTO periodo : periodos) {
+            if (!periodo.getFechaFin().isAfter(periodo.getFechaInicio())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "La fecha de fin debe ser posterior a la fecha de inicio");
+            }
+            if (periodo.getFechaInicio().isBefore(hoy)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "La fecha de inicio no puede estar en el pasado");
+            }
+        }
+
+        List<PeriodoDisponibilidadRequestDTO> ordenados = periodos.stream()
+                .sorted(Comparator.comparing(PeriodoDisponibilidadRequestDTO::getFechaInicio))
+                .toList();
+        for (int i = 1; i < ordenados.size(); i++) {
+            if (ordenados.get(i).getFechaInicio().isBefore(ordenados.get(i - 1).getFechaFin())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Los períodos no se pueden cruzar entre sí");
+            }
+        }
+    }
+
+    private PeriodoDisponibilidad toPeriodoDisponible(PeriodoDisponibilidadRequestDTO dto) {
+        PeriodoDisponibilidad periodo = new PeriodoDisponibilidad();
+        periodo.setFechaInicio(dto.getFechaInicio());
+        periodo.setFechaFin(dto.getFechaFin());
+        periodo.setTipo(TipoPeriodo.DISPONIBLE);
+        return periodo;
+    }
+
     private Publicacion obtenerAutorizada(Integer idPublicacion, Integer idUsuario, String mensajeSiNoAutorizado) {
         Publicacion publicacion = buscar(idPublicacion);
 
@@ -180,6 +225,9 @@ public class PublicacionServiceImpl implements PublicacionService {
         PublicacionResponseDTO dto = mapper.map(publicacion, PublicacionResponseDTO.class);
         dto.setAnfitrion(CuentaUsuario.aRespuesta(publicacion.getAnfitrion().getUsuario(), new AnfitrionResponseDTO()));
         dto.setPoliticaCancelacion(publicacion.getPoliticaCancelacion().codigo());
+        dto.setPeriodos(publicacion.getPeriodos().stream()
+                .map(periodo -> mapper.map(periodo, PeriodoDisponibilidadResponseDTO.class))
+                .toList());
         return dto;
     }
 }
