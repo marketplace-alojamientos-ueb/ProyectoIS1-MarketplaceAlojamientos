@@ -53,6 +53,19 @@ class PublicacionControllerTest {
     }
 
     @Test
+    void listarResponde200ConLasPublicacionesDelAnfitrion() {
+        PublicacionResponseDTO publicacion = new PublicacionResponseDTO();
+        publicacion.setIdPublicacion(15);
+        when(publicacionService.listar(7)).thenReturn(List.of(publicacion));
+
+        ResponseEntity<List<PublicacionResponseDTO>> respuesta = controller.listar(7);
+
+        assertEquals(HttpStatus.OK, respuesta.getStatusCode());
+        assertEquals(1, respuesta.getBody().size());
+        assertEquals(15, respuesta.getBody().get(0).getIdPublicacion());
+    }
+
+    @Test
     void obtenerParaEditarResponde200() {
         PublicacionResponseDTO publicacion = new PublicacionResponseDTO();
         publicacion.setIdPublicacion(15);

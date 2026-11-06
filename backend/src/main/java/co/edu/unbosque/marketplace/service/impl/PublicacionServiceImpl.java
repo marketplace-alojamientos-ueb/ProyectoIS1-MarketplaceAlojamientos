@@ -118,10 +118,9 @@ public class PublicacionServiceImpl implements PublicacionService {
     @Override
     @Transactional(readOnly = true)
     public List<PublicacionResponseDTO> listar(Integer idAnfitrion) {
-        List<Publicacion> publicaciones = idAnfitrion == null
-                ? publicacionRepository.findAll()
-                : publicacionRepository.findByAnfitrion_IdUsuario(idAnfitrion);
-        return publicaciones.stream().map(this::toResponseDTO).toList();
+        return publicacionRepository.findByAnfitrion_IdUsuario(idAnfitrion).stream()
+                .map(this::toResponseDTO)
+                .toList();
     }
 
     @Override

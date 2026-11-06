@@ -121,15 +121,19 @@ public class PublicacionController {
     }
 
     /**
-     * <b>GET /api/publicaciones</b> — Lista de publicaciones, todas o las de un anfitrión.
+     * <b>GET /api/publicaciones?idAnfitrion=7</b> — "Mis publicaciones": las publicaciones de un anfitrión, cada una con
+     * su estado actual.
      *
-     * <p>Pide (opcional): el parámetro <code>idAnfitrion</code>, por ejemplo
-     * <code>GET /api/publicaciones?idAnfitrion=7</code> para "Mis publicaciones". Sin el parámetro devuelve todas.
-     * No filtra por estado.</p>
-     * <p>Retorna: <b>200</b> con un arreglo de PublicacionResponseDTO (vacío <code>[]</code> si no hay ninguna).</p>
+     * <p>Pide: el parámetro <code>idAnfitrion</code>, el id del anfitrión que consulta. Solo devuelve las de ese
+     * anfitrión, en cualquier estado: BORRADOR, PENDIENTE_REVISION, ACTIVA, PAUSADA o BLOQUEADA. Es obligatorio, sin él
+     * responde 400.</p>
+     * <p>Retorna: <b>200</b> con un arreglo de PublicacionResponseDTO, con el campo <code>estado</code> de cada una.
+     * Si el anfitrión no tiene publicaciones, el arreglo viene vacío <code>[]</code>.</p>
+     * <p>Uso en el front: lista de "Mis publicaciones". Si el arreglo viene vacío, mostrar el mensaje de que todavía
+     * no tiene publicaciones. Cada consulta lee el estado actual, así que al volver a consultar se ve actualizado.</p>
      */
     @GetMapping
-    public ResponseEntity<List<PublicacionResponseDTO>> listar(@RequestParam(required = false) Integer idAnfitrion) {
+    public ResponseEntity<List<PublicacionResponseDTO>> listar(@RequestParam Integer idAnfitrion) {
         return ResponseEntity.ok(publicacionService.listar(idAnfitrion));
     }
 
