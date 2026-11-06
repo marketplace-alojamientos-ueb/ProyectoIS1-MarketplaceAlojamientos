@@ -4,6 +4,8 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import org.junit.jupiter.api.Test;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -30,6 +32,30 @@ class ValidacionPublicacionDTOTest {
     void sinDatosSoloExigeElAnfitrion() {
         // Los campos mínimos que falten no son error de validación: la publicación queda en BORRADOR
         assertEquals(Set.of("idAnfitrion"), camposInvalidos(new PublicacionRequestDTO()));
+    }
+
+    @Test
+    void sinPeriodosNoEsErrorDeValidacion() {
+        PublicacionRequestDTO dto = publicacion(7);
+        dto.setPeriodos(List.of());
+
+        assertTrue(camposInvalidos(dto).isEmpty());
+    }
+
+    @Test
+    void unPeriodoSinFechasEsInvalido() {
+        PublicacionRequestDTO dto = publicacion(7);
+        dto.setPeriodos(List.of(new PeriodoDisponibilidadRequestDTO()));
+
+        assertEquals(Set.of("periodos[0].fechaInicio", "periodos[0].fechaFin"), camposInvalidos(dto));
+    }
+
+    @Test
+    void unPeriodoNuloEsInvalido() {
+        PublicacionRequestDTO dto = publicacion(7);
+        dto.setPeriodos(Collections.singletonList(null));
+
+        assertFalse(camposInvalidos(dto).isEmpty());
     }
 
     @Test

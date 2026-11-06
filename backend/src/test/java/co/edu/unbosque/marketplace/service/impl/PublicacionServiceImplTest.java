@@ -10,7 +10,9 @@ import co.edu.unbosque.marketplace.model.entity.Usuario;
 import co.edu.unbosque.marketplace.model.enums.EstadoCuenta;
 import co.edu.unbosque.marketplace.model.enums.EstadoPublicacion;
 import co.edu.unbosque.marketplace.model.enums.ModoAceptacion;
+import co.edu.unbosque.marketplace.model.enums.TipoPeriodo;
 import co.edu.unbosque.marketplace.model.entity.politica.PoliticaFlexible;
+import co.edu.unbosque.marketplace.repository.AdminRepository;
 import co.edu.unbosque.marketplace.repository.AnfitrionRepository;
 import co.edu.unbosque.marketplace.repository.PublicacionRepository;
 import co.edu.unbosque.marketplace.repository.TipoPoliticaCancelacionRepository;
@@ -19,9 +21,11 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+import static co.edu.unbosque.marketplace.DatosDePrueba.periodo;
 import static co.edu.unbosque.marketplace.DatosDePrueba.publicacion;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -42,7 +46,8 @@ class PublicacionServiceImplTest {
         publicacionRepository = mock(PublicacionRepository.class);
         anfitrionRepository = mock(AnfitrionRepository.class);
         politicaRepository = mock(TipoPoliticaCancelacionRepository.class);
-        servicio = new PublicacionServiceImpl(publicacionRepository, anfitrionRepository, politicaRepository);
+        servicio = new PublicacionServiceImpl(publicacionRepository, anfitrionRepository, politicaRepository,
+                mock(AdminRepository.class));
 
         // La política FLEXIBLE existe en la tabla
         when(politicaRepository.existsById("FLEXIBLE")).thenReturn(true);
@@ -122,9 +127,34 @@ class PublicacionServiceImplTest {
 
         assertEquals(EstadoPublicacion.BORRADOR, respuesta.getEstado());
         assertEquals(List.of("Título", "Descripción", "Ubicación", "Ciudad", "Tipo de alojamiento", "Capacidad",
-                "Precio por noche", "Modo de aceptación", "Política de cancelación"), respuesta.getCamposFaltantes());
+                "Precio por noche", "Modo de aceptación", "Política de cancelación", "Períodos disponibles"),
+                respuesta.getCamposFaltantes());
         assertNull(respuesta.getPoliticaCancelacion());
+        assertTrue(respuesta.getPeriodos().isEmpty());
         verify(politicaRepository, never()).existsById(any());
+    }
+
+    @Test
+    void sinPeriodosQuedaEnBorradorYLosSenalaComoFaltantes() {
+        anfitrionExiste(crearAnfitrion());
+        PublicacionRequestDTO dto = publicacion(7);
+        dto.setPeriodos(List.of());
+
+        PublicacionResponseDTO respuesta = servicio.crear(dto);
+
+        assertEquals(EstadoPublicacion.BORRADOR, respuesta.getEstado());
+        assertEquals(List.of("Períodos disponibles"), respuesta.getCamposFaltantes());
+    }
+
+    @Test
+    void unBorradorConUnPeriodoInvalidoRecibe400() {
+        anfitrionExiste(crearAnfitrion());
+        LocalDate inicio = LocalDate.now().plusDays(1);
+        PublicacionRequestDTO dto = new PublicacionRequestDTO();
+        dto.setIdAnfitrion(7);
+        dto.setPeriodos(List.of(periodo(inicio, inicio)));
+
+        assertEstado(HttpStatus.BAD_REQUEST, dto);
     }
 
     @Test
@@ -217,6 +247,90 @@ class PublicacionServiceImplTest {
         anfitrionExiste(crearAnfitrion());
         PublicacionRequestDTO dto = publicacion(7);
         dto.setPoliticaCancelacion("INEXISTENTE");
+
+        assertEstado(HttpStatus.BAD_REQUEST, dto);
+    }
+
+    @Test
+    void guardaLosPeriodosComoDisponiblesYLosDevuelve() {
+        anfitrionExiste(crearAnfitrion());
+        LocalDate inicio = LocalDate.now().plusDays(1);
+        PublicacionRequestDTO dto = publicacion(7);
+        dto.setPeriodos(List.of(
+                periodo(inicio, inicio.plusDays(5)),
+                periodo(inicio.plusDays(10), inicio.plusDays(15))));
+
+        PublicacionResponseDTO respuesta = servicio.crear(dto);
+
+        ArgumentCaptor<Publicacion> guardada = ArgumentCaptor.forClass(Publicacion.class);
+        verify(publicacionRepository).save(guardada.capture());
+        assertEquals(2, guardada.getValue().getPeriodos().size());
+        assertTrue(guardada.getValue().getPeriodos().stream().allMatch(p -> p.getTipo() == TipoPeriodo.DISPONIBLE));
+
+        assertEquals(2, respuesta.getPeriodos().size());
+        assertEquals(inicio, respuesta.getPeriodos().get(0).getFechaInicio());
+        assertEquals(inicio.plusDays(5), respuesta.getPeriodos().get(0).getFechaFin());
+        assertEquals(TipoPeriodo.DISPONIBLE, respuesta.getPeriodos().get(0).getTipo());
+    }
+
+    @Test
+    void unPeriodoQueEmpiezaHoyEsValido() {
+        anfitrionExiste(crearAnfitrion());
+        PublicacionRequestDTO dto = publicacion(7);
+        dto.setPeriodos(List.of(periodo(LocalDate.now(), LocalDate.now().plusDays(1))));
+
+        assertEquals(1, servicio.crear(dto).getPeriodos().size());
+    }
+
+    @Test
+    void dosPeriodosPuedenCompartirElDiaDeSalidaYLlegada() {
+        anfitrionExiste(crearAnfitrion());
+        LocalDate inicio = LocalDate.now().plusDays(1);
+        PublicacionRequestDTO dto = publicacion(7);
+        dto.setPeriodos(List.of(
+                periodo(inicio, inicio.plusDays(5)),
+                periodo(inicio.plusDays(5), inicio.plusDays(8))));
+
+        assertEquals(2, servicio.crear(dto).getPeriodos().size());
+    }
+
+    @Test
+    void unPeriodoConFinIgualAlInicioRecibe400() {
+        anfitrionExiste(crearAnfitrion());
+        LocalDate inicio = LocalDate.now().plusDays(1);
+        PublicacionRequestDTO dto = publicacion(7);
+        dto.setPeriodos(List.of(periodo(inicio, inicio)));
+
+        assertEstado(HttpStatus.BAD_REQUEST, dto);
+    }
+
+    @Test
+    void unPeriodoConFinAntesDelInicioRecibe400() {
+        anfitrionExiste(crearAnfitrion());
+        LocalDate inicio = LocalDate.now().plusDays(5);
+        PublicacionRequestDTO dto = publicacion(7);
+        dto.setPeriodos(List.of(periodo(inicio, inicio.minusDays(1))));
+
+        assertEstado(HttpStatus.BAD_REQUEST, dto);
+    }
+
+    @Test
+    void unPeriodoEnElPasadoRecibe400() {
+        anfitrionExiste(crearAnfitrion());
+        PublicacionRequestDTO dto = publicacion(7);
+        dto.setPeriodos(List.of(periodo(LocalDate.now().minusDays(1), LocalDate.now().plusDays(3))));
+
+        assertEstado(HttpStatus.BAD_REQUEST, dto);
+    }
+
+    @Test
+    void periodosCruzadosRecibe400AunqueLleguenDesordenados() {
+        anfitrionExiste(crearAnfitrion());
+        LocalDate inicio = LocalDate.now().plusDays(1);
+        PublicacionRequestDTO dto = publicacion(7);
+        dto.setPeriodos(List.of(
+                periodo(inicio.plusDays(3), inicio.plusDays(8)),
+                periodo(inicio, inicio.plusDays(5))));
 
         assertEstado(HttpStatus.BAD_REQUEST, dto);
     }

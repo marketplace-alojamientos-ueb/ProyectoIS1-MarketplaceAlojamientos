@@ -1,6 +1,7 @@
 package co.edu.unbosque.marketplace.controller;
 
 import co.edu.unbosque.marketplace.model.dto.PoliticaCancelacionDTO;
+import co.edu.unbosque.marketplace.model.dto.PublicacionEditarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionResponseDTO;
 import co.edu.unbosque.marketplace.service.PublicacionService;
@@ -34,7 +35,10 @@ import java.util.List;
  *     "idUsuario": 7, "cedula": "1012345678", "primerNombre": "Ana", "segundoNombre": "María",
  *     "primerApellido": "Gómez", "segundoApellido": "Rojas", "nombreCompleto": "Ana María Gómez Rojas",
  *     "correo": "ana@correo.com", "estadoCuenta": "ACTIVA", "restringido": false
- *   }
+ *   },
+ *   "periodos": [                        // fechas en formato AAAA-MM-DD
+ *     { "idPeriodo": 3, "fechaInicio": "2026-12-01", "fechaFin": "2026-12-15", "tipo": "DISPONIBLE" }
+ *   ]                                    // tipo: DISPONIBLE | BLOQUEADO | RESERVADO
  * }
  * </pre>
  * <p>Los errores llegan con el formato por defecto de Spring; el texto para mostrar está en
@@ -67,7 +71,10 @@ public class PublicacionController {
      *   "tarifaLimpieza": 30000,               // opcional, 0 o más (si no se envía queda en 0)
      *   "reglas": "No se permiten fiestas",    // opcional, máx. 1000
      *   "modoAceptacion": "INMEDIATA",         // mínimo: INMEDIATA o CON_APROBACION
-     *   "politicaCancelacion": "FLEXIBLE"      // mínimo, un código de GET /api/publicaciones/politicas-cancelacion
+     *   "politicaCancelacion": "FLEXIBLE",     // mínimo, un código de GET /api/publicaciones/politicas-cancelacion
+     *   "periodos": [                          // mínimo, al menos uno; fechas en formato AAAA-MM-DD
+     *     { "fechaInicio": "2026-12-01", "fechaFin": "2026-12-15" }
+     *   ]
      * }
      * </pre>
      * <p>Retorna:</p>
@@ -76,7 +83,9 @@ public class PublicacionController {
      *       <code>PENDIENTE_REVISION</code> y <code>camposFaltantes</code> va vacío; si falta alguno queda en
      *       <code>BORRADOR</code> y <code>camposFaltantes</code> trae sus nombres.</li>
      *   <li><b>400</b> si falta el idAnfitrion, si un campo enviado no cumple las validaciones (en
-     *       <code>"errors"</code> viene cada campo con su mensaje), o si la política de cancelación no existe.</li>
+     *       <code>"errors"</code> viene cada campo con su mensaje), si la política de cancelación no existe, o si un
+     *       período enviado es inválido: la fecha de fin no es posterior a la de inicio, la de inicio está en el pasado
+     *       o se cruza con otro período.</li>
      *   <li><b>403</b> si el id no es de un anfitrión, o su cuenta está desactivada o restringida
      *       ("Solo un anfitrión puede crear publicaciones").</li>
      * </ul>
@@ -101,5 +110,101 @@ public class PublicacionController {
     @GetMapping("/politicas-cancelacion")
     public ResponseEntity<List<PoliticaCancelacionDTO>> listarPoliticas() {
         return ResponseEntity.ok(publicacionService.listarPoliticas());
+    }
+
+    /**
+     * <b>GET /api/publicaciones/{id}/edicion?idUsuario=7</b> — Datos de una publicación para llenar el formulario de edición.
+     *
+     * <p>Pide: el id de la publicación en la ruta y, como parámetro <code>idUsuario</code>, el id de quien va a
+     * editar (el anfitrión propietario o un administrador).</p>
+     * <p>Retorna:</p>
+     * <ul>
+     *   <li><b>200</b> con el PublicacionResponseDTO de la publicación.</li>
+     *   <li><b>403</b> "Edición no autorizada" si el usuario no es el propietario (con la cuenta activa y sin
+     *       restricciones) ni un administrador.</li>
+     *   <li><b>404</b> si la publicación no existe.</li>
+     * </ul>
+     * <p>Uso en el front: al escoger una publicación en "Mis publicaciones" y pulsar editar, para llenar el formulario.</p>
+     */
+    @GetMapping("/{id}/edicion")
+    public ResponseEntity<PublicacionResponseDTO> obtenerParaEditar(@PathVariable Integer id,
+                                                                    @RequestParam Integer idUsuario) {
+        return ResponseEntity.ok(publicacionService.obtenerParaEditar(id, idUsuario));
+    }
+
+    /**
+     * <b>GET /api/publicaciones</b> — Lista de publicaciones, todas o las de un anfitrión.
+     *
+     * <p>Pide (opcional): el parámetro <code>idAnfitrion</code>, por ejemplo
+     * <code>GET /api/publicaciones?idAnfitrion=7</code> para "Mis publicaciones". Sin el parámetro devuelve todas.
+     * No filtra por estado.</p>
+     * <p>Retorna: <b>200</b> con un arreglo de PublicacionResponseDTO (vacío <code>[]</code> si no hay ninguna).</p>
+     */
+    @GetMapping
+    public ResponseEntity<List<PublicacionResponseDTO>> listar(@RequestParam(required = false) Integer idAnfitrion) {
+        return ResponseEntity.ok(publicacionService.listar(idAnfitrion));
+    }
+
+    /**
+     * <b>GET /api/publicaciones/{id}</b> — Una publicación por su id, sin importar su estado.
+     *
+     * <p>Pide: el id en la ruta.</p>
+     * <p>Retorna: <b>200</b> con el PublicacionResponseDTO, o <b>404</b> si no existe.</p>
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<PublicacionResponseDTO> obtener(@PathVariable Integer id) {
+        return ResponseEntity.ok(publicacionService.obtener(id));
+    }
+
+    /**
+     * <b>PUT /api/publicaciones/{id}</b> — Guarda los cambios de una publicación (botón "Guardar cambios").
+     *
+     * <p>Pide (body JSON): los mismos campos y validaciones que al crear, con <code>idUsuario</code> en lugar de
+     * <code>idAnfitrion</code> y sin <code>periodos</code>, que no se modifican. Reemplaza todos los datos del
+     * formulario, por eso hay que enviarlos todos:</p>
+     * <pre>
+     * {
+     *   "idUsuario": 7,                        // obligatorio, quien edita: el propietario o un administrador
+     *   "titulo": "Cabaña con vista al lago",  // los demás campos, igual que en POST /api/publicaciones
+     *   "descripcion": "...", "ubicacion": "...", "ciudad": "...", "tipoAlojamiento": "...",
+     *   "capacidad": 4, "precioPorNoche": 250000, "tarifaLimpieza": 30000, "reglas": "...",
+     *   "modoAceptacion": "INMEDIATA", "politicaCancelacion": "FLEXIBLE"
+     * }
+     * </pre>
+     * <p>Retorna:</p>
+     * <ul>
+     *   <li><b>200</b> con el PublicacionResponseDTO actualizado. El estado de la publicación no cambia.</li>
+     *   <li><b>400</b> si falta algún campo (en <code>"message"</code> vienen sus nombres), si no cumple las validaciones
+     *       (en <code>"errors"</code>), o si la política de cancelación no existe.</li>
+     *   <li><b>403</b> "Edición no autorizada" si el usuario no es el propietario (con la cuenta activa y sin
+     *       restricciones) ni un administrador.</li>
+     *   <li><b>404</b> si la publicación no existe.</li>
+     * </ul>
+     * <p>Uso en el front: al recibir 200, mostrar el mensaje de confirmación de que la publicación se actualizó.</p>
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<PublicacionResponseDTO> editar(@PathVariable Integer id,
+                                                         @Valid @RequestBody PublicacionEditarRequestDTO dto) {
+        return ResponseEntity.ok(publicacionService.editar(id, dto));
+    }
+
+    /**
+     * <b>DELETE /api/publicaciones/{id}?idUsuario=7</b> — Elimina una publicación con sus imágenes, períodos y servicios.
+     *
+     * <p>Pide: el id en la ruta y, como parámetro <code>idUsuario</code>, el id de quien elimina (el anfitrión
+     * propietario o un administrador).</p>
+     * <p>Retorna:</p>
+     * <ul>
+     *   <li><b>204</b> sin cuerpo si se eliminó.</li>
+     *   <li><b>403</b> "Eliminación no autorizada" si el usuario no es el propietario (con la cuenta activa y sin
+     *       restricciones) ni un administrador.</li>
+     *   <li><b>404</b> si la publicación no existe.</li>
+     *   <li><b>409</b> si no se puede eliminar porque tiene datos asociados, como reservas.</li>
+     * </ul>
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminar(@PathVariable Integer id, @RequestParam Integer idUsuario) {
+        publicacionService.eliminar(id, idUsuario);
+        return ResponseEntity.noContent().build();
     }
 }
