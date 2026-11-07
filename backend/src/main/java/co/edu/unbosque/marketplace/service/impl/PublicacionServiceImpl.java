@@ -5,17 +5,23 @@ import co.edu.unbosque.marketplace.model.dto.DatosPublicacionDTO;
 import co.edu.unbosque.marketplace.model.dto.PeriodoDisponibilidadRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PeriodoDisponibilidadResponseDTO;
 import co.edu.unbosque.marketplace.model.dto.PoliticaCancelacionDTO;
+import co.edu.unbosque.marketplace.model.dto.PublicacionBusquedaDTO;
+import co.edu.unbosque.marketplace.model.dto.PublicacionBusquedaRequestDTO;
+import co.edu.unbosque.marketplace.model.dto.PublicacionDetalleDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionEditarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionResponseDTO;
 import co.edu.unbosque.marketplace.model.entity.Anfitrion;
 import co.edu.unbosque.marketplace.model.entity.PeriodoDisponibilidad;
+import co.edu.unbosque.marketplace.model.entity.Imagen;
 import co.edu.unbosque.marketplace.model.entity.Publicacion;
+import co.edu.unbosque.marketplace.model.entity.Servicio;
 import co.edu.unbosque.marketplace.model.entity.politica.PoliticasCancelacion;
 import co.edu.unbosque.marketplace.model.enums.EstadoPublicacion;
 import co.edu.unbosque.marketplace.model.enums.TipoPeriodo;
 import co.edu.unbosque.marketplace.repository.AdminRepository;
 import co.edu.unbosque.marketplace.repository.AnfitrionRepository;
+import co.edu.unbosque.marketplace.repository.PublicacionBusquedaSpecification;
 import co.edu.unbosque.marketplace.repository.PublicacionRepository;
 import co.edu.unbosque.marketplace.repository.TipoPoliticaCancelacionRepository;
 import co.edu.unbosque.marketplace.service.PublicacionService;
@@ -204,6 +210,63 @@ public class PublicacionServiceImpl implements PublicacionService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<PublicacionBusquedaDTO> buscar(PublicacionBusquedaRequestDTO filtros) {
+        exigirFiltrosValidos(filtros);
+        LocalDate llegada = filtros.getLlegada();
+        LocalDate salida = filtros.getSalida();
+        boolean conFechas = llegada != null && salida != null;
+        return publicacionRepository.findAll(PublicacionBusquedaSpecification.de(filtros)).stream()
+                .filter(publicacion -> !conFechas || estaDisponible(publicacion, llegada, salida))
+                .map(this::toBusquedaDTO)
+                .toList();
+    }
+
+    private void exigirFiltrosValidos(PublicacionBusquedaRequestDTO filtros) {
+        if (filtros.getCapacidad() != null && filtros.getCapacidad() <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La capacidad debe ser mayor a cero");
+        }
+        LocalDate llegada = filtros.getLlegada();
+        LocalDate salida = filtros.getSalida();
+        if ((llegada == null) != (salida == null)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Para buscar por fechas hay que indicar la fecha de llegada y la de salida");
+        }
+        if (llegada != null && !salida.isAfter(llegada)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "La fecha de salida debe ser posterior a la fecha de llegada");
+        }
+    }
+
+    /**
+     * Las fechas de fin son las de salida, así que un período cubre las noches desde el inicio hasta el día anterior al fin.
+     * El rango se puede cubrir con varios períodos DISPONIBLE seguidos, y no puede cruzarse con uno bloqueado o reservado.
+     */
+    private boolean estaDisponible(Publicacion publicacion, LocalDate llegada, LocalDate salida) {
+        boolean hayCruce = publicacion.getPeriodos().stream()
+                .anyMatch(p -> p.getTipo() != TipoPeriodo.DISPONIBLE
+                        && p.getFechaInicio().isBefore(salida)
+                        && p.getFechaFin().isAfter(llegada));
+        if (hayCruce) {
+            return false;
+        }
+        List<PeriodoDisponibilidad> disponibles = publicacion.getPeriodos().stream()
+                .filter(p -> p.getTipo() == TipoPeriodo.DISPONIBLE)
+                .sorted(Comparator.comparing(PeriodoDisponibilidad::getFechaInicio))
+                .toList();
+        LocalDate cubiertoHasta = llegada;
+        for (PeriodoDisponibilidad periodo : disponibles) {
+            if (periodo.getFechaInicio().isAfter(cubiertoHasta)) {
+                break;
+            }
+            if (periodo.getFechaFin().isAfter(cubiertoHasta)) {
+                cubiertoHasta = periodo.getFechaFin();
+            }
+        }
+        return !cubiertoHasta.isBefore(salida);
+    }
+
+    @Override
     public void bloquearPeriodoReservado(Integer idPublicacion, LocalDate fechaLlegada, LocalDate fechaSalida) {
         if (!fechaSalida.isAfter(fechaLlegada)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
@@ -339,5 +402,39 @@ public class PublicacionServiceImpl implements PublicacionService {
         // Se calcula aquí para que crear, consultar y editar informen lo mismo sobre un borrador
         dto.setCamposFaltantes(camposFaltantes(dto, !dto.getPeriodos().isEmpty()));
         return dto;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PublicacionDetalleDTO consultarDetalle(Integer idPublicacion) {
+        Publicacion publicacion = publicacionRepository.findById(idPublicacion)
+                .filter(p -> p.getEstado() == EstadoPublicacion.ACTIVA)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "El alojamiento no está disponible"));
+        PublicacionDetalleDTO dto = new PublicacionDetalleDTO();
+        copiarDatosDeBusqueda(publicacion, dto);
+        dto.setImagenes(publicacion.getImagenes().stream().map(Imagen::getRuta).toList());
+        return dto;
+    }
+
+    private PublicacionBusquedaDTO toBusquedaDTO(Publicacion publicacion) {
+        PublicacionBusquedaDTO dto = new PublicacionBusquedaDTO();
+        copiarDatosDeBusqueda(publicacion, dto);
+        return dto;
+    }
+
+    private void copiarDatosDeBusqueda(Publicacion publicacion, PublicacionBusquedaDTO dto) {
+        dto.setIdPublicacion(publicacion.getIdPublicacion());
+        dto.setTitulo(publicacion.getTitulo());
+        dto.setDescripcion(publicacion.getDescripcion());
+        dto.setUbicacion(publicacion.getUbicacion());
+        dto.setCiudad(publicacion.getCiudad());
+        dto.setTipoAlojamiento(publicacion.getTipoAlojamiento());
+        dto.setCapacidad(publicacion.getCapacidad());
+        dto.setPrecioPorNoche(publicacion.getPrecioPorNoche());
+        dto.setTarifaLimpieza(publicacion.getTarifaLimpieza());
+        dto.setReglas(publicacion.getReglas());
+        dto.setModoAceptacion(publicacion.getModoAceptacion().name());
+        dto.setPoliticaCancelacion(publicacion.getPoliticaCancelacion().codigo());
+        dto.setServicios(publicacion.getServicios().stream().map(Servicio::getNombre).toList());
     }
 }
