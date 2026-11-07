@@ -170,8 +170,10 @@ public class PublicacionController {
      * <p>Retorna: <b>200</b> con un arreglo de PublicacionBusquedaDTO: los datos del alojamiento, sus
      * <code>servicios</code> y sin datos personales del anfitrión. Solo incluye publicaciones ACTIVAS. Si nada
      * coincide, el arreglo viene vacío <code>[]</code>.</p>
+     * <p>Errores: <b>400</b> si la fecha de salida no es posterior a la de llegada, si llega solo una de las dos fechas
+     * o si la capacidad es cero o negativa. El texto para mostrar está en <code>"message"</code>.</p>
      * <p>Uso en el front: lista de resultados. Si el arreglo viene vacío, mostrar que no hay resultados y dejar
-     * ajustar los filtros.</p>
+     * ajustar los filtros. Si responde 400, mostrar el mensaje y no mostrar resultados.</p>
      */
     @GetMapping("/buscar")
     public ResponseEntity<List<PublicacionBusquedaDTO>> buscar(PublicacionBusquedaRequestDTO filtros) {

@@ -210,6 +210,7 @@ public class PublicacionServiceImpl implements PublicacionService {
     @Override
     @Transactional(readOnly = true)
     public List<PublicacionBusquedaDTO> buscar(PublicacionBusquedaRequestDTO filtros) {
+        exigirFiltrosValidos(filtros);
         LocalDate llegada = filtros.getLlegada();
         LocalDate salida = filtros.getSalida();
         boolean conFechas = llegada != null && salida != null;
@@ -217,6 +218,22 @@ public class PublicacionServiceImpl implements PublicacionService {
                 .filter(publicacion -> !conFechas || estaDisponible(publicacion, llegada, salida))
                 .map(this::toBusquedaDTO)
                 .toList();
+    }
+
+    private void exigirFiltrosValidos(PublicacionBusquedaRequestDTO filtros) {
+        if (filtros.getCapacidad() != null && filtros.getCapacidad() <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La capacidad debe ser mayor a cero");
+        }
+        LocalDate llegada = filtros.getLlegada();
+        LocalDate salida = filtros.getSalida();
+        if ((llegada == null) != (salida == null)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Para buscar por fechas hay que indicar la fecha de llegada y la de salida");
+        }
+        if (llegada != null && !salida.isAfter(llegada)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "La fecha de salida debe ser posterior a la fecha de llegada");
+        }
     }
 
     /**

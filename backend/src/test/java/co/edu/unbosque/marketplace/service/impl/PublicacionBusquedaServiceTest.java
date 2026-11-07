@@ -16,6 +16,8 @@ import co.edu.unbosque.marketplace.repository.TipoPoliticaCancelacionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -23,6 +25,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /** Pruebas de la búsqueda de alojamientos (MA-99). */
@@ -93,6 +96,29 @@ class PublicacionBusquedaServiceTest {
         List<PublicacionBusquedaDTO> resultado = servicio.buscar(filtros);
 
         assertEquals(List.of(1, 2), resultado.stream().map(PublicacionBusquedaDTO::getIdPublicacion).toList());
+    }
+
+    @Test
+    void buscarConSalidaNoPosteriorALlegadaRespondeError400() {
+        PublicacionBusquedaRequestDTO filtros = new PublicacionBusquedaRequestDTO();
+        filtros.setLlegada(LocalDate.parse("2026-12-23"));
+        filtros.setSalida(LocalDate.parse("2026-12-23"));
+
+        ResponseStatusException error = assertThrows(ResponseStatusException.class, () -> servicio.buscar(filtros));
+
+        assertEquals(HttpStatus.BAD_REQUEST, error.getStatusCode());
+        verifyNoInteractions(publicacionRepository);
+    }
+
+    @Test
+    void buscarConCapacidadCeroRespondeError400() {
+        PublicacionBusquedaRequestDTO filtros = new PublicacionBusquedaRequestDTO();
+        filtros.setCapacidad(0);
+
+        ResponseStatusException error = assertThrows(ResponseStatusException.class, () -> servicio.buscar(filtros));
+
+        assertEquals(HttpStatus.BAD_REQUEST, error.getStatusCode());
+        verifyNoInteractions(publicacionRepository);
     }
 
     private Publicacion publicacion(int id, PeriodoDisponibilidad... periodos) {
