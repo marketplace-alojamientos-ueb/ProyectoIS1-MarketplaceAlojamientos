@@ -1,6 +1,8 @@
 package co.edu.unbosque.marketplace.controller;
 
 import co.edu.unbosque.marketplace.model.dto.PoliticaCancelacionDTO;
+import co.edu.unbosque.marketplace.model.dto.PublicacionBusquedaDTO;
+import co.edu.unbosque.marketplace.model.dto.PublicacionBusquedaRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionEditarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionResponseDTO;
@@ -135,6 +137,29 @@ public class PublicacionController {
     @GetMapping
     public ResponseEntity<List<PublicacionResponseDTO>> listar(@RequestParam Integer idAnfitrion) {
         return ResponseEntity.ok(publicacionService.listar(idAnfitrion));
+    }
+
+    /**
+     * <b>GET /api/publicaciones/buscar</b> — Busca alojamientos con filtros (pantalla de búsqueda del huésped).
+     *
+     * <p>Pide (query params, todos opcionales):</p>
+     * <pre>
+     * ciudad=Guatavita        // texto exacto, sin importar mayúsculas
+     * capacidad=4             // personas: trae los que alojan esa cantidad o más
+     * tipo=CABANA             // tipo de alojamiento
+     * precioMin=100000        // precio por noche mínimo
+     * precioMax=300000        // precio por noche máximo
+     * servicios=WiFi&amp;servicios=Piscina   // por nombre; trae los que tienen todos los indicados
+     * </pre>
+     * <p>Retorna: <b>200</b> con un arreglo de PublicacionBusquedaDTO: los datos del alojamiento, sus
+     * <code>servicios</code> y sin datos personales del anfitrión. Solo incluye publicaciones ACTIVAS. Si nada
+     * coincide, el arreglo viene vacío <code>[]</code>.</p>
+     * <p>Uso en el front: lista de resultados. Si el arreglo viene vacío, mostrar que no hay resultados y dejar
+     * ajustar los filtros.</p>
+     */
+    @GetMapping("/buscar")
+    public ResponseEntity<List<PublicacionBusquedaDTO>> buscar(PublicacionBusquedaRequestDTO filtros) {
+        return ResponseEntity.ok(publicacionService.buscar(filtros));
     }
 
     /**

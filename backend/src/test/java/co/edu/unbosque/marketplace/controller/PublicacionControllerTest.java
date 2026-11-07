@@ -1,6 +1,8 @@
 package co.edu.unbosque.marketplace.controller;
 
 import co.edu.unbosque.marketplace.model.dto.PoliticaCancelacionDTO;
+import co.edu.unbosque.marketplace.model.dto.PublicacionBusquedaDTO;
+import co.edu.unbosque.marketplace.model.dto.PublicacionBusquedaRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionEditarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionResponseDTO;
@@ -101,5 +103,18 @@ class PublicacionControllerTest {
         assertEquals(HttpStatus.OK, respuesta.getStatusCode());
         assertEquals(15, respuesta.getBody().getIdPublicacion());
         verify(publicacionService).editar(15, dto);
+    }
+
+    @Test
+    void buscarResponde200ConLosAlojamientosEncontrados() {
+        PublicacionBusquedaRequestDTO filtros = new PublicacionBusquedaRequestDTO();
+        PublicacionBusquedaDTO alojamiento = new PublicacionBusquedaDTO();
+        alojamiento.setIdPublicacion(15);
+        when(publicacionService.buscar(filtros)).thenReturn(List.of(alojamiento));
+
+        ResponseEntity<List<PublicacionBusquedaDTO>> respuesta = controller.buscar(filtros);
+
+        assertEquals(HttpStatus.OK, respuesta.getStatusCode());
+        assertEquals(15, respuesta.getBody().get(0).getIdPublicacion());
     }
 }

@@ -2,15 +2,19 @@ package co.edu.unbosque.marketplace.service.impl;
 
 import co.edu.unbosque.marketplace.model.dto.AnfitrionResponseDTO;
 import co.edu.unbosque.marketplace.model.dto.PoliticaCancelacionDTO;
+import co.edu.unbosque.marketplace.model.dto.PublicacionBusquedaDTO;
+import co.edu.unbosque.marketplace.model.dto.PublicacionBusquedaRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionEditarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionResponseDTO;
 import co.edu.unbosque.marketplace.model.entity.Anfitrion;
 import co.edu.unbosque.marketplace.model.entity.Publicacion;
+import co.edu.unbosque.marketplace.model.entity.Servicio;
 import co.edu.unbosque.marketplace.model.entity.politica.PoliticasCancelacion;
 import co.edu.unbosque.marketplace.model.enums.EstadoPublicacion;
 import co.edu.unbosque.marketplace.repository.AdminRepository;
 import co.edu.unbosque.marketplace.repository.AnfitrionRepository;
+import co.edu.unbosque.marketplace.repository.PublicacionBusquedaSpecification;
 import co.edu.unbosque.marketplace.repository.PublicacionRepository;
 import co.edu.unbosque.marketplace.repository.TipoPoliticaCancelacionRepository;
 import co.edu.unbosque.marketplace.service.PublicacionService;
@@ -154,6 +158,14 @@ public class PublicacionServiceImpl implements PublicacionService {
         return toResponseDTO(publicacionRepository.save(publicacion));
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<PublicacionBusquedaDTO> buscar(PublicacionBusquedaRequestDTO filtros) {
+        return publicacionRepository.findAll(PublicacionBusquedaSpecification.de(filtros)).stream()
+                .map(this::toBusquedaDTO)
+                .toList();
+    }
+
     private Publicacion buscar(Integer idPublicacion) {
         return publicacionRepository.findById(idPublicacion)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "La publicación no existe"));
@@ -195,6 +207,24 @@ public class PublicacionServiceImpl implements PublicacionService {
         PublicacionResponseDTO dto = mapper.map(publicacion, PublicacionResponseDTO.class);
         dto.setAnfitrion(CuentaUsuario.aRespuesta(publicacion.getAnfitrion().getUsuario(), new AnfitrionResponseDTO()));
         dto.setPoliticaCancelacion(publicacion.getPoliticaCancelacion().codigo());
+        return dto;
+    }
+
+    private PublicacionBusquedaDTO toBusquedaDTO(Publicacion publicacion) {
+        PublicacionBusquedaDTO dto = new PublicacionBusquedaDTO();
+        dto.setIdPublicacion(publicacion.getIdPublicacion());
+        dto.setTitulo(publicacion.getTitulo());
+        dto.setDescripcion(publicacion.getDescripcion());
+        dto.setUbicacion(publicacion.getUbicacion());
+        dto.setCiudad(publicacion.getCiudad());
+        dto.setTipoAlojamiento(publicacion.getTipoAlojamiento());
+        dto.setCapacidad(publicacion.getCapacidad());
+        dto.setPrecioPorNoche(publicacion.getPrecioPorNoche());
+        dto.setTarifaLimpieza(publicacion.getTarifaLimpieza());
+        dto.setReglas(publicacion.getReglas());
+        dto.setModoAceptacion(publicacion.getModoAceptacion().name());
+        dto.setPoliticaCancelacion(publicacion.getPoliticaCancelacion().codigo());
+        dto.setServicios(publicacion.getServicios().stream().map(Servicio::getNombre).toList());
         return dto;
     }
 }
