@@ -120,22 +120,24 @@ CREATE TABLE politica_cancelacion (
 INSERT INTO politica_cancelacion (codigo, nombre, descripcion) VALUES
     ('FLEXIBLE', 'Flexible', 'Cancelacion flexible: el huesped puede cancelar y recibir una devolucion segun las condiciones de esta politica.');
 
+-- Los datos del alojamiento admiten NULL porque una publicación incompleta se guarda como BORRADOR.
+-- Antes de pasar a PENDIENTE_REVISION el backend exige que estén todos.
 CREATE TABLE publicacion (
     id_publicacion     INT            NOT NULL AUTO_INCREMENT,
-    titulo             VARCHAR(52)    NOT NULL,
-    descripcion        VARCHAR(500)   NOT NULL,
-    ubicacion_textual  VARCHAR(100)   NOT NULL,
-    ciudad             VARCHAR(50)    NOT NULL,
-    tipo_alojamiento   VARCHAR(20)    NOT NULL,
-    capacidad          INT            NOT NULL,
-    precio_noche       DECIMAL(12,2)  NOT NULL,
+    titulo             VARCHAR(52),
+    descripcion        VARCHAR(500),
+    ubicacion_textual  VARCHAR(100),
+    ciudad             VARCHAR(50),
+    tipo_alojamiento   VARCHAR(20),
+    capacidad          INT,
+    precio_noche       DECIMAL(12,2),
     tarifa_limpieza    DECIMAL(12,2)  NOT NULL DEFAULT 0,
     reglas             VARCHAR(1000),
     estado             VARCHAR(30)    NOT NULL DEFAULT 'BORRADOR',
-    modo_aceptacion    VARCHAR(30)    NOT NULL,
+    modo_aceptacion    VARCHAR(30),
     motivo_bloqueo     VARCHAR(500),
     id_anfitrion       INT            NOT NULL,
-    politica_cancelacion  VARCHAR(30)  NOT NULL,
+    politica_cancelacion  VARCHAR(30),
     CONSTRAINT publicacion_pk PRIMARY KEY (id_publicacion),
     CONSTRAINT publicacion_anfitrion_fk FOREIGN KEY (id_anfitrion) REFERENCES anfitrion (id_usuario),
     CONSTRAINT publicacion_politica_fk FOREIGN KEY (politica_cancelacion) REFERENCES politica_cancelacion (codigo),

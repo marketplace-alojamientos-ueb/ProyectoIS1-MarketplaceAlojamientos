@@ -4,6 +4,8 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import org.junit.jupiter.api.Test;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -27,19 +29,42 @@ class ValidacionPublicacionDTOTest {
     }
 
     @Test
-    void sinDatosMarcaTodosLosCamposObligatorios() {
-        assertEquals(Set.of("idAnfitrion", "titulo", "descripcion", "ubicacion", "ciudad", "tipoAlojamiento",
-                        "capacidad", "precioPorNoche", "modoAceptacion", "politicaCancelacion"),
-                camposInvalidos(new PublicacionRequestDTO()));
+    void sinDatosSoloExigeElAnfitrion() {
+        // Los campos mínimos que falten no son error de validación: la publicación queda en BORRADOR
+        assertEquals(Set.of("idAnfitrion"), camposInvalidos(new PublicacionRequestDTO()));
     }
 
     @Test
-    void textosEnBlancoSonInvalidos() {
+    void sinPeriodosNoEsErrorDeValidacion() {
+        PublicacionRequestDTO dto = publicacion(7);
+        dto.setPeriodos(List.of());
+
+        assertTrue(camposInvalidos(dto).isEmpty());
+    }
+
+    @Test
+    void unPeriodoSinFechasEsInvalido() {
+        PublicacionRequestDTO dto = publicacion(7);
+        dto.setPeriodos(List.of(new PeriodoDisponibilidadRequestDTO()));
+
+        assertEquals(Set.of("periodos[0].fechaInicio", "periodos[0].fechaFin"), camposInvalidos(dto));
+    }
+
+    @Test
+    void unPeriodoNuloEsInvalido() {
+        PublicacionRequestDTO dto = publicacion(7);
+        dto.setPeriodos(Collections.singletonList(null));
+
+        assertFalse(camposInvalidos(dto).isEmpty());
+    }
+
+    @Test
+    void textosEnBlancoNoSonErrorDeValidacion() {
         PublicacionRequestDTO dto = publicacion(7);
         dto.setTitulo("   ");
         dto.setPoliticaCancelacion(" ");
 
-        assertEquals(Set.of("titulo", "politicaCancelacion"), camposInvalidos(dto));
+        assertTrue(camposInvalidos(dto).isEmpty());
     }
 
     @Test

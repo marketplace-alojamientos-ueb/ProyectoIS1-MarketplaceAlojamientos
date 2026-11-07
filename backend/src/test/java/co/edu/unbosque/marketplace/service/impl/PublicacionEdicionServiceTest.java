@@ -3,11 +3,13 @@ package co.edu.unbosque.marketplace.service.impl;
 import co.edu.unbosque.marketplace.model.dto.PublicacionEditarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionResponseDTO;
 import co.edu.unbosque.marketplace.model.entity.Anfitrion;
+import co.edu.unbosque.marketplace.model.entity.PeriodoDisponibilidad;
 import co.edu.unbosque.marketplace.model.entity.Publicacion;
 import co.edu.unbosque.marketplace.model.entity.politica.PoliticaFlexible;
 import co.edu.unbosque.marketplace.model.entity.Usuario;
 import co.edu.unbosque.marketplace.model.enums.EstadoPublicacion;
 import co.edu.unbosque.marketplace.model.enums.ModoAceptacion;
+import co.edu.unbosque.marketplace.model.enums.TipoPeriodo;
 import co.edu.unbosque.marketplace.repository.AdminRepository;
 import co.edu.unbosque.marketplace.repository.AnfitrionRepository;
 import co.edu.unbosque.marketplace.repository.PublicacionRepository;
@@ -17,6 +19,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -107,6 +111,51 @@ class PublicacionEdicionServiceTest {
         assertEquals("Titulo nuevo", respuesta.getTitulo());
         assertEquals("FLEXIBLE", respuesta.getPoliticaCancelacion());
         assertEquals(7, respuesta.getAnfitrion().getIdUsuario());
+    }
+
+    @Test
+    void editarNoCambiaLosPeriodosYLosDevuelve() {
+        PeriodoDisponibilidad periodo = new PeriodoDisponibilidad();
+        periodo.setFechaInicio(LocalDate.of(2030, 1, 1));
+        periodo.setFechaFin(LocalDate.of(2030, 1, 10));
+        periodo.setTipo(TipoPeriodo.DISPONIBLE);
+        Publicacion existente = publicacionExistente();
+        existente.getPeriodos().add(periodo);
+        when(publicacionRepository.findById(15)).thenReturn(Optional.of(existente));
+
+        PublicacionResponseDTO respuesta = servicio.editar(15, cambios(7));
+
+        assertEquals(1, existente.getPeriodos().size());
+        assertEquals(1, respuesta.getPeriodos().size());
+        assertEquals(LocalDate.of(2030, 1, 1), respuesta.getPeriodos().get(0).getFechaInicio());
+        assertEquals(TipoPeriodo.DISPONIBLE, respuesta.getPeriodos().get(0).getTipo());
+    }
+
+    @Test
+    void editarSinLosCamposMinimosRecibe400YNoGuardaNada() {
+        PublicacionEditarRequestDTO dto = cambios(7);
+        dto.setTitulo("   ");
+        dto.setPoliticaCancelacion(null);
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> servicio.editar(15, dto));
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        assertEquals("Faltan campos obligatorios: Título, Política de cancelación", ex.getReason());
+        verify(publicacionRepository, never()).save(any());
+    }
+
+    @Test
+    void consultarUnBorradorSinPoliticaInformaQueLeFalta() {
+        Publicacion borrador = publicacionExistente();
+        borrador.setEstado(EstadoPublicacion.BORRADOR);
+        borrador.setTitulo(null);
+        borrador.setPoliticaCancelacion(null);
+        when(publicacionRepository.findById(15)).thenReturn(Optional.of(borrador));
+
+        PublicacionResponseDTO respuesta = servicio.obtener(15);
+
+        assertNull(respuesta.getPoliticaCancelacion());
+        assertEquals(List.of("Título", "Política de cancelación", "Períodos disponibles"), respuesta.getCamposFaltantes());
     }
 
     @Test
