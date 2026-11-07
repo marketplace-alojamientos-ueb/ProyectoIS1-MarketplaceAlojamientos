@@ -23,28 +23,28 @@ public class Publicacion {
     @Column(name = "id_publicacion")
     private Integer idPublicacion;
 
-    @Column(name = "titulo", nullable = false, length = 52)
+    @Column(name = "titulo", length = 52)
     private String titulo;
 
-    @Column(name = "descripcion", nullable = false, length = 500)
+    @Column(name = "descripcion", length = 500)
     private String descripcion;
 
-    @Column(name = "ubicacion_textual", nullable = false, length = 100)
+    @Column(name = "ubicacion_textual", length = 100)
     private String ubicacion;
 
-    @Column(name = "ciudad", nullable = false, length = 50)
+    @Column(name = "ciudad", length = 50)
     private String ciudad;
 
-    @Column(name = "tipo_alojamiento", nullable = false, length = 20)
+    @Column(name = "tipo_alojamiento", length = 20)
     private String tipoAlojamiento;
 
-    @Column(name = "capacidad", nullable = false)
+    @Column(name = "capacidad")
     private Integer capacidad;
 
     /**
      * La columna es DECIMAL(12,2). Se usa Double como en el diagrama de clases.
      */
-    @Column(name = "precio_noche", nullable = false)
+    @Column(name = "precio_noche")
     private Double precioPorNoche;
 
     @Column(name = "tarifa_limpieza", nullable = false)
@@ -58,7 +58,7 @@ public class Publicacion {
     private EstadoPublicacion estado = EstadoPublicacion.BORRADOR;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "modo_aceptacion", nullable = false, length = 30)
+    @Column(name = "modo_aceptacion", length = 30)
     private ModoAceptacion modoAceptacion;
 
     @Column(name = "motivo_bloqueo", length = 500)
@@ -69,7 +69,7 @@ public class Publicacion {
     private Anfitrion anfitrion;
 
     @Convert(converter = PoliticaCancelacionConverter.class)
-    @Column(name = "politica_cancelacion", nullable = false, length = 30)
+    @Column(name = "politica_cancelacion", length = 30)
     private PoliticaCancelacion politicaCancelacion;
 
     /** Servicios que ofrece el alojamiento (tabla intermedia PUBLICACION_SERVICIO). */
