@@ -7,11 +7,13 @@ import co.edu.unbosque.marketplace.model.dto.PeriodoDisponibilidadResponseDTO;
 import co.edu.unbosque.marketplace.model.dto.PoliticaCancelacionDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionBusquedaDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionBusquedaRequestDTO;
+import co.edu.unbosque.marketplace.model.dto.PublicacionDetalleDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionEditarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionResponseDTO;
 import co.edu.unbosque.marketplace.model.entity.Anfitrion;
 import co.edu.unbosque.marketplace.model.entity.PeriodoDisponibilidad;
+import co.edu.unbosque.marketplace.model.entity.Imagen;
 import co.edu.unbosque.marketplace.model.entity.Publicacion;
 import co.edu.unbosque.marketplace.model.entity.Servicio;
 import co.edu.unbosque.marketplace.model.entity.politica.PoliticasCancelacion;
@@ -402,8 +404,25 @@ public class PublicacionServiceImpl implements PublicacionService {
         return dto;
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public PublicacionDetalleDTO consultarDetalle(Integer idPublicacion) {
+        Publicacion publicacion = publicacionRepository.findById(idPublicacion)
+                .filter(p -> p.getEstado() == EstadoPublicacion.ACTIVA)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "El alojamiento no está disponible"));
+        PublicacionDetalleDTO dto = new PublicacionDetalleDTO();
+        copiarDatosDeBusqueda(publicacion, dto);
+        dto.setImagenes(publicacion.getImagenes().stream().map(Imagen::getRuta).toList());
+        return dto;
+    }
+
     private PublicacionBusquedaDTO toBusquedaDTO(Publicacion publicacion) {
         PublicacionBusquedaDTO dto = new PublicacionBusquedaDTO();
+        copiarDatosDeBusqueda(publicacion, dto);
+        return dto;
+    }
+
+    private void copiarDatosDeBusqueda(Publicacion publicacion, PublicacionBusquedaDTO dto) {
         dto.setIdPublicacion(publicacion.getIdPublicacion());
         dto.setTitulo(publicacion.getTitulo());
         dto.setDescripcion(publicacion.getDescripcion());
@@ -417,6 +436,5 @@ public class PublicacionServiceImpl implements PublicacionService {
         dto.setModoAceptacion(publicacion.getModoAceptacion().name());
         dto.setPoliticaCancelacion(publicacion.getPoliticaCancelacion().codigo());
         dto.setServicios(publicacion.getServicios().stream().map(Servicio::getNombre).toList());
-        return dto;
     }
 }

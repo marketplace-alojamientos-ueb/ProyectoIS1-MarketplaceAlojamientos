@@ -1,6 +1,7 @@
 package co.edu.unbosque.marketplace.controller;
 
 import co.edu.unbosque.marketplace.model.dto.PoliticaCancelacionDTO;
+import co.edu.unbosque.marketplace.model.dto.PublicacionDetalleDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionBusquedaDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionBusquedaRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionEditarRequestDTO;
@@ -116,5 +117,17 @@ class PublicacionControllerTest {
 
         assertEquals(HttpStatus.OK, respuesta.getStatusCode());
         assertEquals(15, respuesta.getBody().get(0).getIdPublicacion());
+    }
+
+    @Test
+    void consultarDetalleResponde200() {
+        PublicacionDetalleDTO detalle = new PublicacionDetalleDTO();
+        detalle.setIdPublicacion(15);
+        when(publicacionService.consultarDetalle(15)).thenReturn(detalle);
+
+        ResponseEntity<PublicacionDetalleDTO> respuesta = controller.consultarDetalle(15);
+
+        assertEquals(HttpStatus.OK, respuesta.getStatusCode());
+        assertEquals(15, respuesta.getBody().getIdPublicacion());
     }
 }
