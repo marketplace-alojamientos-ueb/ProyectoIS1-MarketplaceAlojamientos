@@ -1,6 +1,9 @@
 package co.edu.unbosque.marketplace.service;
 
 import co.edu.unbosque.marketplace.model.dto.PoliticaCancelacionDTO;
+import co.edu.unbosque.marketplace.model.dto.PublicacionBusquedaDTO;
+import co.edu.unbosque.marketplace.model.dto.PublicacionBusquedaRequestDTO;
+import co.edu.unbosque.marketplace.model.dto.PublicacionDetalleDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionEditarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionResponseDTO;
@@ -39,6 +42,10 @@ public interface PublicacionService {
     void eliminar(Integer idPublicacion, Integer idUsuario);
 
     PublicacionResponseDTO pausar(Integer idPublicacion, Integer idUsuario);
+
+    List<PublicacionBusquedaDTO> buscar(PublicacionBusquedaRequestDTO filtros);
+
+    PublicacionDetalleDTO consultarDetalle(Integer idPublicacion);
 
     /**
      * Marca como RESERVADO el rango de una reserva confirmada; lo que sobre de los períodos disponibles sigue

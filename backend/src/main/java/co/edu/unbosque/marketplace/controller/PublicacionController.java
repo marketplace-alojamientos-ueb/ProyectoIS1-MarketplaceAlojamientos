@@ -1,6 +1,9 @@
 package co.edu.unbosque.marketplace.controller;
 
 import co.edu.unbosque.marketplace.model.dto.PoliticaCancelacionDTO;
+import co.edu.unbosque.marketplace.model.dto.PublicacionBusquedaDTO;
+import co.edu.unbosque.marketplace.model.dto.PublicacionBusquedaRequestDTO;
+import co.edu.unbosque.marketplace.model.dto.PublicacionDetalleDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionEditarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionResponseDTO;
@@ -133,16 +136,65 @@ public class PublicacionController {
     }
 
     /**
-     * <b>GET /api/publicaciones</b> — Lista de publicaciones, todas o las de un anfitrión.
+     * <b>GET /api/publicaciones?idAnfitrion=7</b> — "Mis publicaciones": las publicaciones de un anfitrión, cada una con
+     * su estado actual.
      *
-     * <p>Pide (opcional): el parámetro <code>idAnfitrion</code>, por ejemplo
-     * <code>GET /api/publicaciones?idAnfitrion=7</code> para "Mis publicaciones". Sin el parámetro devuelve todas.
-     * No filtra por estado.</p>
-     * <p>Retorna: <b>200</b> con un arreglo de PublicacionResponseDTO (vacío <code>[]</code> si no hay ninguna).</p>
+     * <p>Pide: el parámetro <code>idAnfitrion</code>, el id del anfitrión que consulta. Solo devuelve las de ese
+     * anfitrión, en cualquier estado: BORRADOR, PENDIENTE_REVISION, ACTIVA, PAUSADA o BLOQUEADA. Es obligatorio, sin él
+     * responde 400.</p>
+     * <p>Retorna: <b>200</b> con un arreglo de PublicacionResponseDTO, con el campo <code>estado</code> de cada una.
+     * Si el anfitrión no tiene publicaciones, el arreglo viene vacío <code>[]</code>.</p>
+     * <p>Uso en el front: lista de "Mis publicaciones". Si el arreglo viene vacío, mostrar el mensaje de que todavía
+     * no tiene publicaciones. Cada consulta lee el estado actual, así que al volver a consultar se ve actualizado.</p>
      */
     @GetMapping
-    public ResponseEntity<List<PublicacionResponseDTO>> listar(@RequestParam(required = false) Integer idAnfitrion) {
+    public ResponseEntity<List<PublicacionResponseDTO>> listar(@RequestParam Integer idAnfitrion) {
         return ResponseEntity.ok(publicacionService.listar(idAnfitrion));
+    }
+
+    /**
+     * <b>GET /api/publicaciones/buscar</b> — Busca alojamientos con filtros (pantalla de búsqueda del huésped).
+     *
+     * <p>Pide (query params, todos opcionales):</p>
+     * <pre>
+     * ciudad=Guatavita        // texto exacto, sin importar mayúsculas
+     * llegada=2026-12-20      // fecha de llegada, formato AAAA-MM-DD
+     * salida=2026-12-23       // fecha de salida, formato AAAA-MM-DD
+     * capacidad=4             // personas: trae los que alojan esa cantidad o más
+     * tipo=CABANA             // tipo de alojamiento
+     * precioMin=100000        // precio por noche mínimo
+     * precioMax=300000        // precio por noche máximo
+     * servicios=WiFi&amp;servicios=Piscina   // por nombre; trae los que tienen todos los indicados
+     * </pre>
+     * <p>Las fechas se usan juntas: con <code>llegada</code> y <code>salida</code> trae solo los alojamientos con
+     * disponibilidad en todas las noches del rango. La noche de la fecha de salida no se cuenta.</p>
+     * <p>Retorna: <b>200</b> con un arreglo de PublicacionBusquedaDTO: los datos del alojamiento, sus
+     * <code>servicios</code> y sin datos personales del anfitrión. Solo incluye publicaciones ACTIVAS. Si nada
+     * coincide, el arreglo viene vacío <code>[]</code>.</p>
+     * <p>Errores: <b>400</b> si la fecha de salida no es posterior a la de llegada, si llega solo una de las dos fechas
+     * o si la capacidad es cero o negativa. El texto para mostrar está en <code>"message"</code>.</p>
+     * <p>Uso en el front: lista de resultados. Si el arreglo viene vacío, mostrar que no hay resultados y dejar
+     * ajustar los filtros. Si responde 400, mostrar el mensaje y no mostrar resultados.</p>
+     */
+    @GetMapping("/buscar")
+    public ResponseEntity<List<PublicacionBusquedaDTO>> buscar(PublicacionBusquedaRequestDTO filtros) {
+        return ResponseEntity.ok(publicacionService.buscar(filtros));
+    }
+
+    /**
+     * <b>GET /api/publicaciones/{id}/detalle</b> — Detalle de un alojamiento para el huésped, al seleccionarlo en los
+     * resultados de la búsqueda.
+     *
+     * <p>Pide: el id en la ruta.</p>
+     * <p>Retorna: <b>200</b> con un PublicacionDetalleDTO: los mismos campos de cada resultado de la búsqueda más
+     * <code>imagenes</code>, un arreglo con las rutas de las imágenes. Sin datos personales del anfitrión.
+     * Responde <b>404</b> si la publicación no existe o no está ACTIVA.</p>
+     * <p>Uso en el front: pantalla de detalle. Para volver a los resultados con los mismos filtros, el front debe
+     * guardar los filtros de la búsqueda antes de abrir el detalle.</p>
+     */
+    @GetMapping("/{id}/detalle")
+    public ResponseEntity<PublicacionDetalleDTO> consultarDetalle(@PathVariable Integer id) {
+        return ResponseEntity.ok(publicacionService.consultarDetalle(id));
     }
 
     /**
