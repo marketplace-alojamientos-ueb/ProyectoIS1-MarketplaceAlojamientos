@@ -29,12 +29,16 @@ import java.util.List;
  *   "tarifaLimpieza": 30000.0,
  *   "reglas": "No se permiten fiestas",  // puede ser null
  *   "modoAceptacion": "INMEDIATA",       // INMEDIATA | CON_APROBACION
- *   "politicaCancelacion": "FLEXIBLE",   // código de la política
+ *   "politicaCancelacion": "FLEXIBLE",   // código de la política (null en un borrador sin política)
+ *   "camposFaltantes": [],               // en BORRADOR: ej. ["Título", "Precio por noche"]
  *   "anfitrion": {                       // datos del anfitrión, sin contraseña
  *     "idUsuario": 7, "cedula": "1012345678", "primerNombre": "Ana", "segundoNombre": "María",
  *     "primerApellido": "Gómez", "segundoApellido": "Rojas", "nombreCompleto": "Ana María Gómez Rojas",
  *     "correo": "ana@correo.com", "estadoCuenta": "ACTIVA", "restringido": false
- *   }
+ *   },
+ *   "periodos": [                        // fechas en formato AAAA-MM-DD
+ *     { "idPeriodo": 3, "fechaInicio": "2026-12-01", "fechaFin": "2026-12-15", "tipo": "DISPONIBLE" }
+ *   ]                                    // tipo: DISPONIBLE | BLOQUEADO | RESERVADO
  * }
  * </pre>
  * <p>Los errores llegan con el formato por defecto de Spring; el texto para mostrar está en
@@ -57,29 +61,37 @@ public class PublicacionController {
      * <pre>
      * {
      *   "idAnfitrion": 7,                      // obligatorio, id del anfitrión que publica
-     *   "titulo": "Cabaña con vista al lago",  // obligatorio, máx. 52
-     *   "descripcion": "Cabaña para 4...",     // obligatorio, máx. 500
-     *   "ubicacion": "Vereda El Lago, km 3",   // obligatorio, máx. 100
-     *   "ciudad": "Guatavita",                 // obligatorio, máx. 50
-     *   "tipoAlojamiento": "CABANA",           // obligatorio, máx. 20
-     *   "capacidad": 4,                        // obligatorio, mayor que 0
-     *   "precioPorNoche": 250000,              // obligatorio, mayor que 0
+     *   "titulo": "Cabaña con vista al lago",  // mínimo, máx. 52
+     *   "descripcion": "Cabaña para 4...",     // mínimo, máx. 500
+     *   "ubicacion": "Vereda El Lago, km 3",   // mínimo, máx. 100
+     *   "ciudad": "Guatavita",                 // mínimo, máx. 50
+     *   "tipoAlojamiento": "CABANA",           // mínimo, máx. 20
+     *   "capacidad": 4,                        // mínimo, mayor que 0
+     *   "precioPorNoche": 250000,              // mínimo, mayor que 0
      *   "tarifaLimpieza": 30000,               // opcional, 0 o más (si no se envía queda en 0)
      *   "reglas": "No se permiten fiestas",    // opcional, máx. 1000
-     *   "modoAceptacion": "INMEDIATA",         // obligatorio: INMEDIATA o CON_APROBACION
-     *   "politicaCancelacion": "FLEXIBLE"      // obligatorio, un código de GET /api/publicaciones/politicas-cancelacion
+     *   "modoAceptacion": "INMEDIATA",         // mínimo: INMEDIATA o CON_APROBACION
+     *   "politicaCancelacion": "FLEXIBLE",     // mínimo, un código de GET /api/publicaciones/politicas-cancelacion
+     *   "periodos": [                          // mínimo, al menos uno; fechas en formato AAAA-MM-DD
+     *     { "fechaInicio": "2026-12-01", "fechaFin": "2026-12-15" }
+     *   ]
      * }
      * </pre>
      * <p>Retorna:</p>
      * <ul>
-     *   <li><b>201</b> con el PublicacionResponseDTO creado, con estado <code>PENDIENTE_REVISION</code>.</li>
-     *   <li><b>400</b> si falta algún campo o no cumple las validaciones (en <code>"errors"</code> viene cada campo
-     *       con su mensaje), o si la política de cancelación no existe.</li>
+     *   <li><b>201</b> con el PublicacionResponseDTO creado. Si vienen todos los campos mínimos queda en
+     *       <code>PENDIENTE_REVISION</code> y <code>camposFaltantes</code> va vacío; si falta alguno queda en
+     *       <code>BORRADOR</code> y <code>camposFaltantes</code> trae sus nombres.</li>
+     *   <li><b>400</b> si falta el idAnfitrion, si un campo enviado no cumple las validaciones (en
+     *       <code>"errors"</code> viene cada campo con su mensaje), si la política de cancelación no existe, o si un
+     *       período enviado es inválido: la fecha de fin no es posterior a la de inicio, la de inicio está en el pasado
+     *       o se cruza con otro período.</li>
      *   <li><b>403</b> si el id no es de un anfitrión, o su cuenta está desactivada o restringida
      *       ("Solo un anfitrión puede crear publicaciones").</li>
      * </ul>
-     * <p>Uso en el front: formulario "Crear publicación". Si responde 400, marcar los campos de
-     * <code>"errors"</code> para que el anfitrión los complete.</p>
+     * <p>Uso en el front: formulario "Crear publicación". Si la respuesta trae <code>estado = BORRADOR</code>,
+     * mostrar la lista <code>camposFaltantes</code> para que el anfitrión los complete. Si responde 400, marcar los
+     * campos de <code>"errors"</code>.</p>
      */
     @PostMapping
     public ResponseEntity<PublicacionResponseDTO> crear(@Valid @RequestBody PublicacionRequestDTO dto) {
@@ -148,7 +160,8 @@ public class PublicacionController {
      * <b>PUT /api/publicaciones/{id}</b> — Guarda los cambios de una publicación (botón "Guardar cambios").
      *
      * <p>Pide (body JSON): los mismos campos y validaciones que al crear, con <code>idUsuario</code> en lugar de
-     * <code>idAnfitrion</code>. Reemplaza todos los datos del formulario, por eso hay que enviarlos todos:</p>
+     * <code>idAnfitrion</code> y sin <code>periodos</code>, que no se modifican. Reemplaza todos los datos del
+     * formulario, por eso hay que enviarlos todos:</p>
      * <pre>
      * {
      *   "idUsuario": 7,                        // obligatorio, quien edita: el propietario o un administrador
@@ -161,8 +174,8 @@ public class PublicacionController {
      * <p>Retorna:</p>
      * <ul>
      *   <li><b>200</b> con el PublicacionResponseDTO actualizado. El estado de la publicación no cambia.</li>
-     *   <li><b>400</b> si falta algún campo o no cumple las validaciones (en <code>"errors"</code>), o si la política
-     *       de cancelación no existe.</li>
+     *   <li><b>400</b> si falta algún campo (en <code>"message"</code> vienen sus nombres), si no cumple las validaciones
+     *       (en <code>"errors"</code>), o si la política de cancelación no existe.</li>
      *   <li><b>403</b> "Edición no autorizada" si el usuario no es el propietario (con la cuenta activa y sin
      *       restricciones) ni un administrador.</li>
      *   <li><b>404</b> si la publicación no existe.</li>
