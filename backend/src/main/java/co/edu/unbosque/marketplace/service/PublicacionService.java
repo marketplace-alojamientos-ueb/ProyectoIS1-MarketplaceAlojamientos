@@ -38,6 +38,8 @@ public interface PublicacionService {
 
     void eliminar(Integer idPublicacion, Integer idUsuario);
 
+    PublicacionResponseDTO pausar(Integer idPublicacion, Integer idUsuario);
+
     /**
      * Marca como RESERVADO el rango de una reserva confirmada; lo que sobre de los períodos disponibles sigue
      * disponible. No tiene endpoint: lo debe llamar el servicio de reservas dentro de su misma transacción.
