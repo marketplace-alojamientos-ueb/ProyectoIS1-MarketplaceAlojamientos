@@ -101,12 +101,13 @@ tbody tr:last-child td {
 
 .alojamiento small {
   display: block;
+  max-width: 320px;
+  white-space: normal;
   color: var(--color-texto-suave);
 }
 
-.acciones {
-  display: flex;
-  gap: 1rem;
+.acciones > * + * {
+  margin-left: 1rem;
 }
 
 .enlace {
