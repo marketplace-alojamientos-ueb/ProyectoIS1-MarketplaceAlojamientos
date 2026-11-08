@@ -1,3 +1,17 @@
+.boton-primario {
+  display: inline-block;
+  padding: 0.7rem 1.1rem;
+  border-radius: var(--radio);
+  color: #fff;
+  background: var(--color-primario);
+  text-decoration: none;
+}
+
+.boton-primario:hover {
+  color: #fff;
+  background: var(--color-primario-hover);
+}
+
 .resumen {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -106,6 +120,7 @@ tbody tr:last-child td {
   color: var(--color-texto-suave);
 }
 
+/* La celda sigue siendo de tabla (con flex se descuadran las filas); solo se separan sus elementos. */
 .acciones > * + * {
   margin-left: 1rem;
 }
@@ -119,6 +134,10 @@ tbody tr:last-child td {
   border: none;
   text-decoration: underline;
   cursor: pointer;
+}
+
+.enlace.peligro {
+  color: var(--color-error);
 }
 
 .enlace.secundario {
