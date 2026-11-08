@@ -140,7 +140,7 @@ describe('MisPublicaciones', () => {
     expect(links).toContain('Editar /anfitrion/publicaciones/1/editar');
     expect(links).toContain('Editar /anfitrion/publicaciones/2/editar');
     expect(links).toContain('Completar /anfitrion/publicaciones/4/editar');
-    expect(links.some((l) => l.includes('/5/editar'))).toBe(false);
+    expect(links).toContain('Editar /anfitrion/publicaciones/5/editar');
   });
 
   it('muestra el aviso con que vuelve del formulario', () => {
