@@ -5,6 +5,7 @@ import { Login } from './pages/login/login';
 import { RecuperarContrasena } from './pages/recuperar-contrasena/recuperar-contrasena';
 import { MiPerfil } from './pages/mi-perfil/mi-perfil';
 import { MisPublicaciones } from './pages/mis-publicaciones/mis-publicaciones';
+import { FormularioPublicacion } from './pages/formulario-publicacion/formulario-publicacion';
 import { conSesion, sinSesion } from './utils/guards';
 import { alInicioDelRol, soloAnfitrion } from './utils/guards-rol';
 
@@ -16,5 +17,7 @@ export const routes: Routes = [
   { path: 'inicio', component: Inicio, canActivate: [alInicioDelRol] },
   { path: 'perfil', component: MiPerfil, canActivate: [conSesion] },
   { path: 'anfitrion/publicaciones', component: MisPublicaciones, canActivate: [soloAnfitrion] },
+  { path: 'anfitrion/publicaciones/nueva', component: FormularioPublicacion, canActivate: [soloAnfitrion] },
+  { path: 'anfitrion/publicaciones/:id/editar', component: FormularioPublicacion, canActivate: [soloAnfitrion] },
   { path: '**', redirectTo: 'login' }
 ];
