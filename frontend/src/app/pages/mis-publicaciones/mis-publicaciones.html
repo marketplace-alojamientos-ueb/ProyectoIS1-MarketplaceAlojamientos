@@ -78,9 +78,10 @@
                 @switch (p.estado) {
                   @case ('BORRADOR') {
                     <a [routerLink]="['/anfitrion/publicaciones', p.idPublicacion, 'editar']">Completar</a>
+                    <span class="nota">Contacta al administrador</span>
                   }
                   @case ('BLOQUEADA') {
-                    <span class="nota">Contacta al administrador</span>
+                    <a [routerLink]="['/anfitrion/publicaciones', p.idPublicacion, 'editar']">Editar</a>
                   }
                   @default {
                     <a [routerLink]="['/anfitrion/publicaciones', p.idPublicacion, 'editar']">Editar</a>
