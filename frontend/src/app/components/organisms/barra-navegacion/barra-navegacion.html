@@ -1,0 +1,23 @@
+<header class="barra">
+  <a [routerLink]="inicio()" class="inicio" aria-label="Ir al inicio">
+    <app-logo />
+  </a>
+  @if (rol() === 'ANFITRION') {
+    <span class="perfil">Perfil anfitrión</span>
+  }
+
+  <nav aria-label="Menú principal">
+    @for (enlace of enlaces(); track enlace.ruta) {
+      <a [routerLink]="enlace.ruta" routerLinkActive="activo">{{ enlace.texto }}</a>
+    }
+  </nav>
+
+  <div class="sesion">
+    @if (sesion.usuario(); as usuario) {
+      <span class="nombre">{{ usuario.nombreCompleto }}</span>
+      <app-boton variante="secundario" (click)="cerrarSesion()">Cerrar sesión</app-boton>
+    } @else {
+      <a routerLink="/login">Iniciar sesión</a>
+    }
+  </div>
+</header>
