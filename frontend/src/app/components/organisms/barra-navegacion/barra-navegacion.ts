@@ -7,7 +7,10 @@ import { SesionService } from '../../../services/sesion.service';
 
 const ENLACES: Record<Rol, { texto: string; ruta: string }[]> = {
   HUESPED: [{ texto: 'Mi perfil', ruta: '/perfil' }],
-  ANFITRION: [{ texto: 'Mi perfil', ruta: '/perfil' }]
+  ANFITRION: [
+    { texto: 'Mis publicaciones', ruta: '/anfitrion/publicaciones' },
+    { texto: 'Mi perfil', ruta: '/perfil' }
+  ]
 };
 
 @Component({

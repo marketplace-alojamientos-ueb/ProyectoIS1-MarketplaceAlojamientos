@@ -1,0 +1,107 @@
+<app-plantilla-principal rol="ANFITRION" titulo="Mis publicaciones" subtitulo="Consulta el estado de tus alojamientos y pausa los activos.">
+  @if (exito()) {
+    <app-alerta tipo="exito">{{ exito() }}</app-alerta>
+  }
+  @if (error()) {
+    <app-alerta tipo="error">{{ error() }}</app-alerta>
+  }
+
+  <section class="resumen" aria-label="Resumen por estado">
+    @for (item of resumen(); track item.estado) {
+      <div class="tarjeta-resumen">
+        <strong>{{ item.cantidad }}</strong>
+        <app-insignia [tono]="estados[item.estado].tono">{{ estados[item.estado].texto }}</app-insignia>
+      </div>
+    }
+  </section>
+
+  <div class="filtros">
+    <label>
+      <span>Buscar</span>
+      <input type="search" placeholder="Título o ciudad" [value]="busqueda()" (input)="buscar($event)" />
+    </label>
+    <label>
+      <span>Estado</span>
+      <select [value]="filtroEstado()" (change)="filtrar($event)">
+        <option value="TODOS">Todos</option>
+        @for (estado of ordenEstados; track estado) {
+          <option [value]="estado">{{ estados[estado].texto }}</option>
+        }
+      </select>
+    </label>
+  </div>
+
+  <div class="tabla-contenedor">
+    <table>
+      <thead>
+        <tr>
+          <th>Alojamiento</th>
+          <th>Ciudad</th>
+          <th>Precio / noche</th>
+          <th>Capacidad</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (p of filtradas(); track p.idPublicacion) {
+          <tr>
+            <td>
+              <div class="alojamiento">
+                <span class="sin-foto" aria-hidden="true">⌂</span>
+                <div>
+                  <strong>{{ p.titulo || 'Sin título' }}</strong>
+                  @if (p.camposFaltantes.length) {
+                    <small>Falta: {{ p.camposFaltantes.join(', ') }}</small>
+                  }
+                </div>
+              </div>
+            </td>
+            <td>{{ p.ciudad || '—' }}</td>
+            <td>{{ p.precioPorNoche ? (p.precioPorNoche | currency: 'COP' : 'symbol-narrow' : '1.0-0') : '—' }}</td>
+            <td>{{ p.capacidad ?? '—' }}</td>
+            <td>
+              <app-insignia [tono]="estados[p.estado].tono">{{ estados[p.estado].texto }}</app-insignia>
+            </td>
+            <td class="acciones">
+              @if (porPausar() === p.idPublicacion) {
+                <span>¿Pausar?</span>
+                <button type="button" class="enlace" (click)="pausar(p)">Sí, pausar</button>
+                <button type="button" class="enlace secundario" (click)="porPausar.set(null)">Cancelar</button>
+              } @else {
+                @switch (p.estado) {
+                  @case ('ACTIVA') {
+                    <button type="button" class="enlace" (click)="porPausar.set(p.idPublicacion)">Pausar</button>
+                  }
+                  @case ('BLOQUEADA') {
+                    <span class="nota">Contacta al administrador</span>
+                  }
+                  @default {
+                    <span class="nota">—</span>
+                  }
+                }
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6" class="vacio">
+              @if (cargado() && !publicaciones().length) {
+                Todavía no tienes publicaciones.
+              } @else if (cargado()) {
+                No hay publicaciones con esos filtros.
+              } @else {
+                Cargando…
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <app-alerta tipo="info">
+    Solo las publicaciones <strong>activas</strong> aparecen en las búsquedas y pueden recibir reservas. Una publicación
+    nueva queda <strong>pendiente de revisión</strong> hasta que un administrador la apruebe.
+  </app-alerta>
+</app-plantilla-principal>
