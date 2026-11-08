@@ -66,7 +66,7 @@ describe('MisPublicaciones', () => {
     expect(filas(fixture)).toBe(5);
     expect(texto()).toContain('Pendiente de revisión');
     expect(texto()).toContain('Falta: Precio por noche');
-    expect(texto()).toContain('Contacta al administrador');
+     expect(texto()).toContain('Bloqueada por un administrador');
   });
 
   it('avisa cuando no tiene publicaciones', () => {

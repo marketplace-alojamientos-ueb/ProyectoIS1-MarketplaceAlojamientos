@@ -78,7 +78,6 @@
                 @switch (p.estado) {
                   @case ('BORRADOR') {
                     <a [routerLink]="['/anfitrion/publicaciones', p.idPublicacion, 'editar']">Completar</a>
-                    <span class="nota">Contacta al administrador</span>
                   }
                   @case ('BLOQUEADA') {
                     <a [routerLink]="['/anfitrion/publicaciones', p.idPublicacion, 'editar']">Editar</a>
@@ -91,6 +90,9 @@
                   }
                 }
                 <button type="button" class="enlace peligro" (click)="porEliminar.set(p.idPublicacion)">Eliminar</button>
+                @if (p.estado === 'BLOQUEADA') {
+                  <small class="nota">Publicación bloqueada por administrador. No aparecerá en búsquedas.</small>
+                }
               }
             </td>
           </tr>
