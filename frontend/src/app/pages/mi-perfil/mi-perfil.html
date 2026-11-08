@@ -1,0 +1,101 @@
+<app-plantilla-principal [rol]="rol" titulo="Mi perfil" subtitulo="Consulta y actualiza tus datos básicos.">
+  @if (exito()) {
+    <app-alerta tipo="exito">{{ exito() }}</app-alerta>
+  }
+  @if (errorBack()) {
+    <app-alerta tipo="error">{{ errorBack() }}</app-alerta>
+  }
+
+  @if (usuario(); as u) {
+    <section class="tarjeta">
+      <div class="cabecera">
+        <span class="avatar" aria-hidden="true">{{ u.primerNombre.charAt(0) }}{{ u.primerApellido.charAt(0) }}</span>
+        <div>
+          <strong>{{ u.nombreCompleto }}</strong>
+          <p>{{ rol === 'ANFITRION' ? 'Anfitrión' : 'Huésped' }} · {{ u.correo }} · Cuenta {{ u.estadoCuenta === 'ACTIVA' ? 'activa' : 'desactivada' }}</p>
+        </div>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+        <h2 class="seccion">Datos personales</h2>
+        <div class="fila">
+          <div class="solo-lectura">
+            <span>Cédula</span>
+            <strong>{{ u.cedula }}</strong>
+            <small>La cédula no se puede cambiar.</small>
+          </div>
+          <app-campo-formulario
+            id="perfil-correo"
+            etiqueta="Correo electrónico"
+            tipo="email"
+            autocomplete="email"
+            [control]="form.controls.correo"
+            [error]="error(form.controls.correo)"
+          />
+        </div>
+        <div class="fila">
+          <app-campo-formulario
+            id="perfil-primer-nombre"
+            etiqueta="Primer nombre"
+            [control]="form.controls.primerNombre"
+            [error]="error(form.controls.primerNombre)"
+          />
+          <app-campo-formulario
+            id="perfil-segundo-nombre"
+            etiqueta="Segundo nombre"
+            [opcional]="true"
+            [control]="form.controls.segundoNombre"
+            [error]="error(form.controls.segundoNombre)"
+          />
+        </div>
+        <div class="fila">
+          <app-campo-formulario
+            id="perfil-primer-apellido"
+            etiqueta="Primer apellido"
+            [control]="form.controls.primerApellido"
+            [error]="error(form.controls.primerApellido)"
+          />
+          <app-campo-formulario
+            id="perfil-segundo-apellido"
+            etiqueta="Segundo apellido"
+            [control]="form.controls.segundoApellido"
+            [error]="error(form.controls.segundoApellido)"
+          />
+        </div>
+        <div class="botones">
+          <app-boton tipo="submit" [deshabilitado]="cargando()">Guardar cambios</app-boton>
+          <app-boton variante="secundario" (click)="cancelar()">Cancelar</app-boton>
+        </div>
+      </form>
+    </section>
+
+    <section class="tarjeta fila-accion">
+      <div>
+        <h2>Contraseña</h2>
+        <p>Te enviaremos un código a tu correo para cambiarla.</p>
+      </div>
+      <a class="boton-enlace" routerLink="/recuperar-contrasena">Cambiar contraseña</a>
+    </section>
+
+    <section class="tarjeta peligro">
+      <h2>Desactivar cuenta</h2>
+      <p>
+        Tu cuenta quedará desactivada y no podrás iniciar sesión hasta reactivarla.
+        @if (rol === 'ANFITRION') {
+          Tus publicaciones y reservas se conservan.
+        } @else {
+          Tus reservas e historial se conservan.
+        }
+      </p>
+      @if (confirmarDesactivar()) {
+        <p><strong>¿Seguro que quieres desactivar tu cuenta?</strong></p>
+        <div class="botones">
+          <button type="button" class="boton-peligro" (click)="desactivar()">Sí, desactivar</button>
+          <app-boton variante="secundario" (click)="confirmarDesactivar.set(false)">Cancelar</app-boton>
+        </div>
+      } @else {
+        <button type="button" class="boton-peligro" (click)="confirmarDesactivar.set(true)">Desactivar mi cuenta</button>
+      }
+    </section>
+  }
+</app-plantilla-principal>

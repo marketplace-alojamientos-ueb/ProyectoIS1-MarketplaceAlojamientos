@@ -1,0 +1,16 @@
+<app-barra-navegacion [rol]="rol()" />
+
+<main class="contenido">
+  @if (titulo()) {
+    <header>
+      <div>
+        <h1>{{ titulo() }}</h1>
+        @if (subtitulo()) {
+          <p>{{ subtitulo() }}</p>
+        }
+      </div>
+      <ng-content select="[acciones]" />
+    </header>
+  }
+  <ng-content />
+</main>

@@ -1,0 +1,143 @@
+:host {
+  display: block;
+}
+
+.tarjeta {
+  max-width: 760px;
+  margin-bottom: 1.25rem;
+  padding: 1.5rem;
+  background: #fff;
+  border: 1px solid var(--color-borde);
+  border-radius: 12px;
+}
+
+.cabecera {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-bottom: 1.25rem;
+}
+
+.cabecera p {
+  margin: 0.15rem 0 0;
+  font-size: 0.88rem;
+  color: var(--color-texto-suave);
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  font-weight: 700;
+  color: var(--color-primario);
+  background: rgb(15 118 110 / 12%);
+  border-radius: 50%;
+}
+
+.seccion {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-texto-suave);
+  margin: 0 0 0.85rem;
+}
+
+.fila {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 1rem;
+}
+
+.solo-lectura {
+  margin-bottom: 1rem;
+}
+
+.solo-lectura span {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.solo-lectura strong {
+  display: block;
+  padding: 0.7rem 0.85rem;
+  font-weight: 400;
+  background: var(--color-fondo);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+}
+
+.solo-lectura small {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.82rem;
+  color: var(--color-texto-suave);
+}
+
+.botones {
+  display: flex;
+  gap: 0.75rem;
+}
+
+h2 {
+  font-size: 1.05rem;
+  margin: 0 0 0.35rem;
+}
+
+.tarjeta p {
+  margin: 0 0 1rem;
+  color: var(--color-texto-suave);
+}
+
+.fila-accion {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.fila-accion p {
+  margin: 0;
+}
+
+.boton-enlace {
+  padding: 0.6rem 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+}
+
+.peligro {
+  border-color: var(--color-error);
+  background: #fef2f2;
+}
+
+.peligro h2 {
+  color: var(--color-error);
+}
+
+.boton-peligro {
+  padding: 0.65rem 1.1rem;
+  font: inherit;
+  font-weight: 600;
+  color: #fff;
+  background: var(--color-error);
+  border: none;
+  border-radius: var(--radio);
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .fila {
+    grid-template-columns: 1fr;
+  }
+
+  .fila-accion {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
