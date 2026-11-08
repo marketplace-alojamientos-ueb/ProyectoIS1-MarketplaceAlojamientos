@@ -80,9 +80,11 @@
     <section class="tarjeta peligro">
       <h2>Desactivar cuenta</h2>
       <p>
-        Tu cuenta quedará inactiva y no podrás iniciar sesión hasta reactivarla.
+        Tu cuenta quedará desactivada y no podrás iniciar sesión hasta reactivarla.
         @if (rol === 'ANFITRION') {
-          Tus publicaciones dejarán de aparecer en las búsquedas.
+          Tus publicaciones y reservas se conservan.
+        } @else {
+          Tus reservas e historial se conservan.
         }
       </p>
       @if (confirmarDesactivar()) {

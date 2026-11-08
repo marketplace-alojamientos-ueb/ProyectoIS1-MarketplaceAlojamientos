@@ -42,7 +42,7 @@ describe('MiPerfil', () => {
   it('muestra los datos del anfitrión y guarda los cambios', () => {
     const { fixture, http, sesion, pagina, texto } = crear('ANFITRION', '/api/anfitriones');
     expect(texto()).toContain('1012345678');
-    expect(texto()).toContain('Tus publicaciones dejarán de aparecer');
+    expect(texto()).toContain('Tus publicaciones y reservas se conservan');
     expect(pagina.form.controls.primerNombre.value).toBe('Ana');
 
     pagina.form.controls.primerNombre.setValue('');
