@@ -1,4 +1,6 @@
-<app-plantilla-principal rol="ANFITRION" titulo="Mis publicaciones" subtitulo="Consulta el estado de tus alojamientos y pausa los activos.">
+<app-plantilla-principal rol="ANFITRION" titulo="Mis publicaciones" subtitulo="Crea, edita, pausa y elimina tus alojamientos.">
+  <a acciones class="boton-primario" routerLink="/anfitrion/publicaciones/nueva">+ Nueva publicación</a>
+
   @if (exito()) {
     <app-alerta tipo="exito">{{ exito() }}</app-alerta>
   }
@@ -68,17 +70,28 @@
                 <span>¿Pausar?</span>
                 <button type="button" class="enlace" (click)="pausar(p)">Sí, pausar</button>
                 <button type="button" class="enlace secundario" (click)="porPausar.set(null)">Cancelar</button>
+              } @else if (porEliminar() === p.idPublicacion) {
+                <span>¿Eliminar?</span>
+                <button type="button" class="enlace peligro" (click)="eliminar(p)">Sí, eliminar</button>
+                <button type="button" class="enlace secundario" (click)="porEliminar.set(null)">Cancelar</button>
               } @else {
                 @switch (p.estado) {
-                  @case ('ACTIVA') {
-                    <button type="button" class="enlace" (click)="porPausar.set(p.idPublicacion)">Pausar</button>
+                  @case ('BORRADOR') {
+                    <a [routerLink]="['/anfitrion/publicaciones', p.idPublicacion, 'editar']">Completar</a>
                   }
                   @case ('BLOQUEADA') {
-                    <span class="nota">Contacta al administrador</span>
+                    <a [routerLink]="['/anfitrion/publicaciones', p.idPublicacion, 'editar']">Editar</a>
                   }
                   @default {
-                    <span class="nota">—</span>
+                    <a [routerLink]="['/anfitrion/publicaciones', p.idPublicacion, 'editar']">Editar</a>
+                    @if (p.estado === 'ACTIVA') {
+                      <button type="button" class="enlace" (click)="porPausar.set(p.idPublicacion)">Pausar</button>
+                    }
                   }
+                }
+                <button type="button" class="enlace peligro" (click)="porEliminar.set(p.idPublicacion)">Eliminar</button>
+                @if (p.estado === 'BLOQUEADA') {
+                  <small class="nota">Publicación bloqueada por administrador. No aparecerá en búsquedas.</small>
                 }
               }
             </td>
@@ -87,7 +100,7 @@
           <tr>
             <td colspan="6" class="vacio">
               @if (cargado() && !publicaciones().length) {
-                Todavía no tienes publicaciones.
+                Todavía no tienes publicaciones. Crea la primera con "+ Nueva publicación".
               } @else if (cargado()) {
                 No hay publicaciones con esos filtros.
               } @else {

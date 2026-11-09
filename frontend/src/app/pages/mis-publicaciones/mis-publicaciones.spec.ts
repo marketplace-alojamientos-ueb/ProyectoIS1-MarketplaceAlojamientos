@@ -1,7 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { PublicacionAnfitrion } from '../../models/publicacion-anfitrion.model';
 import { SesionService } from '../../services/sesion.service';
 import { MisPublicaciones } from './mis-publicaciones';
@@ -26,11 +26,16 @@ const LISTA = [
   publicacion(5, 'BLOQUEADA', 'Habitación', 'Medellín')
 ];
 
-function crear() {
+function crear(aviso: string | null = null) {
   sessionStorage.clear();
   TestBed.configureTestingModule({
     imports: [MisPublicaciones],
-    providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()]
+    providers: [
+      provideRouter([]),
+      provideHttpClient(),
+      provideHttpClientTesting(),
+      { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(aviso ? { aviso } : {}) } } }
+    ]
   });
   TestBed.inject(SesionService).iniciar({ idUsuario: 7, nombreCompleto: 'Ana', correo: 'a@a.co', rol: 'ANFITRION' });
   const http = TestBed.inject(HttpTestingController);
@@ -38,6 +43,15 @@ function crear() {
   fixture.detectChanges();
   return { fixture, http, pagina: fixture.componentInstance, texto: () => fixture.nativeElement.textContent as string };
 }
+
+const botones = (fixture: ComponentFixture<MisPublicaciones>, texto: string): HTMLButtonElement[] =>
+  Array.from<HTMLButtonElement>(fixture.nativeElement.querySelectorAll('tbody button')).filter(
+    (b) => b.textContent?.trim() === texto
+  );
+const enlaces = (fixture: ComponentFixture<MisPublicaciones>): string[] =>
+  Array.from<HTMLAnchorElement>(fixture.nativeElement.querySelectorAll('a')).map(
+    (a) => `${a.textContent?.trim()} ${a.getAttribute('href')}`
+  );
 
 const filas = (fixture: ComponentFixture<MisPublicaciones>) => fixture.nativeElement.querySelectorAll('tbody tr').length;
 const listar = (http: HttpTestingController) => http.expectOne('/api/publicaciones?idAnfitrion=7');
@@ -52,7 +66,7 @@ describe('MisPublicaciones', () => {
     expect(filas(fixture)).toBe(5);
     expect(texto()).toContain('Pendiente de revisión');
     expect(texto()).toContain('Falta: Precio por noche');
-    expect(texto()).toContain('Contacta al administrador');
+    expect(texto()).toContain('Publicación bloqueada por administrador');
   });
 
   it('avisa cuando no tiene publicaciones', () => {
@@ -88,10 +102,10 @@ describe('MisPublicaciones', () => {
     const { fixture, http, pagina, texto } = crear();
     listar(http).flush(LISTA);
     fixture.detectChanges();
-    const botones = fixture.nativeElement.querySelectorAll('tbody button');
-    expect(botones.length).toBe(1);
+    const pausar = botones(fixture, 'Pausar');
+    expect(pausar.length).toBe(1);
 
-    botones[0].click();
+    pausar[0].click();
     fixture.detectChanges();
     expect(texto()).toContain('¿Pausar?');
 
@@ -115,5 +129,52 @@ describe('MisPublicaciones', () => {
     const { http, pagina } = crear();
     listar(http).flush(null, { status: 0, statusText: '' });
     expect(pagina['error']()).toContain('No se pudo conectar');
+  });
+
+  it('MA-64 / MA-61: ofrece crear, editar y completar según el estado', () => {
+    const { fixture, http } = crear();
+    listar(http).flush(LISTA);
+    fixture.detectChanges();
+    const links = enlaces(fixture);
+    expect(links).toContain('+ Nueva publicación /anfitrion/publicaciones/nueva');
+    expect(links).toContain('Editar /anfitrion/publicaciones/1/editar');
+    expect(links).toContain('Editar /anfitrion/publicaciones/2/editar');
+    expect(links).toContain('Completar /anfitrion/publicaciones/4/editar');
+    expect(links).toContain('Editar /anfitrion/publicaciones/5/editar');
+  });
+
+  it('muestra el aviso con que vuelve del formulario', () => {
+    const { fixture, http, texto } = crear('borrador');
+    listar(http).flush(LISTA);
+    fixture.detectChanges();
+    expect(texto()).toContain('Guardamos tu publicación como borrador');
+  });
+
+  it('MA-61: pide confirmación, elimina y muestra el error 409 del back', () => {
+    const { fixture, http, pagina, texto } = crear();
+    listar(http).flush(LISTA);
+    fixture.detectChanges();
+    expect(botones(fixture, 'Eliminar').length).toBe(5);
+
+    botones(fixture, 'Eliminar')[3].click();
+    fixture.detectChanges();
+    expect(texto()).toContain('¿Eliminar?');
+    botones(fixture, 'Cancelar')[0].click();
+    fixture.detectChanges();
+    expect(texto()).not.toContain('¿Eliminar?');
+
+    pagina['eliminar'](LISTA[3]);
+    http.expectOne({ method: 'DELETE', url: '/api/publicaciones/4?idUsuario=7' }).flush(null, { status: 204, statusText: 'No Content' });
+    listar(http).flush(LISTA.filter((p) => p.idPublicacion !== 4));
+    expect(pagina['exito']()).toContain('Eliminaste');
+
+    pagina['eliminar'](LISTA[0]);
+    http
+      .expectOne('/api/publicaciones/1?idUsuario=7')
+      .flush(
+        { message: 'No se puede eliminar la publicación porque tiene datos asociados, como reservas' },
+        { status: 409, statusText: 'Conflict' }
+      );
+    expect(pagina['error']()).toContain('tiene datos asociados');
   });
 });

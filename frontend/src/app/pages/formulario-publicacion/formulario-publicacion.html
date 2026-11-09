@@ -1,0 +1,207 @@
+<app-plantilla-principal
+  rol="ANFITRION"
+  [titulo]="editando ? 'Editar publicación' : 'Nueva publicación'"
+  [subtitulo]="
+    editando
+      ? 'Actualiza la información de tu alojamiento.'
+      : 'Completa la información de tu alojamiento. Si te falta algo, se guarda como borrador.'
+  "
+>
+  <div acciones>
+    <app-boton [deshabilitado]="cargando()" (click)="guardar()">{{ editando ? 'Guardar cambios' : 'Enviar publicación' }}</app-boton>
+  </div>
+
+  <a routerLink="/anfitrion/publicaciones" class="volver">← Volver a mis publicaciones</a>
+
+  @if (mensaje()) {
+    <app-alerta tipo="error">{{ mensaje() }}</app-alerta>
+  }
+
+  <div class="disposicion">
+    <aside class="pasos" aria-label="Pasos">
+      <p class="titulo-pasos">Pasos</p>
+      <ol>
+        @for (paso of pasos(); track paso.id; let i = $index) {
+          <li>
+            <button type="button" [class.completo]="paso.completo" (click)="irA(paso.id)">
+              <span class="numero">{{ paso.completo ? '✓' : i + 1 }}</span>
+              {{ paso.texto }}
+            </button>
+          </li>
+        }
+      </ol>
+      <p class="nota">Con todos los pasos completos, la publicación queda pendiente de revisión.</p>
+    </aside>
+
+    <form [formGroup]="form" novalidate>
+      <section id="seccion-basica" class="tarjeta">
+        <h2>1. Información básica</h2>
+        <app-campo-formulario
+          id="pub-titulo"
+          etiqueta="Título"
+          placeholder="Apartamento con vista a los cerros"
+          [ayuda]="largoTitulo() + '/52 caracteres'"
+          [control]="form.controls.titulo"
+          [error]="error(form.controls.titulo)"
+        />
+
+        <div class="campo">
+          <app-etiqueta para="pub-descripcion">Descripción</app-etiqueta>
+          <textarea
+            id="pub-descripcion"
+            rows="4"
+            formControlName="descripcion"
+            [class.invalida]="!!error(form.controls.descripcion)"
+          ></textarea>
+          @if (error(form.controls.descripcion); as e) {
+            <small class="error">{{ e }}</small>
+          }
+        </div>
+
+        <div class="fila">
+          <div class="campo">
+            <app-etiqueta para="pub-tipo">Tipo de alojamiento</app-etiqueta>
+            <select id="pub-tipo" formControlName="tipoAlojamiento" [class.invalida]="!!error(form.controls.tipoAlojamiento)">
+              <option value="">Selecciona</option>
+              @for (tipo of tipos; track tipo.valor) {
+                <option [value]="tipo.valor">{{ tipo.texto }}</option>
+              }
+            </select>
+            @if (error(form.controls.tipoAlojamiento); as e) {
+              <small class="error">{{ e }}</small>
+            }
+          </div>
+          <app-campo-formulario
+            id="pub-capacidad"
+            etiqueta="Capacidad (huéspedes)"
+            modoTeclado="numeric"
+            [control]="form.controls.capacidad"
+            [error]="error(form.controls.capacidad, 'Escribe un número mayor que 0')"
+          />
+        </div>
+
+        <div class="fila">
+          <app-campo-formulario
+            id="pub-ciudad"
+            etiqueta="Ciudad"
+            [control]="form.controls.ciudad"
+            [error]="error(form.controls.ciudad)"
+          />
+          <app-campo-formulario
+            id="pub-ubicacion"
+            etiqueta="Ubicación"
+            placeholder="Calle 57 # 3-30, Chapinero"
+            [control]="form.controls.ubicacion"
+            [error]="error(form.controls.ubicacion)"
+          />
+        </div>
+      </section>
+
+      <section id="seccion-precio" class="tarjeta">
+        <h2>2. Precio y tarifas</h2>
+        <div class="fila">
+          <app-campo-formulario
+            id="pub-precio"
+            etiqueta="Precio por noche (COP)"
+            modoTeclado="numeric"
+            placeholder="180000"
+            [control]="form.controls.precioPorNoche"
+            [error]="error(form.controls.precioPorNoche, 'Escribe un valor mayor que 0, solo números')"
+          />
+          <app-campo-formulario
+            id="pub-limpieza"
+            etiqueta="Tarifa de limpieza (COP)"
+            modoTeclado="numeric"
+            placeholder="40000"
+            [opcional]="true"
+            [control]="form.controls.tarifaLimpieza"
+            [error]="error(form.controls.tarifaLimpieza, 'Solo números')"
+          />
+        </div>
+      </section>
+
+      <section id="seccion-reglas" class="tarjeta">
+        <h2>3. Reglas y políticas</h2>
+        <div class="campo">
+          <app-etiqueta para="pub-reglas" [opcional]="true">Reglas de la casa</app-etiqueta>
+          <textarea id="pub-reglas" rows="3" formControlName="reglas"></textarea>
+          @if (error(form.controls.reglas); as e) {
+            <small class="error">{{ e }}</small>
+          }
+        </div>
+
+        <div class="campo">
+          <app-etiqueta para="pub-politica">Política de cancelación</app-etiqueta>
+          <select id="pub-politica" formControlName="politicaCancelacion" [class.invalida]="!!error(form.controls.politicaCancelacion)">
+            <option value="">Selecciona</option>
+            @for (politica of politicas(); track politica.codigo) {
+              <option [value]="politica.codigo">{{ politica.nombre }}</option>
+            }
+          </select>
+          @for (politica of politicas(); track politica.codigo) {
+            @if (politica.codigo === form.controls.politicaCancelacion.value) {
+              <small class="ayuda">{{ politica.descripcion }}</small>
+            }
+          }
+          @if (error(form.controls.politicaCancelacion); as e) {
+            <small class="error">{{ e }}</small>
+          }
+        </div>
+
+        <p class="subtitulo">¿Cómo aceptas las reservas?</p>
+        <div class="opciones">
+          <label [class.activa]="form.controls.modoAceptacion.value === 'INMEDIATA'">
+            <input type="radio" value="INMEDIATA" formControlName="modoAceptacion" />
+            <strong>Inmediata</strong>
+            <span>La reserva se confirma en cuanto el huésped paga.</span>
+          </label>
+          <label [class.activa]="form.controls.modoAceptacion.value === 'CON_APROBACION'">
+            <input type="radio" value="CON_APROBACION" formControlName="modoAceptacion" />
+            <strong>Con aprobación</strong>
+            <span>Revisas cada solicitud antes de confirmarla.</span>
+          </label>
+        </div>
+      </section>
+
+      <section id="seccion-periodos" class="tarjeta">
+        <h2>{{ editando ? 'Disponibilidad' : '4. Disponibilidad' }}</h2>
+        @if (editando) {
+          <p class="ayuda">Los periodos se definen al crear la publicación y no se modifican al editarla.</p>
+          @for (periodo of periodosGuardados(); track periodo.idPeriodo) {
+            <div class="item-lista">
+              <span>{{ periodo.fechaInicio | date: 'dd/MM/yyyy' }} → {{ periodo.fechaFin | date: 'dd/MM/yyyy' }}</span>
+              <app-insignia [tono]="tiposPeriodo[periodo.tipo].tono">{{ tiposPeriodo[periodo.tipo].texto }}</app-insignia>
+            </div>
+          } @empty {
+            <p class="ayuda">Sin periodos registrados.</p>
+          }
+        } @else {
+          <p class="ayuda">Agrega al menos un periodo en el que el alojamiento estará disponible.</p>
+          @for (periodo of periodos(); track periodo.fechaInicio) {
+            <div class="item-lista">
+              <span>{{ periodo.fechaInicio | date: 'dd/MM/yyyy' }} → {{ periodo.fechaFin | date: 'dd/MM/yyyy' }}</span>
+              <button type="button" class="quitar" aria-label="Quitar periodo" (click)="quitarPeriodo($index)">×</button>
+            </div>
+          }
+          @if (errorPeriodo()) {
+            <app-alerta tipo="error">{{ errorPeriodo() }}</app-alerta>
+          }
+          <div class="agregar">
+            <input type="date" aria-label="Fecha de inicio" [min]="hoy" [formControl]="nuevoInicio" />
+            <input type="date" aria-label="Fecha de fin" [min]="hoy" [formControl]="nuevoFin" />
+            <app-boton variante="secundario" (click)="agregarPeriodo()">+ Agregar periodo</app-boton>
+          </div>
+        }
+      </section>
+
+      <app-alerta tipo="info">
+        @if (editando) {
+          Al guardar, la publicación conserva su estado actual.
+        } @else {
+          Si envías la publicación completa, queda <strong>pendiente de revisión</strong>. Si le falta algo, se guarda
+          como <strong>borrador</strong> y en "Mis publicaciones" verás qué le falta.
+        }
+      </app-alerta>
+    </form>
+  </div>
+</app-plantilla-principal>
