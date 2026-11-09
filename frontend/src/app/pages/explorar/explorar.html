@@ -1,0 +1,57 @@
+<app-plantilla-principal titulo="Encuentra tu próximo alojamiento" subtitulo="Explora los espacios disponibles en todo el país">
+  <form class="filtros" [formGroup]="filtros" (ngSubmit)="buscar()" novalidate>
+    <div>
+      <app-etiqueta para="filtro-ciudad">Ciudad</app-etiqueta>
+      <input id="filtro-ciudad" placeholder="Bogotá" formControlName="ciudad" />
+    </div>
+    <div>
+      <app-etiqueta para="filtro-llegada">Llegada</app-etiqueta>
+      <input id="filtro-llegada" type="date" formControlName="llegada" />
+    </div>
+    <div>
+      <app-etiqueta para="filtro-salida">Salida</app-etiqueta>
+      <input id="filtro-salida" type="date" formControlName="salida" />
+    </div>
+    <div>
+      <app-etiqueta para="filtro-capacidad">Huéspedes</app-etiqueta>
+      <input id="filtro-capacidad" inputmode="numeric" placeholder="2" formControlName="capacidad" />
+    </div>
+    <div>
+      <app-etiqueta para="filtro-tipo">Tipo</app-etiqueta>
+      <select id="filtro-tipo" formControlName="tipo">
+        <option value="">Todos</option>
+        @for (tipo of tipos; track tipo.valor) {
+          <option [value]="tipo.valor">{{ tipo.texto }}</option>
+        }
+      </select>
+    </div>
+    <div>
+      <app-etiqueta para="filtro-precio-min">Precio mínimo / noche</app-etiqueta>
+      <input id="filtro-precio-min" inputmode="numeric" placeholder="100000" formControlName="precioMin" />
+    </div>
+    <div>
+      <app-etiqueta para="filtro-precio-max">Precio máximo / noche</app-etiqueta>
+      <input id="filtro-precio-max" inputmode="numeric" placeholder="300000" formControlName="precioMax" />
+    </div>
+    <div>
+      <app-etiqueta para="filtro-servicios">Servicios</app-etiqueta>
+      <input id="filtro-servicios" placeholder="WiFi, Piscina" formControlName="servicios" />
+    </div>
+    <div class="botones">
+      <app-boton tipo="submit" [deshabilitado]="cargando()">Buscar</app-boton>
+      <app-boton variante="secundario" (click)="limpiar()">Limpiar</app-boton>
+    </div>
+  </form>
+
+  @if (error()) {
+    <app-alerta tipo="error">{{ error() }}</app-alerta>
+  } @else if (resultados().length) {
+    <div class="grilla">
+      @for (publicacion of resultados(); track publicacion.idPublicacion) {
+        <app-tarjeta-publicacion [publicacion]="publicacion" />
+      }
+    </div>
+  } @else if (buscado()) {
+    <app-alerta tipo="info">No encontramos alojamientos con esos filtros. Prueba ajustándolos.</app-alerta>
+  }
+</app-plantilla-principal>

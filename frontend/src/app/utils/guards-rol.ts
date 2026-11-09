@@ -5,7 +5,7 @@ import { SesionService } from '../services/sesion.service';
 
 const INICIO_POR_ROL: Record<Rol, string> = {
   ANFITRION: '/anfitrion/publicaciones',
-  HUESPED: '/perfil'
+  HUESPED: '/explorar'
 };
 
 
