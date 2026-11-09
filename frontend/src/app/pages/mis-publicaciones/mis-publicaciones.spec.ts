@@ -140,6 +140,8 @@ describe('MisPublicaciones', () => {
     expect(links).toContain('Editar /anfitrion/publicaciones/1/editar');
     expect(links).toContain('Editar /anfitrion/publicaciones/2/editar');
     expect(links).toContain('Completar /anfitrion/publicaciones/4/editar');
+    expect(links).toContain('Disponibilidad /anfitrion/disponibilidad?publicacion=1');
+    expect(links).toContain('Disponibilidad /anfitrion/disponibilidad?publicacion=3');
     expect(links).toContain('Editar /anfitrion/publicaciones/5/editar');
   });
 

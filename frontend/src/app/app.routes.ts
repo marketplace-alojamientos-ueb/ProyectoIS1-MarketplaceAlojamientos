@@ -6,6 +6,7 @@ import { RecuperarContrasena } from './pages/recuperar-contrasena/recuperar-cont
 import { MiPerfil } from './pages/mi-perfil/mi-perfil';
 import { MisPublicaciones } from './pages/mis-publicaciones/mis-publicaciones';
 import { FormularioPublicacion } from './pages/formulario-publicacion/formulario-publicacion';
+import { Disponibilidad } from './pages/disponibilidad/disponibilidad';
 import { conSesion, sinSesion } from './utils/guards';
 import { alInicioDelRol, soloAnfitrion } from './utils/guards-rol';
 
@@ -19,5 +20,6 @@ export const routes: Routes = [
   { path: 'anfitrion/publicaciones', component: MisPublicaciones, canActivate: [soloAnfitrion] },
   { path: 'anfitrion/publicaciones/nueva', component: FormularioPublicacion, canActivate: [soloAnfitrion] },
   { path: 'anfitrion/publicaciones/:id/editar', component: FormularioPublicacion, canActivate: [soloAnfitrion] },
+  { path: 'anfitrion/disponibilidad', component: Disponibilidad, canActivate: [soloAnfitrion] },
   { path: '**', redirectTo: 'login' }
 ];

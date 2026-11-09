@@ -121,9 +121,13 @@ tbody tr:last-child td {
   color: var(--color-texto-suave);
 }
 
-/* La celda sigue siendo de tabla (con flex se descuadran las filas); solo se separan sus elementos. */
-.acciones > * + * {
-  margin-left: 1rem;
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 1rem;
+  max-width: 260px;
 }
 
 .enlace {
@@ -149,9 +153,10 @@ tbody tr:last-child td {
   font-size: 0.85rem;
   color: var(--color-texto-suave);
 }
+/* En la bloqueada la nota va en su propia línea, debajo de las acciones. */
 .acciones .nota {
-  display: block;
-  margin: 0.25rem 0 0;
+  flex-basis: 100%;
+  white-space: normal;
 }
 .vacio {
   text-align: center;

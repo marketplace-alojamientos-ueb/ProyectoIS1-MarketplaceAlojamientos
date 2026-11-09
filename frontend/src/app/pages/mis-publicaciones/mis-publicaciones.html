@@ -65,35 +65,38 @@
             <td>
               <app-insignia [tono]="estados[p.estado].tono">{{ estados[p.estado].texto }}</app-insignia>
             </td>
-            <td class="acciones">
-              @if (porPausar() === p.idPublicacion) {
-                <span>¿Pausar?</span>
-                <button type="button" class="enlace" (click)="pausar(p)">Sí, pausar</button>
-                <button type="button" class="enlace secundario" (click)="porPausar.set(null)">Cancelar</button>
-              } @else if (porEliminar() === p.idPublicacion) {
-                <span>¿Eliminar?</span>
-                <button type="button" class="enlace peligro" (click)="eliminar(p)">Sí, eliminar</button>
-                <button type="button" class="enlace secundario" (click)="porEliminar.set(null)">Cancelar</button>
-              } @else {
-                @switch (p.estado) {
-                  @case ('BORRADOR') {
-                    <a [routerLink]="['/anfitrion/publicaciones', p.idPublicacion, 'editar']">Completar</a>
-                  }
-                  @case ('BLOQUEADA') {
-                    <a [routerLink]="['/anfitrion/publicaciones', p.idPublicacion, 'editar']">Editar</a>
-                  }
-                  @default {
-                    <a [routerLink]="['/anfitrion/publicaciones', p.idPublicacion, 'editar']">Editar</a>
-                    @if (p.estado === 'ACTIVA') {
-                      <button type="button" class="enlace" (click)="porPausar.set(p.idPublicacion)">Pausar</button>
+            <td>
+              <div class="acciones">
+                @if (porPausar() === p.idPublicacion) {
+                  <span>¿Pausar?</span>
+                  <button type="button" class="enlace" (click)="pausar(p)">Sí, pausar</button>
+                  <button type="button" class="enlace secundario" (click)="porPausar.set(null)">Cancelar</button>
+                } @else if (porEliminar() === p.idPublicacion) {
+                  <span>¿Eliminar?</span>
+                  <button type="button" class="enlace peligro" (click)="eliminar(p)">Sí, eliminar</button>
+                  <button type="button" class="enlace secundario" (click)="porEliminar.set(null)">Cancelar</button>
+                } @else {
+                  @switch (p.estado) {
+                    @case ('BORRADOR') {
+                      <a [routerLink]="['/anfitrion/publicaciones', p.idPublicacion, 'editar']">Completar</a>
+                    }
+                    @case ('BLOQUEADA') {
+                      <a [routerLink]="['/anfitrion/publicaciones', p.idPublicacion, 'editar']">Editar</a>
+                    }
+                    @default {
+                      <a [routerLink]="['/anfitrion/publicaciones', p.idPublicacion, 'editar']">Editar</a>
+                      @if (p.estado === 'ACTIVA') {
+                        <button type="button" class="enlace" (click)="porPausar.set(p.idPublicacion)">Pausar</button>
+                      }
+                      <a routerLink="/anfitrion/disponibilidad" [queryParams]="{ publicacion: p.idPublicacion }">Disponibilidad</a>
                     }
                   }
+                  <button type="button" class="enlace peligro" (click)="porEliminar.set(p.idPublicacion)">Eliminar</button>
+                  @if (p.estado === 'BLOQUEADA') {
+                    <small class="nota">Publicación bloqueada por administrador. No aparecerá en búsquedas.</small>
+                  }
                 }
-                <button type="button" class="enlace peligro" (click)="porEliminar.set(p.idPublicacion)">Eliminar</button>
-                @if (p.estado === 'BLOQUEADA') {
-                  <small class="nota">Publicación bloqueada por administrador. No aparecerá en búsquedas.</small>
-                }
-              }
+              </div>
             </td>
           </tr>
         } @empty {
