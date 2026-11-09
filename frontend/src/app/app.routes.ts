@@ -8,6 +8,7 @@ import { MisPublicaciones } from './pages/mis-publicaciones/mis-publicaciones';
 import { FormularioPublicacion } from './pages/formulario-publicacion/formulario-publicacion';
 import { Disponibilidad } from './pages/disponibilidad/disponibilidad';
 import { Explorar } from './pages/explorar/explorar';
+import { DetallePublicacion } from './pages/detalle-publicacion/detalle-publicacion';
 import { conSesion, sinSesion } from './utils/guards';
 import { alInicioDelRol, soloAnfitrion } from './utils/guards-rol';
 
@@ -23,5 +24,6 @@ export const routes: Routes = [
   { path: 'anfitrion/publicaciones/:id/editar', component: FormularioPublicacion, canActivate: [soloAnfitrion] },
   { path: 'anfitrion/disponibilidad', component: Disponibilidad, canActivate: [soloAnfitrion] },
   { path: 'explorar', component: Explorar },
+  { path: 'publicaciones/:id', component: DetallePublicacion },
   { path: '**', redirectTo: 'login' }
 ];

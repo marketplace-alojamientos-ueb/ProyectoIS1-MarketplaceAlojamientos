@@ -30,3 +30,9 @@ export const TIPOS_ALOJAMIENTO = [
 export function textoTipo(valor: string | null): string {
   return TIPOS_ALOJAMIENTO.find((t) => t.valor === valor)?.texto ?? valor ?? '';
 }
+
+/** Cómo acepta reservas el anfitrión, como lo guarda el back. */
+export const MODOS_ACEPTACION: Record<string, string> = {
+  INMEDIATA: 'Reserva inmediata',
+  CON_APROBACION: 'Con aprobación del anfitrión'
+};
