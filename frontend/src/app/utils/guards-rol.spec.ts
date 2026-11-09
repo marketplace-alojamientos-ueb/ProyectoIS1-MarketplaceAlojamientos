@@ -19,15 +19,15 @@ function correr(guard: CanActivateFn, rol: string | null): string | boolean {
 }
 
 describe('guards por rol', () => {
-  it('alInicioDelRol lleva al anfitrión a sus publicaciones, al huésped a su perfil y sin sesión al login', () => {
+    it('alInicioDelRol lleva al anfitrión a sus publicaciones, al huésped a explorar y sin sesión al login', () => {
     expect(correr(alInicioDelRol, 'ANFITRION')).toBe('/anfitrion/publicaciones');
-    expect(correr(alInicioDelRol, 'HUESPED')).toBe('/perfil');
+    expect(correr(alInicioDelRol, 'HUESPED')).toBe('/explorar');
     expect(correr(alInicioDelRol, null)).toBe('/login');
   });
 
   it('soloAnfitrion deja pasar al anfitrión y devuelve a los demás a su inicio', () => {
     expect(correr(soloAnfitrion, 'ANFITRION')).toBe(true);
-    expect(correr(soloAnfitrion, 'HUESPED')).toBe('/perfil');
+    expect(correr(soloAnfitrion, 'HUESPED')).toBe('/explorar');
     expect(correr(soloAnfitrion, null)).toBe('/login');
   });
 });

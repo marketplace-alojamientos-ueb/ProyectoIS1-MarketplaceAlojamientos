@@ -14,6 +14,7 @@ describe('BarraNavegacion', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Iniciar sesión');
+    expect(fixture.nativeElement.textContent).toContain('Explorar');
     expect(fixture.nativeElement.textContent).toContain('Mi perfil');
     expect(fixture.nativeElement.textContent).not.toContain('Perfil anfitrión');
   });
