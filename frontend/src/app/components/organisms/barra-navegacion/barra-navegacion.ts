@@ -9,8 +9,9 @@ const ENLACES: Record<Rol, { texto: string; ruta: string }[]> = {
   HUESPED: [{ texto: 'Mi perfil', ruta: '/perfil' }],
   ANFITRION: [
     { texto: 'Mis publicaciones', ruta: '/anfitrion/publicaciones' },
+    { texto: 'Disponibilidad', ruta: '/anfitrion/disponibilidad' },
     { texto: 'Mi perfil', ruta: '/perfil' }
-  ]
+    ]
 };
 
 @Component({
