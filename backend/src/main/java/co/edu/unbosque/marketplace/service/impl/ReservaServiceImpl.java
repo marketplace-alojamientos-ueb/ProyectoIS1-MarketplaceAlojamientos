@@ -56,6 +56,15 @@ public class ReservaServiceImpl implements ReservaService {
         return mensaje("La reserva fue confirmada y se notificó al huésped");
     }
 
+    @Override
+    public MensajeResponseDTO rechazar(Integer idReserva, Integer idAnfitrion) {
+        Reserva reserva = obtenerPendienteDelAnfitrion(idReserva, idAnfitrion);
+        reserva.rechazar();
+        reservaRepository.save(reserva);
+        notificarAlHuesped(reserva, "RESERVA_RECHAZADA", "rechazada");
+        return mensaje("La reserva fue rechazada y se notificó al huésped");
+    }
+
     private Reserva obtenerPendienteDelAnfitrion(Integer idReserva, Integer idAnfitrion) {
         exigirAnfitrionHabilitado(idAnfitrion);
         Reserva reserva = reservaRepository.findById(idReserva)

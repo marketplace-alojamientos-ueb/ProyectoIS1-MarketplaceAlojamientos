@@ -43,4 +43,18 @@ class ReservaControllerTest {
         assertEquals(HttpStatus.OK, respuesta.getStatusCode());
         assertEquals("La reserva fue confirmada y se notificó al huésped", respuesta.getBody().getMensaje());
     }
+
+    @Test
+    void rechazarResponde200ConElMensaje() {
+        ReservaService reservaService = mock(ReservaService.class);
+        ReservaController controller = new ReservaController(reservaService);
+        MensajeResponseDTO mensaje = new MensajeResponseDTO();
+        mensaje.setMensaje("La reserva fue rechazada y se notificó al huésped");
+        when(reservaService.rechazar(31, 7)).thenReturn(mensaje);
+
+        ResponseEntity<MensajeResponseDTO> respuesta = controller.rechazar(31, 7);
+
+        assertEquals(HttpStatus.OK, respuesta.getStatusCode());
+        assertEquals("La reserva fue rechazada y se notificó al huésped", respuesta.getBody().getMensaje());
+    }
 }

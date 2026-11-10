@@ -54,6 +54,10 @@ public class Reserva {
         this.estado = EstadoReserva.CONFIRMADA;
     }
 
+    public void rechazar() {
+        this.estado = EstadoReserva.RECHAZADA;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;

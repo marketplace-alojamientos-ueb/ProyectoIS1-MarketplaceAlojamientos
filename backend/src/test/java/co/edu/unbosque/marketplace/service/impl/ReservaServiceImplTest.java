@@ -114,6 +114,20 @@ class ReservaServiceImplTest {
     }
 
     @Test
+    void rechazarMarcaLaReservaComoRechazadaNotificaAlHuespedYNoTocaLasFechas() {
+        MensajeResponseDTO respuesta = servicio.rechazar(31, 7);
+
+        assertEquals(EstadoReserva.RECHAZADA, reserva.getEstado());
+        verify(reservaRepository).save(reserva);
+        verifyNoInteractions(publicacionService);
+        ArgumentCaptor<Notificacion> notificacion = ArgumentCaptor.forClass(Notificacion.class);
+        verify(notificacionRepository).save(notificacion.capture());
+        assertEquals(20, notificacion.getValue().getUsuario().getIdUsuario());
+        assertEquals("RESERVA_RECHAZADA", notificacion.getValue().getTipo());
+        assertEquals("La reserva fue rechazada y se notificó al huésped", respuesta.getMensaje());
+    }
+
+    @Test
     void aceptarUnaReservaDeOtroAnfitrionResponde403SinCambios() {
         ResponseStatusException error = assertThrows(ResponseStatusException.class, () -> servicio.aceptar(31, 8));
 

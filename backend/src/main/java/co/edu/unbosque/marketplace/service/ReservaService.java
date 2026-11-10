@@ -10,4 +10,6 @@ public interface ReservaService {
     List<ReservaPendienteDTO> listarPendientes(Integer idAnfitrion);
 
     MensajeResponseDTO aceptar(Integer idReserva, Integer idAnfitrion);
+
+    MensajeResponseDTO rechazar(Integer idReserva, Integer idAnfitrion);
 }

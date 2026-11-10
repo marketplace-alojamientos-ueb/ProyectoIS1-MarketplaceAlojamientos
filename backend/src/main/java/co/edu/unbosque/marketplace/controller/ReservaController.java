@@ -80,4 +80,26 @@ public class ReservaController {
     public ResponseEntity<MensajeResponseDTO> aceptar(@PathVariable Integer id, @RequestParam Integer idAnfitrion) {
         return ResponseEntity.ok(reservaService.aceptar(id, idAnfitrion));
     }
+
+    /**
+     * <b>POST /api/reservas/{id}/rechazar?idAnfitrion=7</b> — Rechaza una reserva en espera (botón "Rechazar").
+     *
+     * <p>Pide: el id de la reserva en la ruta y, como parámetro <code>idAnfitrion</code>, el id del anfitrión dueño
+     * del alojamiento que decide.</p>
+     * <p>Retorna:</p>
+     * <ul>
+     *   <li><b>200</b> con <code>{ "mensaje": "..." }</code>. La reserva pasa a <code>RECHAZADA</code>, las fechas
+     *       del alojamiento no se tocan y se guarda una notificación para el huésped.</li>
+     *   <li><b>403</b> si el id no es de un anfitrión activo y sin restricciones, o si la reserva no es de un
+     *       alojamiento suyo.</li>
+     *   <li><b>404</b> si la reserva no existe.</li>
+     *   <li><b>409</b> si la reserva ya no está PENDIENTE. No cambia nada.</li>
+     * </ul>
+     * <p>Uso en el front: botón "Rechazar" de cada reserva de la lista de pendientes. Al responder 200, quitarla de
+     * la lista y mostrar el mensaje.</p>
+     */
+    @PostMapping("/{id}/rechazar")
+    public ResponseEntity<MensajeResponseDTO> rechazar(@PathVariable Integer id, @RequestParam Integer idAnfitrion) {
+        return ResponseEntity.ok(reservaService.rechazar(id, idAnfitrion));
+    }
 }
