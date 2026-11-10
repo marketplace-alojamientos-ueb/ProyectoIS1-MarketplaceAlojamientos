@@ -1,5 +1,6 @@
 package co.edu.unbosque.marketplace.controller;
 
+import co.edu.unbosque.marketplace.model.dto.MensajeResponseDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaPendienteDTO;
 import co.edu.unbosque.marketplace.service.ReservaService;
 import org.junit.jupiter.api.Test;
@@ -27,5 +28,19 @@ class ReservaControllerTest {
 
         assertEquals(HttpStatus.OK, respuesta.getStatusCode());
         assertEquals(31, respuesta.getBody().get(0).getIdReserva());
+    }
+
+    @Test
+    void aceptarResponde200ConElMensaje() {
+        ReservaService reservaService = mock(ReservaService.class);
+        ReservaController controller = new ReservaController(reservaService);
+        MensajeResponseDTO mensaje = new MensajeResponseDTO();
+        mensaje.setMensaje("La reserva fue confirmada y se notificó al huésped");
+        when(reservaService.aceptar(31, 7)).thenReturn(mensaje);
+
+        ResponseEntity<MensajeResponseDTO> respuesta = controller.aceptar(31, 7);
+
+        assertEquals(HttpStatus.OK, respuesta.getStatusCode());
+        assertEquals("La reserva fue confirmada y se notificó al huésped", respuesta.getBody().getMensaje());
     }
 }

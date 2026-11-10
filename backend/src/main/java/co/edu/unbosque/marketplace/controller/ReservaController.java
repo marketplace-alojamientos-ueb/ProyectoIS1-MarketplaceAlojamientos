@@ -1,5 +1,6 @@
 package co.edu.unbosque.marketplace.controller;
 
+import co.edu.unbosque.marketplace.model.dto.MensajeResponseDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaPendienteDTO;
 import co.edu.unbosque.marketplace.service.ReservaService;
 import org.springframework.http.ResponseEntity;
@@ -55,5 +56,28 @@ public class ReservaController {
     @GetMapping("/pendientes")
     public ResponseEntity<List<ReservaPendienteDTO>> listarPendientes(@RequestParam Integer idAnfitrion) {
         return ResponseEntity.ok(reservaService.listarPendientes(idAnfitrion));
+    }
+
+    /**
+     * <b>POST /api/reservas/{id}/aceptar?idAnfitrion=7</b> — Acepta una reserva en espera (botón "Aceptar").
+     *
+     * <p>Pide: el id de la reserva en la ruta y, como parámetro <code>idAnfitrion</code>, el id del anfitrión dueño
+     * del alojamiento que decide.</p>
+     * <p>Retorna:</p>
+     * <ul>
+     *   <li><b>200</b> con <code>{ "mensaje": "..." }</code>. La reserva pasa a <code>CONFIRMADA</code>, las fechas
+     *       del alojamiento quedan reservadas y se guarda una notificación para el huésped.</li>
+     *   <li><b>403</b> si el id no es de un anfitrión activo y sin restricciones, o si la reserva no es de un
+     *       alojamiento suyo.</li>
+     *   <li><b>404</b> si la reserva no existe.</li>
+     *   <li><b>409</b> si la reserva ya no está PENDIENTE, o si las fechas ya no están disponibles en el
+     *       alojamiento. En ambos casos no cambia nada.</li>
+     * </ul>
+     * <p>Uso en el front: botón "Aceptar" de cada reserva de la lista de pendientes. Al responder 200, quitarla de la
+     * lista y mostrar el mensaje.</p>
+     */
+    @PostMapping("/{id}/aceptar")
+    public ResponseEntity<MensajeResponseDTO> aceptar(@PathVariable Integer id, @RequestParam Integer idAnfitrion) {
+        return ResponseEntity.ok(reservaService.aceptar(id, idAnfitrion));
     }
 }
