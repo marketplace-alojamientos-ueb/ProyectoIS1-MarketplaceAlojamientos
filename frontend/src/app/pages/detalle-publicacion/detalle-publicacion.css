@@ -1,0 +1,121 @@
+.volver {
+  display: inline-block;
+  margin-bottom: 1rem;
+  text-decoration: none;
+}
+
+.galeria {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.galeria img,
+.sin-foto {
+  width: 100%;
+  height: 260px;
+  object-fit: cover;
+  border-radius: 12px;
+  background: var(--color-borde);
+}
+
+.sin-foto {
+  display: grid;
+  place-items: center;
+  font-size: 4rem;
+  color: var(--color-primario);
+  background: linear-gradient(135deg, rgb(15 118 110 / 12%), rgb(15 118 110 / 4%));
+}
+
+dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.35rem 1rem;
+  margin: 0 0 1.25rem;
+  font-size: 0.9rem;
+}
+
+dt {
+  color: var(--color-texto-suave);
+}
+
+dd {
+  margin: 0;
+  text-align: right;
+}
+
+dd small {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--color-texto-suave);
+}
+
+.columnas {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.tarjeta {
+  padding: 1.5rem;
+  background: #fff;
+  border: 1px solid var(--color-borde);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgb(15 23 42 / 6%);
+}
+
+h1 {
+  font-size: 1.5rem;
+  margin: 0 0 0.25rem;
+}
+
+h2 {
+  font-size: 1.05rem;
+  margin: 1.5rem 0 0.5rem;
+}
+
+.sub {
+  margin: 0 0 1rem;
+  color: var(--color-texto-suave);
+}
+
+.servicios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.servicios li {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.85rem;
+  color: var(--color-primario);
+  background: rgb(15 118 110 / 10%);
+  border-radius: 999px;
+}
+
+.precio {
+  font-size: 1.35rem;
+  margin: 0 0 1rem;
+  color: var(--color-primario);
+}
+
+app-alerta {
+  display: block;
+  margin-top: 1rem;
+}
+
+@media (max-width: 760px) {
+  .columnas {
+    grid-template-columns: 1fr;
+  }
+
+  .galeria img,
+  .sin-foto {
+    height: 200px;
+  }
+}

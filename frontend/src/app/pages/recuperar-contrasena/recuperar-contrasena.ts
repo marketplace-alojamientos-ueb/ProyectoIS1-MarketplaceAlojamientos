@@ -8,6 +8,7 @@ import { FormularioRestablecer } from '../../components/organisms/formulario-res
 import { FormularioSolicitarCodigo } from '../../components/organisms/formulario-solicitar-codigo/formulario-solicitar-codigo';
 import { PlantillaAutenticacion } from '../../components/templates/plantilla-autenticacion/plantilla-autenticacion';
 import { RecuperarContrasenaRequest } from '../../models/recuperacion-contrasena.model';
+import { SesionService } from '../../services/sesion.service';
 import { UsuarioService } from '../../services/usuario.service';
 import { mensajeDelBack } from '../../utils/errores';
 
@@ -24,7 +25,7 @@ export class RecuperarContrasena {
   private readonly router = inject(Router);
 
   protected readonly paso = signal<Paso>(1);
-  protected readonly correo = signal('');
+  protected readonly correo = signal(inject(SesionService).usuario()?.correo ?? '');
   protected readonly cargando = signal(false);
   protected readonly error = signal('');
   /** Mensaje que devuelve el back en cada paso. */

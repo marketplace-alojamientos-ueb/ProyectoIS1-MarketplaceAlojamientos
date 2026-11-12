@@ -1,0 +1,61 @@
+.tarjeta {
+  display: block;
+  height: 100%;
+  overflow: hidden;
+  color: inherit;
+  font-weight: 400;
+  text-decoration: none;
+  background: #fff;
+  border: 1px solid var(--color-borde);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgb(15 23 42 / 6%);
+  transition: transform 0.15s, border-color 0.15s;
+}
+
+.tarjeta:hover {
+  color: inherit;
+  transform: translateY(-3px);
+  border-color: var(--color-primario);
+}
+
+.tarjeta:focus-visible {
+  outline: 3px solid var(--color-foco);
+  outline-offset: 2px;
+}
+
+/* La búsqueda del back no trae imágenes (solo el detalle), así que la tarjeta muestra un ícono. */
+.portada {
+  display: grid;
+  place-items: center;
+  height: 150px;
+  font-size: 3rem;
+  color: var(--color-primario);
+  background: linear-gradient(135deg, rgb(15 118 110 / 12%), rgb(15 118 110 / 4%));
+}
+
+.info {
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+.fila {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  color: var(--color-texto-suave);
+}
+
+h3 {
+  font-size: 1.05rem;
+  margin: 0.35rem 0 0.25rem;
+}
+
+.detalle {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-texto-suave);
+}
+
+.precio {
+  margin: 0.75rem 0 0;
+  color: var(--color-primario);
+}
