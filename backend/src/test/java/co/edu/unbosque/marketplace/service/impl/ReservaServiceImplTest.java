@@ -10,7 +10,9 @@ import co.edu.unbosque.marketplace.model.entity.Reserva;
 import co.edu.unbosque.marketplace.model.entity.Usuario;
 import co.edu.unbosque.marketplace.model.enums.EstadoReserva;
 import co.edu.unbosque.marketplace.repository.AnfitrionRepository;
+import co.edu.unbosque.marketplace.repository.HuespedRepository;
 import co.edu.unbosque.marketplace.repository.NotificacionRepository;
+import co.edu.unbosque.marketplace.repository.PagoRepository;
 import co.edu.unbosque.marketplace.repository.ReservaRepository;
 import co.edu.unbosque.marketplace.service.PublicacionService;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,7 +45,7 @@ class ReservaServiceImplTest {
         publicacionService = mock(PublicacionService.class);
         notificacionRepository = mock(NotificacionRepository.class);
         servicio = new ReservaServiceImpl(reservaRepository, anfitrionRepository, publicacionService,
-                notificacionRepository);
+                notificacionRepository, mock(HuespedRepository.class), mock(PagoRepository.class));
 
         Anfitrion anfitrion = anfitrion(7, "1012345678", "ana@correo.com");
         Anfitrion otroAnfitrion = anfitrion(8, "1011111111", "otro@correo.com");
