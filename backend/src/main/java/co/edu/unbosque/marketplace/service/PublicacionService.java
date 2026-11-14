@@ -62,4 +62,11 @@ public interface PublicacionService {
      * publicación no existe, y 409 si no está ACTIVA o si alguna noche del rango ya no está disponible.
      */
     Publicacion obtenerParaReservar(Integer idPublicacion, LocalDate fechaLlegada, LocalDate fechaSalida);
+
+    /**
+     * Bloquea la fila de la publicación hasta que termine la transacción, sin revisar nada más: si otra reserva de la
+     * misma publicación está en curso, espera a que termine. No tiene endpoint: lo llama el servicio de reservas antes
+     * de volver a revisar la clave de idempotencia. Responde 404 si la publicación no existe.
+     */
+    void esperarTurnoParaReservar(Integer idPublicacion);
 }

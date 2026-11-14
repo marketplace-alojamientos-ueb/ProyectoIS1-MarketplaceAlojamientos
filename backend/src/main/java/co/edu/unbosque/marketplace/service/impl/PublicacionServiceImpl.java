@@ -281,6 +281,12 @@ public class PublicacionServiceImpl implements PublicacionService {
     }
 
     @Override
+    public void esperarTurnoParaReservar(Integer idPublicacion) {
+        publicacionRepository.buscarParaBloquearPeriodos(idPublicacion)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "La publicación no existe"));
+    }
+
+    @Override
     public void bloquearPeriodoReservado(Integer idPublicacion, LocalDate fechaLlegada, LocalDate fechaSalida) {
         if (!fechaSalida.isAfter(fechaLlegada)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,

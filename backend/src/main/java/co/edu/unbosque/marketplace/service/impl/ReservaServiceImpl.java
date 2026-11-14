@@ -22,6 +22,7 @@ import co.edu.unbosque.marketplace.service.PublicacionService;
 import co.edu.unbosque.marketplace.service.ReservaService;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -53,7 +54,13 @@ public class ReservaServiceImpl implements ReservaService {
         this.pagoRepository = pagoRepository;
     }
 
+    /**
+     * READ_COMMITTED porque MySQL usa REPEATABLE READ por defecto: con ese nivel, después de esperar el lock de la
+     * publicación la transacción seguiría viendo los períodos y las reservas de antes de esperar, y no lo que dejó la
+     * reserva que tenía el lock (MA-103).
+     */
     @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public ReservaConfirmadaDTO confirmar(ReservaConfirmarRequestDTO dto) {
         exigirFechasValidas(dto.getFechaLlegada(), dto.getFechaSalida());
         Huesped huesped = huespedRepository.findById(dto.getIdHuesped())
@@ -61,8 +68,18 @@ public class ReservaServiceImpl implements ReservaService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN,
                         "Solo un huésped con la cuenta activa puede reservar"));
 
-        // Si la misma petición llega otra vez (doble clic, reintento), se devuelve la reserva ya hecha sin cobrar de nuevo
+        // MA-103 escenarios 1 y 2: si la misma petición llega otra vez (doble clic, reintento), se devuelve la reserva
+        // ya hecha sin crear otra ni cobrar de nuevo
         Optional<Reserva> repetida = reservaRepository.findByClaveIdempotencia(dto.getClaveIdempotencia());
+        if (repetida.isPresent()) {
+            return reservaYaHecha(repetida.get(), huesped);
+        }
+
+        // MA-103 escenario 3: solo una reserva de la publicación avanza a la vez; las demás esperan aquí. Al pasar se
+        // vuelve a buscar la clave, porque si el reintento llegó al mismo tiempo que la original, la original pudo
+        // terminar mientras este esperaba
+        publicacionService.esperarTurnoParaReservar(dto.getIdPublicacion());
+        repetida = reservaRepository.findByClaveIdempotencia(dto.getClaveIdempotencia());
         if (repetida.isPresent()) {
             return reservaYaHecha(repetida.get(), huesped);
         }
@@ -181,7 +198,9 @@ public class ReservaServiceImpl implements ReservaService {
                 .toList();
     }
 
+    /** READ_COMMITTED por lo mismo que confirmar: al bloquear el período tiene que ver lo que dejaron las otras reservas. */
     @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public MensajeResponseDTO aceptar(Integer idReserva, Integer idAnfitrion) {
         Reserva reserva = obtenerPendienteDelAnfitrion(idReserva, idAnfitrion);
         publicacionService.bloquearPeriodoReservado(reserva.getPublicacion().getIdPublicacion(),
