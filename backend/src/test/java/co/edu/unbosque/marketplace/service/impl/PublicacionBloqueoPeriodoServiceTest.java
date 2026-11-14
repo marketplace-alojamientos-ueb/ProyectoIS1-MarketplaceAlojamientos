@@ -2,6 +2,7 @@ package co.edu.unbosque.marketplace.service.impl;
 
 import co.edu.unbosque.marketplace.model.entity.PeriodoDisponibilidad;
 import co.edu.unbosque.marketplace.model.entity.Publicacion;
+import co.edu.unbosque.marketplace.model.enums.EstadoPublicacion;
 import co.edu.unbosque.marketplace.model.enums.TipoPeriodo;
 import co.edu.unbosque.marketplace.repository.AdminRepository;
 import co.edu.unbosque.marketplace.repository.AnfitrionRepository;
@@ -202,6 +203,50 @@ class PublicacionBloqueoPeriodoServiceTest {
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> servicio.bloquearPeriodoReservado(99, dia(1), dia(2)));
+
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+    }
+
+    // ---- obtenerParaReservar (MA-102): revisa la disponibilidad antes del pago, sin tocar los períodos ----
+
+    @Test
+    void obtenerParaReservarDevuelveLaPublicacionActivaSiLasFechasSiguenDisponibles() {
+        publicacion.setEstado(EstadoPublicacion.ACTIVA);
+        agregarPeriodo(1, 20, TipoPeriodo.DISPONIBLE);
+
+        assertSame(publicacion, servicio.obtenerParaReservar(15, dia(5), dia(10)));
+        assertEquals(List.of("1-20-DISPONIBLE"), periodos());
+        verify(publicacionRepository, never()).save(any());
+    }
+
+    @Test
+    void obtenerParaReservarCuandoSePerdioLaDisponibilidadResponde409() {
+        publicacion.setEstado(EstadoPublicacion.ACTIVA);
+        agregarPeriodo(1, 20, TipoPeriodo.DISPONIBLE);
+        agregarPeriodo(6, 8, TipoPeriodo.RESERVADO);
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> servicio.obtenerParaReservar(15, dia(5), dia(10)));
+
+        assertEquals(HttpStatus.CONFLICT, ex.getStatusCode());
+        assertTrue(ex.getReason().contains("Se perdió la disponibilidad"));
+    }
+
+    @Test
+    void obtenerParaReservarUnaPublicacionNoActivaResponde409() {
+        publicacion.setEstado(EstadoPublicacion.PAUSADA);
+        agregarPeriodo(1, 20, TipoPeriodo.DISPONIBLE);
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> servicio.obtenerParaReservar(15, dia(5), dia(10)));
+
+        assertEquals(HttpStatus.CONFLICT, ex.getStatusCode());
+    }
+
+    @Test
+    void obtenerParaReservarUnaPublicacionQueNoExisteResponde404() {
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> servicio.obtenerParaReservar(99, dia(1), dia(2)));
 
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
     }

@@ -43,7 +43,8 @@ public class Reserva {
     @JoinColumn(name = "id_publicacion", nullable = false)
     private Publicacion publicacion;
 
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    /** La cotización se guarda junto con la reserva nueva. */
+    @OneToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.PERSIST)
     @JoinColumn(name = "id_cotizacion", nullable = false, unique = true)
     private Cotizacion cotizacion;
 

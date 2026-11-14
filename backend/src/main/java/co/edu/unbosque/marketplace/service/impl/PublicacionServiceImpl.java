@@ -267,6 +267,20 @@ public class PublicacionServiceImpl implements PublicacionService {
     }
 
     @Override
+    public Publicacion obtenerParaReservar(Integer idPublicacion, LocalDate fechaLlegada, LocalDate fechaSalida) {
+        Publicacion publicacion = publicacionRepository.buscarParaBloquearPeriodos(idPublicacion)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "La publicación no existe"));
+        if (publicacion.getEstado() != EstadoPublicacion.ACTIVA) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "La publicación no está disponible para reservar");
+        }
+        if (!estaDisponible(publicacion, fechaLlegada, fechaSalida)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Se perdió la disponibilidad: las fechas seleccionadas ya no están disponibles");
+        }
+        return publicacion;
+    }
+
+    @Override
     public void bloquearPeriodoReservado(Integer idPublicacion, LocalDate fechaLlegada, LocalDate fechaSalida) {
         if (!fechaSalida.isAfter(fechaLlegada)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
