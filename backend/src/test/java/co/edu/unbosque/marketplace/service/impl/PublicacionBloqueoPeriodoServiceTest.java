@@ -243,6 +243,27 @@ class PublicacionBloqueoPeriodoServiceTest {
         assertEquals(HttpStatus.CONFLICT, ex.getStatusCode());
     }
 
+    // ---- esperarTurnoParaReservar (MA-103): solo toma el lock de la publicación ----
+
+    @Test
+    void esperarTurnoParaReservarTomaElLockSinTocarLosPeriodos() {
+        agregarPeriodo(1, 20, TipoPeriodo.DISPONIBLE);
+
+        servicio.esperarTurnoParaReservar(15);
+
+        verify(publicacionRepository).buscarParaBloquearPeriodos(15);
+        assertEquals(List.of("1-20-DISPONIBLE"), periodos());
+        verify(publicacionRepository, never()).save(any());
+    }
+
+    @Test
+    void esperarTurnoParaReservarUnaPublicacionQueNoExisteResponde404() {
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> servicio.esperarTurnoParaReservar(99));
+
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+    }
+
     @Test
     void obtenerParaReservarUnaPublicacionQueNoExisteResponde404() {
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
