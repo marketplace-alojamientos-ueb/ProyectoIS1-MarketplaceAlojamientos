@@ -15,4 +15,6 @@ export class Entrada {
   readonly autocomplete = input('off');
   readonly modoTeclado = input<'text' | 'numeric' | 'email'>('text');
   readonly invalida = input(false);
+  /** Texto de la etiqueta; se repite como aria-label para que el input tenga nombre accesible por sí mismo (Sonar). */
+  readonly etiqueta = input('');
 }
