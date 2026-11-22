@@ -72,4 +72,4 @@ describe('DetallePublicacion', () => {
     fixture.detectChanges();
     expect(texto()).toContain('El alojamiento no está disponible');
   });
-});
+});

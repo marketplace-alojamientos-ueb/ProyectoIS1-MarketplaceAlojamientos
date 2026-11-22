@@ -218,4 +218,4 @@ export class FormularioPublicacion {
     });
     this.periodosGuardados.set(p.periodos ?? []);
   }
-}
+}

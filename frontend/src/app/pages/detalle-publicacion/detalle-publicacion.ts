@@ -44,4 +44,4 @@ export class DetallePublicacion {
         error: (e: HttpErrorResponse) => this.error.set(mensajeDelBack(e))
       });
   }
-}
+}
