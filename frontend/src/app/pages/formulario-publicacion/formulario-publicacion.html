@@ -49,6 +49,7 @@
           <app-etiqueta para="pub-descripcion">Descripción</app-etiqueta>
           <textarea
             id="pub-descripcion"
+            aria-label="Descripción"
             rows="4"
             formControlName="descripcion"
             [class.invalida]="!!error(form.controls.descripcion)"
@@ -61,7 +62,7 @@
         <div class="fila">
           <div class="campo">
             <app-etiqueta para="pub-tipo">Tipo de alojamiento</app-etiqueta>
-            <select id="pub-tipo" formControlName="tipoAlojamiento" [class.invalida]="!!error(form.controls.tipoAlojamiento)">
+            <select id="pub-tipo" aria-label="Tipo de alojamiento" formControlName="tipoAlojamiento" [class.invalida]="!!error(form.controls.tipoAlojamiento)">
               <option value="">Selecciona</option>
               @for (tipo of tipos; track tipo.valor) {
                 <option [value]="tipo.valor">{{ tipo.texto }}</option>
@@ -124,7 +125,7 @@
         <h2>3. Reglas y políticas</h2>
         <div class="campo">
           <app-etiqueta para="pub-reglas" [opcional]="true">Reglas de la casa</app-etiqueta>
-          <textarea id="pub-reglas" rows="3" formControlName="reglas"></textarea>
+          <textarea id="pub-reglas" aria-label="Reglas de la casa" rows="3" formControlName="reglas"></textarea>
           @if (error(form.controls.reglas); as e) {
             <small class="error">{{ e }}</small>
           }
@@ -132,7 +133,7 @@
 
         <div class="campo">
           <app-etiqueta para="pub-politica">Política de cancelación</app-etiqueta>
-          <select id="pub-politica" formControlName="politicaCancelacion" [class.invalida]="!!error(form.controls.politicaCancelacion)">
+          <select id="pub-politica" aria-label="Política de cancelación" formControlName="politicaCancelacion" [class.invalida]="!!error(form.controls.politicaCancelacion)">
             <option value="">Selecciona</option>
             @for (politica of politicas(); track politica.codigo) {
               <option [value]="politica.codigo">{{ politica.nombre }}</option>
