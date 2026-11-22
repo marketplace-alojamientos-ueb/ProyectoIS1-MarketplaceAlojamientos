@@ -49,10 +49,10 @@
             }
           </dd>
         </dl>
-        <app-alerta tipo="info">Las reservas aún no están habilitadas en la plataforma.</app-alerta>
+        <app-formulario-reserva [publicacion]="p" />
       </aside>
     </div>
   } @else if (error()) {
     <app-alerta tipo="error">{{ error() }}</app-alerta>
   }
-</app-plantilla-principal>
+</app-plantilla-principal>

@@ -109,6 +109,12 @@ app-alerta {
   margin-top: 1rem;
 }
 
+app-formulario-reserva {
+  display: block;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-borde);
+}
+
 @media (max-width: 760px) {
   .columnas {
     grid-template-columns: 1fr;
@@ -118,4 +124,4 @@ app-alerta {
   .sin-foto {
     height: 200px;
   }
-}
+}

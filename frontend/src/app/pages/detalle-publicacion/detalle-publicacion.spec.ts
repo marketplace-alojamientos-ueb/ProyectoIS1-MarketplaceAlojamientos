@@ -56,14 +56,14 @@ describe('DetallePublicacion', () => {
     expect(fixture.nativeElement.querySelector('img').getAttribute('src')).toBe('https://imagenes.test/1.jpg');
   });
 
-  it('sin imágenes muestra un ícono y no ofrece reservar todavía', () => {
+  it('sin imágenes muestra un ícono; sin sesión invita a iniciar sesión para reservar', () => {
     const { fixture, req, texto } = crear();
     req.flush({ ...DETALLE, imagenes: [], servicios: [], reglas: null, politicaCancelacion: 'OTRA', tipoAlojamiento: 'GLAMPING' });
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.sin-foto')).not.toBeNull();
     expect(texto()).toContain('OTRA');
     expect(texto()).toContain('GLAMPING en Cartagena');
-    expect(texto()).toContain('Las reservas aún no están habilitadas');
+    expect(texto()).toContain('inicia sesión');
   });
 
   it('avisa si el alojamiento no existe o no está activo', () => {
@@ -72,4 +72,4 @@ describe('DetallePublicacion', () => {
     fixture.detectChanges();
     expect(texto()).toContain('El alojamiento no está disponible');
   });
-});
+});
