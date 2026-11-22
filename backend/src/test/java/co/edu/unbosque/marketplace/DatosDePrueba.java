@@ -4,10 +4,13 @@ import co.edu.unbosque.marketplace.model.dto.AnfitrionActualizarDTO;
 import co.edu.unbosque.marketplace.model.dto.AnfitrionRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.LoginRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.LoginResponseDTO;
+import co.edu.unbosque.marketplace.model.dto.PeriodoDisponibilidadRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.RecuperarContrasenaRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.RestablecerContrasenaRequestDTO;
 import co.edu.unbosque.marketplace.model.enums.ModoAceptacion;
+import java.time.LocalDate;
+import java.util.List;
 
 /** Arma los DTOs que usan las pruebas, llenándolos con sus setters. */
 public final class DatosDePrueba {
@@ -82,6 +85,15 @@ public final class DatosDePrueba {
         dto.setPrecioPorNoche(180000.0);
         dto.setModoAceptacion(ModoAceptacion.INMEDIATA);
         dto.setPoliticaCancelacion("FLEXIBLE");
+        LocalDate manana = LocalDate.now().plusDays(1);
+        dto.setPeriodos(List.of(periodo(manana, manana.plusDays(14))));
+        return dto;
+    }
+
+    public static PeriodoDisponibilidadRequestDTO periodo(LocalDate fechaInicio, LocalDate fechaFin) {
+        PeriodoDisponibilidadRequestDTO dto = new PeriodoDisponibilidadRequestDTO();
+        dto.setFechaInicio(fechaInicio);
+        dto.setFechaFin(fechaFin);
         return dto;
     }
 }

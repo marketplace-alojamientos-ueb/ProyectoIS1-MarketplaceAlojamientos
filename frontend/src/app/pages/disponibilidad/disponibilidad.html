@@ -1,0 +1,107 @@
+<app-plantilla-principal
+  rol="ANFITRION"
+  titulo="Disponibilidad"
+  subtitulo="Consulta los periodos disponibles, bloqueados y reservados de tus alojamientos."
+>
+  @if (publicaciones().length) {
+    <label acciones class="selector">
+      <span>Publicación</span>
+      <select (change)="cambiarPublicacion($event)">
+        @for (p of publicaciones(); track p.idPublicacion) {
+          <option [value]="p.idPublicacion" [selected]="p.idPublicacion === idPublicacion()">{{ p.titulo || 'Sin título' }}</option>
+        }
+      </select>
+    </label>
+  }
+
+  @if (error()) {
+    <app-alerta tipo="error">{{ error() }}</app-alerta>
+  }
+
+  <section class="tarjeta calendario">
+    <div class="navegacion">
+      <button type="button" aria-label="Meses anteriores" (click)="moverMes(-1)">‹</button>
+      <strong>{{ meses()[0].titulo }} – {{ meses()[1].titulo }}</strong>
+      <button type="button" aria-label="Meses siguientes" (click)="moverMes(1)">›</button>
+    </div>
+
+    <div class="meses">
+      @for (mes of meses(); track mes.titulo) {
+        <table>
+          <caption>{{ mes.titulo }}</caption>
+          <thead>
+            <tr>
+              @for (dia of diasSemana; track $index) {
+                <th scope="col">{{ dia }}</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (semana of mes.semanas; track $index) {
+              <tr>
+                @for (dia of semana; track $index) {
+                  <td>
+                    @if (dia) {
+                      <span
+                        class="dia"
+                        [class]="tipoDelDia(dia.fecha)?.toLowerCase() ?? ''"
+                        [class.pasado]="dia.fecha < hoy"
+                        [class.hoy]="dia.fecha === hoy"
+                      >
+                        {{ dia.numero }}
+                      </span>
+                    }
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+
+    <ul class="leyenda">
+      <li><span class="muestra disponible"></span> Disponible</li>
+      <li><span class="muestra reservado"></span> Reservado (automático)</li>
+      <li><span class="muestra bloqueado"></span> Bloqueado</li>
+      <li><span class="muestra"></span> Sin definir</li>
+    </ul>
+  </section>
+
+  <h2>Periodos registrados</h2>
+  <div class="tabla-contenedor">
+    <table class="periodos">
+      <thead>
+        <tr>
+          <th>Desde</th>
+          <th>Hasta (salida)</th>
+          <th>Tipo</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (p of periodos(); track p.idPeriodo) {
+          <tr>
+            <td>{{ p.fechaInicio | date: 'dd/MM/yyyy' }}</td>
+            <td>{{ p.fechaFin | date: 'dd/MM/yyyy' }}</td>
+            <td><app-insignia [tono]="tipos[p.tipo].tono">{{ tipos[p.tipo].texto }}</app-insignia></td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="3" class="vacio">
+              @if (publicaciones().length) {
+                Esta publicación aún no tiene periodos.
+              } @else {
+                Todavía no tienes publicaciones. <a routerLink="/anfitrion/publicaciones/nueva">Crea una</a>.
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <app-alerta tipo="info">
+    Los periodos disponibles se definen al <strong>crear la publicación</strong>. Las fechas se marcan como
+    <strong>reservadas</strong> automáticamente cuando se confirma una reserva.
+  </app-alerta>
+</app-plantilla-principal>

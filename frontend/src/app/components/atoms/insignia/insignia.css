@@ -1,0 +1,43 @@
+.insignia {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.insignia::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.exito {
+  background: #ecfdf3;
+  color: var(--color-exito);
+}
+
+.aviso {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.info {
+  background: #eff6ff;
+  color: var(--color-info);
+}
+
+.error {
+  background: #fef2f2;
+  color: var(--color-error);
+}
+
+.neutro {
+  background: #f3f4f6;
+  color: var(--color-texto-suave);
+}
