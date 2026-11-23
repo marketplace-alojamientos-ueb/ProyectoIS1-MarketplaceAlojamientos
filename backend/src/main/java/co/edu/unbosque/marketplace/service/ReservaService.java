@@ -2,6 +2,7 @@ package co.edu.unbosque.marketplace.service;
 
 import co.edu.unbosque.marketplace.model.dto.MensajeResponseDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaCanceladaDTO;
+import co.edu.unbosque.marketplace.model.dto.ReservaCancelarAnfitrionRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaCancelarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaConfirmadaDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaConfirmarRequestDTO;
@@ -28,4 +29,6 @@ public interface ReservaService {
     ReservaConfirmadaDTO confirmar(ReservaConfirmarRequestDTO dto);
 
     ReservaCanceladaDTO cancelar(Integer idReserva, ReservaCancelarRequestDTO dto);
+
+    ReservaCanceladaDTO cancelarComoAnfitrion(Integer idReserva, ReservaCancelarAnfitrionRequestDTO dto);
 }

@@ -2,6 +2,7 @@ package co.edu.unbosque.marketplace.controller;
 
 import co.edu.unbosque.marketplace.model.dto.MensajeResponseDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaCanceladaDTO;
+import co.edu.unbosque.marketplace.model.dto.ReservaCancelarAnfitrionRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaCancelarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaConfirmadaDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaConfirmarRequestDTO;
@@ -192,5 +193,45 @@ public class ReservaController {
     public ResponseEntity<ReservaCanceladaDTO> cancelar(@PathVariable Integer id,
                                                         @Valid @RequestBody ReservaCancelarRequestDTO dto) {
         return ResponseEntity.ok(reservaService.cancelar(id, dto));
+    }
+
+    /**
+     * <b>POST /api/reservas/{id}/cancelar-anfitrion</b> — El anfitrión cancela una reserva de su alojamiento (botón
+     * "Cancelar reserva" en la gestión de reservas del anfitrión).
+     *
+     * <p>Pide: el id de la reserva en la ruta y en el cuerpo:</p>
+     * <pre>
+     * {
+     *   "idAnfitrion": 7,
+     *   "motivo": "Imprevisto en la propiedad"   // obligatorio, máximo 500 caracteres
+     * }
+     * </pre>
+     * <p>Retorna:</p>
+     * <ul>
+     *   <li><b>200</b> con el ReservaCanceladaDTO, el mismo de la cancelación del huésped:
+     *   <pre>
+     * {
+     *   "idReserva": 31, "estado": "CANCELADA", "valorDevolucion": 0.0,
+     *   "estadoDevolucion": "SIN_DEVOLUCION",
+     *   "mensaje": "La reserva fue cancelada"
+     * }
+     *   </pre>
+     *   La reserva queda CANCELADA, las fechas vuelven a quedar disponibles, se guarda la cancelación y se notifica
+     *   al huésped. Por ahora esta cancelación no calcula devolución, así que <code>"valorDevolucion"</code> es 0.</li>
+     *   <li><b>400</b> si falta el anfitrión o el motivo, o el motivo pasa de 500 caracteres.</li>
+     *   <li><b>403</b> si el id no es de un anfitrión con la cuenta activa y sin restricciones, o si la reserva no es
+     *       de uno de sus alojamientos.</li>
+     *   <li><b>404</b> si la reserva no existe.</li>
+     *   <li><b>409</b> si la reserva no se puede cancelar, por ejemplo porque ya está CANCELADA. El mensaje trae su
+     *       estado actual y no cambia nada.</li>
+     * </ul>
+     * <p>Uso en el front: botón "Cancelar reserva" para el anfitrión, con un campo para el motivo. Al responder 200
+     * mostrar el <code>"mensaje"</code> y actualizar el estado de la reserva. En 403 y 409 mostrar el
+     * <code>"message"</code> del error.</p>
+     */
+    @PostMapping("/{id}/cancelar-anfitrion")
+    public ResponseEntity<ReservaCanceladaDTO> cancelarComoAnfitrion(@PathVariable Integer id,
+                                                                     @Valid @RequestBody ReservaCancelarAnfitrionRequestDTO dto) {
+        return ResponseEntity.ok(reservaService.cancelarComoAnfitrion(id, dto));
     }
 }
