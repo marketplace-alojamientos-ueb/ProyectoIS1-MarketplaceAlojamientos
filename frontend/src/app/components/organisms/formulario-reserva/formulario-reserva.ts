@@ -10,7 +10,7 @@ import { ReservaConfirmada } from '../../../models/reserva.model';
 import { PublicacionService } from '../../../services/publicacion.service';
 import { ReservaService } from '../../../services/reserva.service';
 import { SesionService } from '../../../services/sesion.service';
-import { aISO } from '../../../utils/calendario';
+import { aISO, nochesEntre } from '../../../utils/calendario';
 import { mensajeDelBack } from '../../../utils/errores';
 import { mensajeError } from '../../../utils/validaciones';
 import { Alerta } from '../../atoms/alerta/alerta';
@@ -20,14 +20,6 @@ import { CampoFormulario } from '../../molecules/campo-formulario/campo-formular
 
 const ENTERO_POSITIVO = /^[1-9]\d*$/;
 const TARJETA = /^\d{16}$/;
-const MS_DIA = 24 * 60 * 60 * 1000;
-
-/** Noches entre dos fechas AAAA-MM-DD (0 si falta alguna o la salida no es posterior). */
-export function nochesEntre(llegada: string, salida: string): number {
-  if (!llegada || !salida) return 0;
-  const noches = Math.round((Date.parse(salida) - Date.parse(llegada)) / MS_DIA);
-  return noches > 0 ? noches : 0;
-}
 
 /** La salida debe ser posterior a la llegada (misma regla del back). */
 function salidaPosterior(grupo: AbstractControl): ValidationErrors | null {

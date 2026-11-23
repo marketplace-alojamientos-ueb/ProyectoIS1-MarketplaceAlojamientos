@@ -13,6 +13,7 @@ const ENLACES: Record<Rol, { texto: string; ruta: string }[]> = {
   ANFITRION: [
     { texto: 'Mis publicaciones', ruta: '/anfitrion/publicaciones' },
     { texto: 'Disponibilidad', ruta: '/anfitrion/disponibilidad' },
+    { texto: 'Reservas pendientes', ruta: '/anfitrion/reservas' },
     { texto: 'Mi perfil', ruta: '/perfil' }
     ]
 };
