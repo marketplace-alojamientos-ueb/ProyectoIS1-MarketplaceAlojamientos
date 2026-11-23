@@ -1,6 +1,8 @@
 package co.edu.unbosque.marketplace.service;
 
 import co.edu.unbosque.marketplace.model.dto.MensajeResponseDTO;
+import co.edu.unbosque.marketplace.model.dto.ReservaCanceladaDTO;
+import co.edu.unbosque.marketplace.model.dto.ReservaCancelarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaConfirmadaDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaConfirmarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaPendienteDTO;
@@ -24,4 +26,6 @@ public interface ReservaService {
      * 402 si el pago es rechazado (sin crear la reserva ni bloquear el período).
      */
     ReservaConfirmadaDTO confirmar(ReservaConfirmarRequestDTO dto);
+
+    ReservaCanceladaDTO cancelar(Integer idReserva, ReservaCancelarRequestDTO dto);
 }

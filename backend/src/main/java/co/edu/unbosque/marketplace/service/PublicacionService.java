@@ -69,4 +69,6 @@ public interface PublicacionService {
      * de volver a revisar la clave de idempotencia. Responde 404 si la publicación no existe.
      */
     void esperarTurnoParaReservar(Integer idPublicacion);
+
+    void liberarPeriodoReservado(Integer idPublicacion, LocalDate fechaLlegada, LocalDate fechaSalida);
 }

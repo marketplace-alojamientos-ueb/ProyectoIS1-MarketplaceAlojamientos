@@ -18,6 +18,7 @@ import java.util.Objects;
 public class Pago {
 
     public static final String TIPO_PAGO = "PAGO";
+    public static final String TIPO_DEVOLUCION = "DEVOLUCION";
     public static final String APROBADO = "APROBADO";
 
     @Id
