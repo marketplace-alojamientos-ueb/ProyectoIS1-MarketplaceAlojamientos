@@ -11,6 +11,7 @@ import co.edu.unbosque.marketplace.model.entity.Usuario;
 import co.edu.unbosque.marketplace.model.enums.EstadoReserva;
 import co.edu.unbosque.marketplace.repository.AnfitrionRepository;
 import co.edu.unbosque.marketplace.repository.CancelacionRepository;
+import co.edu.unbosque.marketplace.repository.EventoAuditoriaRepository;
 import co.edu.unbosque.marketplace.repository.HuespedRepository;
 import co.edu.unbosque.marketplace.repository.NotificacionRepository;
 import co.edu.unbosque.marketplace.repository.PagoRepository;
@@ -47,7 +48,7 @@ class ReservaServiceImplTest {
         notificacionRepository = mock(NotificacionRepository.class);
         servicio = new ReservaServiceImpl(reservaRepository, anfitrionRepository, publicacionService,
                 notificacionRepository, mock(HuespedRepository.class), mock(PagoRepository.class),
-                mock(CancelacionRepository.class));
+                mock(CancelacionRepository.class), mock(EventoAuditoriaRepository.class));
 
         Anfitrion anfitrion = anfitrion(7, "1012345678", "ana@correo.com");
         Anfitrion otroAnfitrion = anfitrion(8, "1011111111", "otro@correo.com");

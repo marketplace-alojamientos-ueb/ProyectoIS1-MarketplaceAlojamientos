@@ -8,6 +8,7 @@ import co.edu.unbosque.marketplace.model.dto.ReservaConfirmarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaPendienteDTO;
 import co.edu.unbosque.marketplace.model.entity.Cancelacion;
 import co.edu.unbosque.marketplace.model.entity.Cotizacion;
+import co.edu.unbosque.marketplace.model.entity.EventoAuditoria;
 import co.edu.unbosque.marketplace.model.entity.Huesped;
 import co.edu.unbosque.marketplace.model.entity.Notificacion;
 import co.edu.unbosque.marketplace.model.entity.Pago;
@@ -20,6 +21,7 @@ import co.edu.unbosque.marketplace.model.enums.EstadoReserva;
 import co.edu.unbosque.marketplace.model.enums.ModoAceptacion;
 import co.edu.unbosque.marketplace.repository.AnfitrionRepository;
 import co.edu.unbosque.marketplace.repository.CancelacionRepository;
+import co.edu.unbosque.marketplace.repository.EventoAuditoriaRepository;
 import co.edu.unbosque.marketplace.repository.HuespedRepository;
 import co.edu.unbosque.marketplace.repository.NotificacionRepository;
 import co.edu.unbosque.marketplace.repository.PagoRepository;
@@ -49,11 +51,13 @@ public class ReservaServiceImpl implements ReservaService {
     private final HuespedRepository huespedRepository;
     private final PagoRepository pagoRepository;
     private final CancelacionRepository cancelacionRepository;
+    private final EventoAuditoriaRepository eventoAuditoriaRepository;
 
     public ReservaServiceImpl(ReservaRepository reservaRepository, AnfitrionRepository anfitrionRepository,
                               PublicacionService publicacionService, NotificacionRepository notificacionRepository,
                               HuespedRepository huespedRepository, PagoRepository pagoRepository,
-                              CancelacionRepository cancelacionRepository) {
+                              CancelacionRepository cancelacionRepository,
+                              EventoAuditoriaRepository eventoAuditoriaRepository) {
         this.reservaRepository = reservaRepository;
         this.anfitrionRepository = anfitrionRepository;
         this.publicacionService = publicacionService;
@@ -61,6 +65,7 @@ public class ReservaServiceImpl implements ReservaService {
         this.huespedRepository = huespedRepository;
         this.pagoRepository = pagoRepository;
         this.cancelacionRepository = cancelacionRepository;
+        this.eventoAuditoriaRepository = eventoAuditoriaRepository;
     }
 
     /**
@@ -182,6 +187,7 @@ public class ReservaServiceImpl implements ReservaService {
         if (devolucion > 0) {
             registrarDevolucion(reserva, huesped, devolucion);
         }
+        registrarEventoDeCancelacion(reserva, cancelacion);
 
         String fechas = " del " + reserva.getFechaLlegada() + " al " + reserva.getFechaSalida();
         String titulo = reserva.getPublicacion().getTitulo();
@@ -199,6 +205,18 @@ public class ReservaServiceImpl implements ReservaService {
                 ? "La reserva fue cancelada y se devolvió " + devolucion
                 : "La reserva fue cancelada sin devolución");
         return respuesta;
+    }
+
+    private void registrarEventoDeCancelacion(Reserva reserva, Cancelacion cancelacion) {
+        EventoAuditoria evento = new EventoAuditoria();
+        evento.setUsuario(cancelacion.getUsuario());
+        evento.setOperacion(EventoAuditoria.CANCELAR_RESERVA);
+        evento.setEntidadAfectada(EventoAuditoria.ENTIDAD_RESERVA);
+        evento.setIdEntidad(reserva.getIdReserva());
+        evento.setResultado(reserva.getEstado().name());
+        evento.setDetalle("Motivo: " + cancelacion.getMotivo() + ". Devolución: " + cancelacion.getValorDevolucion()
+                + " (" + cancelacion.getEstadoDevolucion() + ")");
+        eventoAuditoriaRepository.save(evento);
     }
 
     private void registrarDevolucion(Reserva reserva, Huesped huesped, double valor) {

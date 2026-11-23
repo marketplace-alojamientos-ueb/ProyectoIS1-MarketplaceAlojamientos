@@ -15,6 +15,7 @@ import co.edu.unbosque.marketplace.model.enums.EstadoReserva;
 import co.edu.unbosque.marketplace.model.enums.ModoAceptacion;
 import co.edu.unbosque.marketplace.repository.AnfitrionRepository;
 import co.edu.unbosque.marketplace.repository.CancelacionRepository;
+import co.edu.unbosque.marketplace.repository.EventoAuditoriaRepository;
 import co.edu.unbosque.marketplace.repository.HuespedRepository;
 import co.edu.unbosque.marketplace.repository.NotificacionRepository;
 import co.edu.unbosque.marketplace.repository.PagoRepository;
@@ -66,7 +67,7 @@ class ReservaConfirmacionServiceTest {
         huespedRepository = mock(HuespedRepository.class);
         pagoRepository = mock(PagoRepository.class);
         servicio = new ReservaServiceImpl(reservaRepository, mock(AnfitrionRepository.class), publicacionService,
-                notificacionRepository, huespedRepository, pagoRepository, mock(CancelacionRepository.class));
+                notificacionRepository, huespedRepository, pagoRepository, mock(CancelacionRepository.class), mock(EventoAuditoriaRepository.class));
 
         Usuario usuarioHuesped = new Usuario("1098765432", "Luis", null, "Pérez", "Soto", "luis@correo.com", "hash");
         usuarioHuesped.setIdUsuario(20);

@@ -5,6 +5,7 @@ import co.edu.unbosque.marketplace.model.dto.ReservaCancelarRequestDTO;
 import co.edu.unbosque.marketplace.model.entity.Anfitrion;
 import co.edu.unbosque.marketplace.model.entity.Cancelacion;
 import co.edu.unbosque.marketplace.model.entity.Cotizacion;
+import co.edu.unbosque.marketplace.model.entity.EventoAuditoria;
 import co.edu.unbosque.marketplace.model.entity.Huesped;
 import co.edu.unbosque.marketplace.model.entity.Notificacion;
 import co.edu.unbosque.marketplace.model.entity.Pago;
@@ -17,6 +18,7 @@ import co.edu.unbosque.marketplace.model.enums.EstadoDevolucion;
 import co.edu.unbosque.marketplace.model.enums.EstadoReserva;
 import co.edu.unbosque.marketplace.repository.AnfitrionRepository;
 import co.edu.unbosque.marketplace.repository.CancelacionRepository;
+import co.edu.unbosque.marketplace.repository.EventoAuditoriaRepository;
 import co.edu.unbosque.marketplace.repository.HuespedRepository;
 import co.edu.unbosque.marketplace.repository.NotificacionRepository;
 import co.edu.unbosque.marketplace.repository.PagoRepository;
@@ -52,6 +54,7 @@ class ReservaCancelacionServiceTest {
     private HuespedRepository huespedRepository;
     private PagoRepository pagoRepository;
     private CancelacionRepository cancelacionRepository;
+    private EventoAuditoriaRepository eventoAuditoriaRepository;
     private ReservaServiceImpl servicio;
     private Reserva reserva;
     private Huesped huesped;
@@ -66,8 +69,10 @@ class ReservaCancelacionServiceTest {
         huespedRepository = mock(HuespedRepository.class);
         pagoRepository = mock(PagoRepository.class);
         cancelacionRepository = mock(CancelacionRepository.class);
+        eventoAuditoriaRepository = mock(EventoAuditoriaRepository.class);
         servicio = new ReservaServiceImpl(reservaRepository, mock(AnfitrionRepository.class), publicacionService,
-                notificacionRepository, huespedRepository, pagoRepository, cancelacionRepository);
+                notificacionRepository, huespedRepository, pagoRepository, cancelacionRepository,
+                eventoAuditoriaRepository);
 
         huesped = huesped(20, "luis@correo.com");
         when(huespedRepository.findById(20)).thenReturn(Optional.of(huesped));
@@ -125,7 +130,7 @@ class ReservaCancelacionServiceTest {
         assertEquals(estadoEsperado, reserva.getEstado());
         verify(reservaRepository, never()).save(any());
         verify(publicacionService, never()).liberarPeriodoReservado(any(), any(), any());
-        verifyNoInteractions(cancelacionRepository, pagoRepository, notificacionRepository);
+        verifyNoInteractions(cancelacionRepository, pagoRepository, notificacionRepository, eventoAuditoriaRepository);
     }
 
     // Escenario 1
@@ -162,6 +167,17 @@ class ReservaCancelacionServiceTest {
         assertEquals(7, guardadas.get(1).getUsuario().getIdUsuario());
         assertEquals("RESERVA_CANCELADA_POR_HUESPED", guardadas.get(1).getTipo());
 
+        ArgumentCaptor<EventoAuditoria> evento = ArgumentCaptor.forClass(EventoAuditoria.class);
+        verify(eventoAuditoriaRepository).save(evento.capture());
+        assertEquals(huesped.getUsuario(), evento.getValue().getUsuario());
+        assertEquals(EventoAuditoria.CANCELAR_RESERVA, evento.getValue().getOperacion());
+        assertEquals(EventoAuditoria.ENTIDAD_RESERVA, evento.getValue().getEntidadAfectada());
+        assertEquals(31, evento.getValue().getIdEntidad());
+        assertEquals("CANCELADA", evento.getValue().getResultado());
+        assertTrue(evento.getValue().getDetalle().contains("Cambio de planes"));
+        assertTrue(evento.getValue().getDetalle().contains("500000.0"));
+        assertTrue(evento.getValue().getDetalle().contains("DEVUELTA"));
+
         assertEquals(31, respuesta.getIdReserva());
         assertEquals(EstadoReserva.CANCELADA, respuesta.getEstado());
         assertEquals(500000.0, respuesta.getValorDevolucion());
@@ -181,6 +197,9 @@ class ReservaCancelacionServiceTest {
         assertEquals(0.0, cancelacion.getValue().getValorDevolucion());
         assertEquals(EstadoDevolucion.SIN_DEVOLUCION, cancelacion.getValue().getEstadoDevolucion());
         verifyNoInteractions(pagoRepository);
+        ArgumentCaptor<EventoAuditoria> evento = ArgumentCaptor.forClass(EventoAuditoria.class);
+        verify(eventoAuditoriaRepository).save(evento.capture());
+        assertTrue(evento.getValue().getDetalle().contains("SIN_DEVOLUCION"));
         assertEquals(EstadoDevolucion.SIN_DEVOLUCION, respuesta.getEstadoDevolucion());
         assertEquals(EstadoReserva.CANCELADA, respuesta.getEstado());
     }
