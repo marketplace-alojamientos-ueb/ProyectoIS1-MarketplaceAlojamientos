@@ -1,9 +1,12 @@
 package co.edu.unbosque.marketplace.service.impl;
 
 import co.edu.unbosque.marketplace.model.dto.MensajeResponseDTO;
+import co.edu.unbosque.marketplace.model.dto.ReservaCanceladaDTO;
+import co.edu.unbosque.marketplace.model.dto.ReservaCancelarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaConfirmadaDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaConfirmarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaPendienteDTO;
+import co.edu.unbosque.marketplace.model.entity.Cancelacion;
 import co.edu.unbosque.marketplace.model.entity.Cotizacion;
 import co.edu.unbosque.marketplace.model.entity.Huesped;
 import co.edu.unbosque.marketplace.model.entity.Notificacion;
@@ -11,9 +14,12 @@ import co.edu.unbosque.marketplace.model.entity.Pago;
 import co.edu.unbosque.marketplace.model.entity.Publicacion;
 import co.edu.unbosque.marketplace.model.entity.Reserva;
 import co.edu.unbosque.marketplace.model.entity.Usuario;
+import co.edu.unbosque.marketplace.model.entity.politica.PoliticaCancelacion;
+import co.edu.unbosque.marketplace.model.enums.EstadoDevolucion;
 import co.edu.unbosque.marketplace.model.enums.EstadoReserva;
 import co.edu.unbosque.marketplace.model.enums.ModoAceptacion;
 import co.edu.unbosque.marketplace.repository.AnfitrionRepository;
+import co.edu.unbosque.marketplace.repository.CancelacionRepository;
 import co.edu.unbosque.marketplace.repository.HuespedRepository;
 import co.edu.unbosque.marketplace.repository.NotificacionRepository;
 import co.edu.unbosque.marketplace.repository.PagoRepository;
@@ -42,16 +48,19 @@ public class ReservaServiceImpl implements ReservaService {
     private final NotificacionRepository notificacionRepository;
     private final HuespedRepository huespedRepository;
     private final PagoRepository pagoRepository;
+    private final CancelacionRepository cancelacionRepository;
 
     public ReservaServiceImpl(ReservaRepository reservaRepository, AnfitrionRepository anfitrionRepository,
                               PublicacionService publicacionService, NotificacionRepository notificacionRepository,
-                              HuespedRepository huespedRepository, PagoRepository pagoRepository) {
+                              HuespedRepository huespedRepository, PagoRepository pagoRepository,
+                              CancelacionRepository cancelacionRepository) {
         this.reservaRepository = reservaRepository;
         this.anfitrionRepository = anfitrionRepository;
         this.publicacionService = publicacionService;
         this.notificacionRepository = notificacionRepository;
         this.huespedRepository = huespedRepository;
         this.pagoRepository = pagoRepository;
+        this.cancelacionRepository = cancelacionRepository;
     }
 
     /**
@@ -132,6 +141,76 @@ public class ReservaServiceImpl implements ReservaService {
         return toConfirmadaDTO(reserva, pago, conAprobacion
                 ? "El pago fue aprobado y la reserva quedó en espera de que el anfitrión la acepte"
                 : "El pago fue aprobado y la reserva quedó confirmada");
+    }
+
+    @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public ReservaCanceladaDTO cancelar(Integer idReserva, ReservaCancelarRequestDTO dto) {
+        Huesped huesped = huespedRepository.findById(dto.getIdHuesped())
+                .filter(h -> h.getUsuario().estaActiva() && !Boolean.TRUE.equals(h.getUsuario().getRestringido()))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN,
+                        "Solo un huésped con la cuenta activa puede cancelar una reserva"));
+        Reserva reserva = reservaRepository.findById(idReserva)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "La reserva no existe"));
+        if (!reserva.getHuesped().getIdUsuario().equals(huesped.getIdUsuario())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Solo el huésped que hizo la reserva puede cancelarla");
+        }
+        if (reserva.getEstado() != EstadoReserva.CONFIRMADA && reserva.getEstado() != EstadoReserva.PENDIENTE) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "La reserva no se puede cancelar porque su estado es " + reserva.getEstado());
+        }
+
+        boolean teniaElPeriodoBloqueado = reserva.getEstado() == EstadoReserva.CONFIRMADA;
+        PoliticaCancelacion politica = reserva.getPublicacion().getPoliticaCancelacion();
+        double devolucion = politica == null ? 0.0 : politica.calcularDevolucion(reserva);
+
+        reserva.cancelar();
+        reservaRepository.save(reserva);
+        if (teniaElPeriodoBloqueado) {
+            publicacionService.liberarPeriodoReservado(reserva.getPublicacion().getIdPublicacion(),
+                    reserva.getFechaLlegada(), reserva.getFechaSalida());
+        }
+
+        Cancelacion cancelacion = new Cancelacion();
+        cancelacion.setReserva(reserva);
+        cancelacion.setUsuario(huesped.getUsuario());
+        cancelacion.setMotivo(dto.getMotivo().trim());
+        cancelacion.setValorDevolucion(devolucion);
+        cancelacion.setEstadoDevolucion(devolucion > 0 ? EstadoDevolucion.DEVUELTA : EstadoDevolucion.SIN_DEVOLUCION);
+        cancelacionRepository.save(cancelacion);
+        if (devolucion > 0) {
+            registrarDevolucion(reserva, huesped, devolucion);
+        }
+
+        String fechas = " del " + reserva.getFechaLlegada() + " al " + reserva.getFechaSalida();
+        String titulo = reserva.getPublicacion().getTitulo();
+        notificar(huesped.getUsuario(), "RESERVA_CANCELADA",
+                "Cancelaste tu reserva en " + titulo + fechas + ". Devolución: " + devolucion);
+        notificar(reserva.getPublicacion().getAnfitrion().getUsuario(), "RESERVA_CANCELADA_POR_HUESPED",
+                "El huésped canceló su reserva en " + titulo + fechas);
+
+        ReservaCanceladaDTO respuesta = new ReservaCanceladaDTO();
+        respuesta.setIdReserva(reserva.getIdReserva());
+        respuesta.setEstado(reserva.getEstado());
+        respuesta.setValorDevolucion(devolucion);
+        respuesta.setEstadoDevolucion(cancelacion.getEstadoDevolucion());
+        respuesta.setMensaje(devolucion > 0
+                ? "La reserva fue cancelada y se devolvió " + devolucion
+                : "La reserva fue cancelada sin devolución");
+        return respuesta;
+    }
+
+    private void registrarDevolucion(Reserva reserva, Huesped huesped, double valor) {
+        Pago devolucion = new Pago();
+        devolucion.setReserva(reserva);
+        devolucion.setTipoMovimiento(Pago.TIPO_DEVOLUCION);
+        devolucion.setValor(valor);
+        devolucion.setEmisor("MARKETPLACE");
+        devolucion.setReceptor("HUESPED-" + huesped.getIdUsuario());
+        devolucion.setIdTransaccion("SIM-" + UUID.randomUUID());
+        devolucion.setEstado(Pago.APROBADO);
+        pagoRepository.save(devolucion);
     }
 
     private void exigirFechasValidas(LocalDate llegada, LocalDate salida) {

@@ -38,6 +38,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -284,6 +285,30 @@ public class PublicacionServiceImpl implements PublicacionService {
     public void esperarTurnoParaReservar(Integer idPublicacion) {
         publicacionRepository.buscarParaBloquearPeriodos(idPublicacion)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "La publicación no existe"));
+    }
+
+    @Override
+    public void liberarPeriodoReservado(Integer idPublicacion, LocalDate fechaLlegada, LocalDate fechaSalida) {
+        Publicacion publicacion = publicacionRepository.buscarParaBloquearPeriodos(idPublicacion)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "La publicación no existe"));
+        Optional<PeriodoDisponibilidad> reservado = publicacion.getPeriodos().stream()
+                .filter(p -> p.getTipo() == TipoPeriodo.RESERVADO
+                        && !p.getFechaInicio().isAfter(fechaLlegada)
+                        && !p.getFechaFin().isBefore(fechaSalida))
+                .findFirst();
+        if (reservado.isEmpty()) {
+            return;
+        }
+        PeriodoDisponibilidad periodo = reservado.get();
+        publicacion.getPeriodos().remove(periodo);
+        if (periodo.getFechaInicio().isBefore(fechaLlegada)) {
+            publicacion.getPeriodos().add(nuevoPeriodo(periodo.getFechaInicio(), fechaLlegada, TipoPeriodo.RESERVADO));
+        }
+        publicacion.getPeriodos().add(nuevoPeriodo(fechaLlegada, fechaSalida, TipoPeriodo.DISPONIBLE));
+        if (periodo.getFechaFin().isAfter(fechaSalida)) {
+            publicacion.getPeriodos().add(nuevoPeriodo(fechaSalida, periodo.getFechaFin(), TipoPeriodo.RESERVADO));
+        }
+        publicacionRepository.save(publicacion);
     }
 
     @Override
