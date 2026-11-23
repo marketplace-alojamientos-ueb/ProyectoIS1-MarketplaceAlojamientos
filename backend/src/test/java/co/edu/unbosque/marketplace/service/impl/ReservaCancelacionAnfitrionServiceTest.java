@@ -38,10 +38,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-/**
- * Pruebas de cancelar una reserva como anfitrión (MA-96). El anfitrión 7 cancela la reserva 31 de su publicación 15,
- * hecha por el huésped 20.
- */
 class ReservaCancelacionAnfitrionServiceTest {
 
     private ReservaRepository reservaRepository;
@@ -130,7 +126,6 @@ class ReservaCancelacionAnfitrionServiceTest {
         verifyNoInteractions(cancelacionRepository, pagoRepository, notificacionRepository, eventoAuditoriaRepository);
     }
 
-    // Escenario 1
     @Test
     void cancelaUnaReservaConfirmadaLiberaElPeriodoRegistraLaCancelacionYNotificaAlHuesped() {
         ReservaCanceladaDTO respuesta = servicio.cancelarComoAnfitrion(31, solicitud(7, "Imprevisto en la propiedad"));
@@ -224,7 +219,6 @@ class ReservaCancelacionAnfitrionServiceTest {
         assertEquals("Imprevisto", cancelacion.getValue().getMotivo());
     }
 
-    // Escenario 2
     @Test
     void siLaReservaNoEsDeUnAlojamientoDelAnfitrionResponde403YNoCambiaNada() {
         Anfitrion otro = anfitrion(8, "otro@correo.com");

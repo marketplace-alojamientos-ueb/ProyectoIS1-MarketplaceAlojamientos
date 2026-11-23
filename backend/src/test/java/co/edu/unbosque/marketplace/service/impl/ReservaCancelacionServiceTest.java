@@ -40,10 +40,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-/**
- * Pruebas de cancelar una reserva como huésped (MA-95). El huésped 20 cancela la reserva 31 de la publicación 15,
- * cuyo anfitrión es el 7.
- */
 class ReservaCancelacionServiceTest {
 
     private static final ZoneId ZONA = ZoneId.of("America/Bogota");
@@ -133,7 +129,6 @@ class ReservaCancelacionServiceTest {
         verifyNoInteractions(cancelacionRepository, pagoRepository, notificacionRepository, eventoAuditoriaRepository);
     }
 
-    // Escenario 1
     @Test
     void cancelaUnaReservaConfirmadaAplicaLaPoliticaLiberaElPeriodoYNotifica() {
         ReservaCanceladaDTO respuesta = servicio.cancelar(31, solicitud(20, "Cambio de planes"));
@@ -234,7 +229,6 @@ class ReservaCancelacionServiceTest {
         assertEquals("Cambio de planes", cancelacion.getValue().getMotivo());
     }
 
-    // Escenario 2
     @Test
     void siLaReservaNoEsDelHuespedResponde403YNoCambiaNada() {
         Huesped otro = huesped(21, "otro@correo.com");
@@ -279,7 +273,6 @@ class ReservaCancelacionServiceTest {
         verifyNoInteractions(cancelacionRepository, pagoRepository, notificacionRepository);
     }
 
-    // Escenario 3
     @Test
     void siLaReservaYaEstaCanceladaResponde409ConSuEstadoYNoCambiaNada() {
         reserva.setEstado(EstadoReserva.CANCELADA);

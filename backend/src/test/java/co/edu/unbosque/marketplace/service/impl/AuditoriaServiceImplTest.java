@@ -18,7 +18,6 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-/** Pruebas de consultar los eventos de auditoría como administrador. El administrador 4 consulta. */
 class AuditoriaServiceImplTest {
 
     private EventoAuditoriaRepository eventoRepository;

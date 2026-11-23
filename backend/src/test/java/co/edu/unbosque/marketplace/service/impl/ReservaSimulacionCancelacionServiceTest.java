@@ -36,10 +36,6 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-/**
- * Pruebas de calcular la devolución simulada de una cancelación (MA-97). El huésped 20 consulta la reserva 31 de la
- * publicación 15, con un total de 500000.
- */
 class ReservaSimulacionCancelacionServiceTest {
 
     private static final ZoneId ZONA = ZoneId.systemDefault();
@@ -126,7 +122,6 @@ class ReservaSimulacionCancelacionServiceTest {
         verifyNoInteractions(cancelacionRepository, pagoRepository, notificacionRepository, eventoAuditoriaRepository);
     }
 
-    // Escenario 1
     @Test
     void cancelandoDentroDelPlazoMuestraLaDevolucionSimulada() {
         SimulacionCancelacionDTO simulacion = servicio.simularCancelacion(31, 20);
@@ -160,7 +155,6 @@ class ReservaSimulacionCancelacionServiceTest {
         assertEquals(500000.0, simulacion.getValorDevolucion());
     }
 
-    // Escenario 2
     @Test
     void cancelandoFueraDelPlazoLaDevolucionEsCeroYElMensajeLoIndica() {
         llegaraEnHoras(2);
@@ -185,7 +179,6 @@ class ReservaSimulacionCancelacionServiceTest {
         assertNull(simulacion.getPolitica());
     }
 
-    // Escenario 3
     @Test
     void elValorSimuladoEsElMismoQueSeDevuelveAlConfirmarLaCancelacion() {
         SimulacionCancelacionDTO simulacion = servicio.simularCancelacion(31, 20);
