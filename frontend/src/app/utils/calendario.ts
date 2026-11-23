@@ -6,16 +6,6 @@ export function aISO(fecha: Date): string {
 }
 
 
-const MS_DIA = 24 * 60 * 60 * 1000;
-
-/** Noches entre dos fechas AAAA-MM-DD (0 si falta alguna o la salida no es posterior). */
-export function nochesEntre(llegada: string, salida: string): number {
-  if (!llegada || !salida) return 0;
-  const noches = Math.round((Date.parse(salida) - Date.parse(llegada)) / MS_DIA);
-  return noches > 0 ? noches : 0;
-}
-
-
 export function periodosSeCruzan(inicioA: string, finA: string, inicioB: string, finB: string): boolean {
   return inicioA < finB && inicioB < finA;
 }

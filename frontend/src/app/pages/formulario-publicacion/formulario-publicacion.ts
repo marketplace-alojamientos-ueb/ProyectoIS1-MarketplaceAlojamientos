@@ -168,18 +168,11 @@ export class FormularioPublicacion {
         : this.servicio.editar(this.idPublicacion, { ...this.datos(), idUsuario: this.idUsuario });
     peticion.pipe(finalize(() => this.cargando.set(false))).subscribe({
       next: (p) => {
-        void this.router.navigate(['/anfitrion/publicaciones'], { queryParams: { aviso: this.avisoAlGuardar(p) } });
+        const aviso = this.editando ? 'editada' : p.estado === 'BORRADOR' ? 'borrador' : 'revision';
+        void this.router.navigate(['/anfitrion/publicaciones'], { queryParams: { aviso } });
       },
       error: (e: HttpErrorResponse) => this.mensaje.set(mensajeDelBack(e))
     });
-  }
-
-  /** Aviso que muestra "Mis publicaciones" al volver: editada, guardada como borrador o enviada a revisión. */
-  private avisoAlGuardar(p: PublicacionAnfitrion): string {
-    if (this.editando) {
-      return 'editada';
-    }
-    return p.estado === 'BORRADOR' ? 'borrador' : 'revision';
   }
 
   /** Los campos vacíos van como null para que el back los cuente como faltantes. */
@@ -202,7 +195,7 @@ export class FormularioPublicacion {
   }
 
   private cargar(p: PublicacionAnfitrion): void {
-    const texto = (valor: string | number | null) => (valor === null ? '' : String(valor));
+    const texto = (valor: string | number | null) => (valor === null || valor === undefined ? '' : String(valor));
     this.form.setValue({
       titulo: texto(p.titulo),
       descripcion: texto(p.descripcion),
