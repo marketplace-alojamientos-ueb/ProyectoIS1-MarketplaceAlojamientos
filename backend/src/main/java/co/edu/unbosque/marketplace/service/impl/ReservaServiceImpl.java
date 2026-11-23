@@ -4,6 +4,7 @@ import co.edu.unbosque.marketplace.model.dto.MensajeResponseDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaCanceladaDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaCancelarAnfitrionRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaCancelarRequestDTO;
+import co.edu.unbosque.marketplace.model.dto.SimulacionCancelacionDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaConfirmadaDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaConfirmarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaPendienteDTO;
@@ -151,22 +152,37 @@ public class ReservaServiceImpl implements ReservaService {
     }
 
     @Override
-    @Transactional(isolation = Isolation.READ_COMMITTED)
-    public ReservaCanceladaDTO cancelar(Integer idReserva, ReservaCancelarRequestDTO dto) {
-        Huesped huesped = huespedRepository.findById(dto.getIdHuesped())
-                .filter(h -> h.getUsuario().estaActiva() && !Boolean.TRUE.equals(h.getUsuario().getRestringido()))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN,
-                        "Solo un huésped con la cuenta activa puede cancelar una reserva"));
-        Reserva reserva = reservaRepository.findById(idReserva)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "La reserva no existe"));
-        if (!reserva.getHuesped().getIdUsuario().equals(huesped.getIdUsuario())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "Solo el huésped que hizo la reserva puede cancelarla");
-        }
+    @Transactional(readOnly = true)
+    public SimulacionCancelacionDTO simularCancelacion(Integer idReserva, Integer idHuesped) {
+        Huesped huesped = huespedActivo(idHuesped,
+                "Solo un huésped con la cuenta activa puede consultar la devolución de una reserva");
+        Reserva reserva = reservaDelHuesped(idReserva, huesped,
+                "Solo el huésped que hizo la reserva puede consultar su devolución");
         exigirCancelable(reserva);
 
+        double devolucion = devolucionSegunPolitica(reserva);
         PoliticaCancelacion politica = reserva.getPublicacion().getPoliticaCancelacion();
-        double devolucion = politica == null ? 0.0 : politica.calcularDevolucion(reserva);
+        SimulacionCancelacionDTO simulacion = new SimulacionCancelacionDTO();
+        simulacion.setIdReserva(reserva.getIdReserva());
+        simulacion.setEstado(reserva.getEstado());
+        simulacion.setPolitica(politica == null ? null : politica.codigo());
+        simulacion.setValorTotal(reserva.getCotizacion().getTotal());
+        simulacion.setValorDevolucion(devolucion);
+        simulacion.setAplicaDevolucion(devolucion > 0);
+        simulacion.setMensaje(devolucion > 0
+                ? "Si cancelas ahora se te devolverían " + devolucion
+                : "Si cancelas ahora no recibirías devolución, el valor de la devolución es 0");
+        return simulacion;
+    }
+
+    @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public ReservaCanceladaDTO cancelar(Integer idReserva, ReservaCancelarRequestDTO dto) {
+        Huesped huesped = huespedActivo(dto.getIdHuesped(), "Solo un huésped con la cuenta activa puede cancelar una reserva");
+        Reserva reserva = reservaDelHuesped(idReserva, huesped, "Solo el huésped que hizo la reserva puede cancelarla");
+        exigirCancelable(reserva);
+
+        double devolucion = devolucionSegunPolitica(reserva);
         Cancelacion cancelacion = completarCancelacion(reserva, huesped.getUsuario(), dto.getMotivo(), devolucion);
 
         String fechas = " del " + reserva.getFechaLlegada() + " al " + reserva.getFechaSalida();
@@ -196,15 +212,39 @@ public class ReservaServiceImpl implements ReservaService {
         }
         exigirCancelable(reserva);
 
-        Cancelacion cancelacion = completarCancelacion(reserva, anfitrion.getUsuario(), dto.getMotivo(), 0.0);
+        double devolucion = reserva.getCotizacion().getTotal();
+        Cancelacion cancelacion = completarCancelacion(reserva, anfitrion.getUsuario(), dto.getMotivo(), devolucion);
 
         String fechas = " del " + reserva.getFechaLlegada() + " al " + reserva.getFechaSalida();
         String titulo = reserva.getPublicacion().getTitulo();
         notificar(reserva.getHuesped().getUsuario(), "RESERVA_CANCELADA_POR_ANFITRION",
-                "El anfitrión canceló tu reserva en " + titulo + fechas + ". Motivo: " + cancelacion.getMotivo());
+                "El anfitrión canceló tu reserva en " + titulo + fechas + ". Motivo: " + cancelacion.getMotivo()
+                        + ". Devolución: " + devolucion);
         notificar(anfitrion.getUsuario(), "RESERVA_CANCELADA", "Cancelaste la reserva en " + titulo + fechas);
 
-        return toCanceladaDTO(reserva, cancelacion, "La reserva fue cancelada");
+        return toCanceladaDTO(reserva, cancelacion, devolucion > 0
+                ? "La reserva fue cancelada y se devolvió " + devolucion
+                : "La reserva fue cancelada sin devolución");
+    }
+
+    private Huesped huespedActivo(Integer idHuesped, String mensajeSiNoPuede) {
+        return huespedRepository.findById(idHuesped)
+                .filter(h -> h.getUsuario().estaActiva() && !Boolean.TRUE.equals(h.getUsuario().getRestringido()))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, mensajeSiNoPuede));
+    }
+
+    private Reserva reservaDelHuesped(Integer idReserva, Huesped huesped, String mensajeSiNoEsSuya) {
+        Reserva reserva = reservaRepository.findById(idReserva)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "La reserva no existe"));
+        if (!reserva.getHuesped().getIdUsuario().equals(huesped.getIdUsuario())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, mensajeSiNoEsSuya);
+        }
+        return reserva;
+    }
+
+    private double devolucionSegunPolitica(Reserva reserva) {
+        PoliticaCancelacion politica = reserva.getPublicacion().getPoliticaCancelacion();
+        return politica == null ? 0.0 : politica.calcularDevolucion(reserva);
     }
 
     private void exigirCancelable(Reserva reserva) {

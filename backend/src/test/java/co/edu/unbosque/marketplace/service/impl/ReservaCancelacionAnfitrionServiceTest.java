@@ -8,6 +8,7 @@ import co.edu.unbosque.marketplace.model.entity.Cotizacion;
 import co.edu.unbosque.marketplace.model.entity.EventoAuditoria;
 import co.edu.unbosque.marketplace.model.entity.Huesped;
 import co.edu.unbosque.marketplace.model.entity.Notificacion;
+import co.edu.unbosque.marketplace.model.entity.Pago;
 import co.edu.unbosque.marketplace.model.entity.Publicacion;
 import co.edu.unbosque.marketplace.model.entity.Reserva;
 import co.edu.unbosque.marketplace.model.entity.Usuario;
@@ -143,9 +144,17 @@ class ReservaCancelacionAnfitrionServiceTest {
         assertEquals(reserva, cancelacion.getValue().getReserva());
         assertEquals(anfitrion.getUsuario(), cancelacion.getValue().getUsuario());
         assertEquals("Imprevisto en la propiedad", cancelacion.getValue().getMotivo());
-        assertEquals(0.0, cancelacion.getValue().getValorDevolucion());
-        assertEquals(EstadoDevolucion.SIN_DEVOLUCION, cancelacion.getValue().getEstadoDevolucion());
-        verifyNoInteractions(pagoRepository);
+        assertEquals(500000.0, cancelacion.getValue().getValorDevolucion());
+        assertEquals(EstadoDevolucion.DEVUELTA, cancelacion.getValue().getEstadoDevolucion());
+
+        ArgumentCaptor<Pago> pago = ArgumentCaptor.forClass(Pago.class);
+        verify(pagoRepository).save(pago.capture());
+        assertEquals(Pago.TIPO_DEVOLUCION, pago.getValue().getTipoMovimiento());
+        assertEquals(Pago.APROBADO, pago.getValue().getEstado());
+        assertEquals(500000.0, pago.getValue().getValor());
+        assertEquals("MARKETPLACE", pago.getValue().getEmisor());
+        assertEquals("HUESPED-20", pago.getValue().getReceptor());
+        assertTrue(pago.getValue().getIdTransaccion().startsWith("SIM-"));
 
         ArgumentCaptor<EventoAuditoria> evento = ArgumentCaptor.forClass(EventoAuditoria.class);
         verify(eventoAuditoriaRepository).save(evento.capture());
@@ -161,13 +170,38 @@ class ReservaCancelacionAnfitrionServiceTest {
         assertEquals(20, guardadas.get(0).getUsuario().getIdUsuario());
         assertEquals("RESERVA_CANCELADA_POR_ANFITRION", guardadas.get(0).getTipo());
         assertTrue(guardadas.get(0).getMensaje().contains("Imprevisto en la propiedad"));
+        assertTrue(guardadas.get(0).getMensaje().contains("500000.0"));
         assertEquals(7, guardadas.get(1).getUsuario().getIdUsuario());
         assertEquals("RESERVA_CANCELADA", guardadas.get(1).getTipo());
 
         assertEquals(31, respuesta.getIdReserva());
         assertEquals(EstadoReserva.CANCELADA, respuesta.getEstado());
-        assertEquals(0.0, respuesta.getValorDevolucion());
-        assertEquals(EstadoDevolucion.SIN_DEVOLUCION, respuesta.getEstadoDevolucion());
+        assertEquals(500000.0, respuesta.getValorDevolucion());
+        assertEquals(EstadoDevolucion.DEVUELTA, respuesta.getEstadoDevolucion());
+        assertEquals("La reserva fue cancelada y se devolvió 500000.0", respuesta.getMensaje());
+    }
+
+    @Test
+    void elAnfitrionSiempreDevuelveElTotalAunqueFaltePocoParaLaLlegada() {
+        reserva.setFechaLlegada(LocalDate.now().plusDays(1));
+        reserva.getPublicacion().setPoliticaCancelacion(new PoliticaFlexible(java.time.Clock.fixed(
+                reserva.getFechaLlegada().atStartOfDay(java.time.ZoneId.systemDefault()).minusHours(2).toInstant(),
+                java.time.ZoneId.systemDefault())));
+
+        ReservaCanceladaDTO respuesta = servicio.cancelarComoAnfitrion(31, solicitud(7, "Imprevisto"));
+
+        assertEquals(500000.0, respuesta.getValorDevolucion());
+        assertEquals(EstadoDevolucion.DEVUELTA, respuesta.getEstadoDevolucion());
+    }
+
+    @Test
+    void siLaPublicacionNoTienePoliticaElAnfitrionIgualDevuelveElTotal() {
+        reserva.getPublicacion().setPoliticaCancelacion(null);
+
+        ReservaCanceladaDTO respuesta = servicio.cancelarComoAnfitrion(31, solicitud(7, "Imprevisto"));
+
+        assertEquals(500000.0, respuesta.getValorDevolucion());
+        verify(pagoRepository).save(any(Pago.class));
     }
 
     @Test
