@@ -2,10 +2,12 @@ package co.edu.unbosque.marketplace.service.impl;
 
 import co.edu.unbosque.marketplace.model.dto.MensajeResponseDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaCanceladaDTO;
+import co.edu.unbosque.marketplace.model.dto.ReservaCancelarAnfitrionRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaCancelarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaConfirmadaDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaConfirmarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaPendienteDTO;
+import co.edu.unbosque.marketplace.model.entity.Anfitrion;
 import co.edu.unbosque.marketplace.model.entity.Cancelacion;
 import co.edu.unbosque.marketplace.model.entity.Cotizacion;
 import co.edu.unbosque.marketplace.model.entity.EventoAuditoria;
@@ -161,15 +163,59 @@ public class ReservaServiceImpl implements ReservaService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "Solo el huésped que hizo la reserva puede cancelarla");
         }
+        exigirCancelable(reserva);
+
+        PoliticaCancelacion politica = reserva.getPublicacion().getPoliticaCancelacion();
+        double devolucion = politica == null ? 0.0 : politica.calcularDevolucion(reserva);
+        Cancelacion cancelacion = completarCancelacion(reserva, huesped.getUsuario(), dto.getMotivo(), devolucion);
+
+        String fechas = " del " + reserva.getFechaLlegada() + " al " + reserva.getFechaSalida();
+        String titulo = reserva.getPublicacion().getTitulo();
+        notificar(huesped.getUsuario(), "RESERVA_CANCELADA",
+                "Cancelaste tu reserva en " + titulo + fechas + ". Devolución: " + devolucion);
+        notificar(reserva.getPublicacion().getAnfitrion().getUsuario(), "RESERVA_CANCELADA_POR_HUESPED",
+                "El huésped canceló su reserva en " + titulo + fechas);
+
+        return toCanceladaDTO(reserva, cancelacion, devolucion > 0
+                ? "La reserva fue cancelada y se devolvió " + devolucion
+                : "La reserva fue cancelada sin devolución");
+    }
+
+    @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public ReservaCanceladaDTO cancelarComoAnfitrion(Integer idReserva, ReservaCancelarAnfitrionRequestDTO dto) {
+        Anfitrion anfitrion = anfitrionRepository.findById(dto.getIdAnfitrion())
+                .filter(a -> a.getUsuario().estaActiva() && !Boolean.TRUE.equals(a.getUsuario().getRestringido()))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN,
+                        "Solo un anfitrión con la cuenta activa puede cancelar una reserva"));
+        Reserva reserva = reservaRepository.findById(idReserva)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "La reserva no existe"));
+        if (!reserva.getPublicacion().getAnfitrion().getIdUsuario().equals(anfitrion.getIdUsuario())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Solo el anfitrión de este alojamiento puede cancelar la reserva");
+        }
+        exigirCancelable(reserva);
+
+        Cancelacion cancelacion = completarCancelacion(reserva, anfitrion.getUsuario(), dto.getMotivo(), 0.0);
+
+        String fechas = " del " + reserva.getFechaLlegada() + " al " + reserva.getFechaSalida();
+        String titulo = reserva.getPublicacion().getTitulo();
+        notificar(reserva.getHuesped().getUsuario(), "RESERVA_CANCELADA_POR_ANFITRION",
+                "El anfitrión canceló tu reserva en " + titulo + fechas + ". Motivo: " + cancelacion.getMotivo());
+        notificar(anfitrion.getUsuario(), "RESERVA_CANCELADA", "Cancelaste la reserva en " + titulo + fechas);
+
+        return toCanceladaDTO(reserva, cancelacion, "La reserva fue cancelada");
+    }
+
+    private void exigirCancelable(Reserva reserva) {
         if (reserva.getEstado() != EstadoReserva.CONFIRMADA && reserva.getEstado() != EstadoReserva.PENDIENTE) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "La reserva no se puede cancelar porque su estado es " + reserva.getEstado());
         }
+    }
 
+    private Cancelacion completarCancelacion(Reserva reserva, Usuario quienCancela, String motivo, double devolucion) {
         boolean teniaElPeriodoBloqueado = reserva.getEstado() == EstadoReserva.CONFIRMADA;
-        PoliticaCancelacion politica = reserva.getPublicacion().getPoliticaCancelacion();
-        double devolucion = politica == null ? 0.0 : politica.calcularDevolucion(reserva);
-
         reserva.cancelar();
         reservaRepository.save(reserva);
         if (teniaElPeriodoBloqueado) {
@@ -179,31 +225,25 @@ public class ReservaServiceImpl implements ReservaService {
 
         Cancelacion cancelacion = new Cancelacion();
         cancelacion.setReserva(reserva);
-        cancelacion.setUsuario(huesped.getUsuario());
-        cancelacion.setMotivo(dto.getMotivo().trim());
+        cancelacion.setUsuario(quienCancela);
+        cancelacion.setMotivo(motivo.trim());
         cancelacion.setValorDevolucion(devolucion);
         cancelacion.setEstadoDevolucion(devolucion > 0 ? EstadoDevolucion.DEVUELTA : EstadoDevolucion.SIN_DEVOLUCION);
         cancelacionRepository.save(cancelacion);
         if (devolucion > 0) {
-            registrarDevolucion(reserva, huesped, devolucion);
+            registrarDevolucion(reserva, reserva.getHuesped(), devolucion);
         }
         registrarEventoDeCancelacion(reserva, cancelacion);
+        return cancelacion;
+    }
 
-        String fechas = " del " + reserva.getFechaLlegada() + " al " + reserva.getFechaSalida();
-        String titulo = reserva.getPublicacion().getTitulo();
-        notificar(huesped.getUsuario(), "RESERVA_CANCELADA",
-                "Cancelaste tu reserva en " + titulo + fechas + ". Devolución: " + devolucion);
-        notificar(reserva.getPublicacion().getAnfitrion().getUsuario(), "RESERVA_CANCELADA_POR_HUESPED",
-                "El huésped canceló su reserva en " + titulo + fechas);
-
+    private ReservaCanceladaDTO toCanceladaDTO(Reserva reserva, Cancelacion cancelacion, String mensaje) {
         ReservaCanceladaDTO respuesta = new ReservaCanceladaDTO();
         respuesta.setIdReserva(reserva.getIdReserva());
         respuesta.setEstado(reserva.getEstado());
-        respuesta.setValorDevolucion(devolucion);
+        respuesta.setValorDevolucion(cancelacion.getValorDevolucion());
         respuesta.setEstadoDevolucion(cancelacion.getEstadoDevolucion());
-        respuesta.setMensaje(devolucion > 0
-                ? "La reserva fue cancelada y se devolvió " + devolucion
-                : "La reserva fue cancelada sin devolución");
+        respuesta.setMensaje(mensaje);
         return respuesta;
     }
 
