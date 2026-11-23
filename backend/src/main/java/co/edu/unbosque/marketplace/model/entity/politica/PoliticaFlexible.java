@@ -1,42 +1,23 @@
 package co.edu.unbosque.marketplace.model.entity.politica;
 
 import co.edu.unbosque.marketplace.model.entity.Reserva;
-import lombok.Getter;
-
-import java.time.Clock;
-import java.time.Duration;
-import java.time.LocalDateTime;
 
 /**
  * Política de cancelación flexible. Su código es FLEXIBLE.
  */
-@Getter
 public class PoliticaFlexible implements PoliticaCancelacion {
-
-    private final String nombre = "Flexible";
-    private final int horasLimite = 24;
-    private final double porcentajeAntes = 100.0;
-    private final double porcentajeDespues = 0.0;
-    private final Clock reloj;
-
-    public PoliticaFlexible() {
-        this(Clock.systemDefaultZone());
-    }
-
-    public PoliticaFlexible(Clock reloj) {
-        this.reloj = reloj;
-    }
 
     @Override
     public String codigo() {
         return "FLEXIBLE";
     }
 
+    /**
+     * Pendiente: la fórmula la define la historia de cancelación, cuando existan Reserva y Cotizacion.
+     * Mientras tanto lanza una excepción, para que nadie obtenga una devolución de 0 sin darse cuenta.
+     */
     @Override
     public Double calcularDevolucion(Reserva reserva) {
-        long horasHastaLaLlegada = Duration.between(LocalDateTime.now(reloj),
-                reserva.getFechaLlegada().atStartOfDay()).toHours();
-        double porcentaje = horasHastaLaLlegada >= horasLimite ? porcentajeAntes : porcentajeDespues;
-        return Math.round(reserva.getCotizacion().getTotal() * porcentaje) / 100.0;
+        throw new UnsupportedOperationException("La devolución de la política flexible aún no está implementada");
     }
 }
