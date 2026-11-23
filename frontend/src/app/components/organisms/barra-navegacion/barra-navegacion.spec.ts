@@ -28,6 +28,7 @@ describe('BarraNavegacion', () => {
     expect(texto).toContain('Perfil anfitrión');
     expect(texto).toContain('Mis publicaciones');
     expect(texto).toContain('Disponibilidad');
+    expect(texto).toContain('Reservas pendientes');
     expect(texto).toContain('Mi perfil');
   });
 

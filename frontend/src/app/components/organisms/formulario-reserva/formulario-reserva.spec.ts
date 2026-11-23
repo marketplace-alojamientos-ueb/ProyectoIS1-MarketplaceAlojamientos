@@ -5,8 +5,8 @@ import { provideRouter } from '@angular/router';
 import { PublicacionDetalle } from '../../../models/publicacion.model';
 import { PublicacionService } from '../../../services/publicacion.service';
 import { SesionService } from '../../../services/sesion.service';
-import { aISO } from '../../../utils/calendario';
-import { FormularioReserva, nochesEntre } from './formulario-reserva';
+import { aISO, nochesEntre } from '../../../utils/calendario';
+import { FormularioReserva } from './formulario-reserva';
 
 const PUBLICACION: PublicacionDetalle = {
   idPublicacion: 15,
