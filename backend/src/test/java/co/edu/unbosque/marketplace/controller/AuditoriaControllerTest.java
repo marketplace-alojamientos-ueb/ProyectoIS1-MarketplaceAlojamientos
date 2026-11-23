@@ -12,7 +12,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-/** Pruebas del controller: revisa que llame al servicio y responda con el código HTTP correcto. */
 class AuditoriaControllerTest {
 
     @Test

@@ -4,6 +4,7 @@ import co.edu.unbosque.marketplace.model.dto.MensajeResponseDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaCanceladaDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaCancelarAnfitrionRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaCancelarRequestDTO;
+import co.edu.unbosque.marketplace.model.dto.SimulacionCancelacionDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaConfirmadaDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaConfirmarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaPendienteDTO;
@@ -103,6 +104,20 @@ class ReservaControllerTest {
         when(reservaService.cancelarComoAnfitrion(31, solicitud)).thenReturn(cancelada);
 
         ResponseEntity<ReservaCanceladaDTO> respuesta = controller.cancelarComoAnfitrion(31, solicitud);
+
+        assertEquals(HttpStatus.OK, respuesta.getStatusCode());
+        assertEquals(31, respuesta.getBody().getIdReserva());
+    }
+
+    @Test
+    void simularCancelacionResponde200ConLaSimulacion() {
+        ReservaService reservaService = mock(ReservaService.class);
+        ReservaController controller = new ReservaController(reservaService);
+        SimulacionCancelacionDTO simulacion = new SimulacionCancelacionDTO();
+        simulacion.setIdReserva(31);
+        when(reservaService.simularCancelacion(31, 20)).thenReturn(simulacion);
+
+        ResponseEntity<SimulacionCancelacionDTO> respuesta = controller.simularCancelacion(31, 20);
 
         assertEquals(HttpStatus.OK, respuesta.getStatusCode());
         assertEquals(31, respuesta.getBody().getIdReserva());

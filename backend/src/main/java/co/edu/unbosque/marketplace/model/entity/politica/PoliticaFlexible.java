@@ -7,9 +7,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
-/**
- * Política de cancelación flexible. Su código es FLEXIBLE.
- */
 @Getter
 public class PoliticaFlexible implements PoliticaCancelacion {
 

@@ -13,7 +13,6 @@ import java.time.ZoneId;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Pruebas de la política flexible: devuelve todo si faltan 24 horas o más para la llegada y nada si falta menos. */
 class PoliticaFlexibleTest {
 
     private static final ZoneId ZONA = ZoneId.of("America/Bogota");

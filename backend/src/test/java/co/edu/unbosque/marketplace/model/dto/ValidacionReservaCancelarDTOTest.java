@@ -11,7 +11,6 @@ import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Comprueba las validaciones de la solicitud para cancelar una reserva. */
 class ValidacionReservaCancelarDTOTest {
 
     private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();

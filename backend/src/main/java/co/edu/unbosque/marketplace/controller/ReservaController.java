@@ -4,6 +4,7 @@ import co.edu.unbosque.marketplace.model.dto.MensajeResponseDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaCanceladaDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaCancelarAnfitrionRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaCancelarRequestDTO;
+import co.edu.unbosque.marketplace.model.dto.SimulacionCancelacionDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaConfirmadaDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaConfirmarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaPendienteDTO;
@@ -211,13 +212,14 @@ public class ReservaController {
      *   <li><b>200</b> con el ReservaCanceladaDTO, el mismo de la cancelación del huésped:
      *   <pre>
      * {
-     *   "idReserva": 31, "estado": "CANCELADA", "valorDevolucion": 0.0,
-     *   "estadoDevolucion": "SIN_DEVOLUCION",
-     *   "mensaje": "La reserva fue cancelada"
+     *   "idReserva": 31, "estado": "CANCELADA", "valorDevolucion": 500000.0,
+     *   "estadoDevolucion": "DEVUELTA",
+     *   "mensaje": "La reserva fue cancelada y se devolvió 500000.0"
      * }
      *   </pre>
      *   La reserva queda CANCELADA, las fechas vuelven a quedar disponibles, se guarda la cancelación y se notifica
-     *   al huésped. Por ahora esta cancelación no calcula devolución, así que <code>"valorDevolucion"</code> es 0.</li>
+     *   al huésped. Como la cancelación es del anfitrión, al huésped siempre se le devuelve el total de la reserva,
+     *   sin aplicar la política de cancelación.</li>
      *   <li><b>400</b> si falta el anfitrión o el motivo, o el motivo pasa de 500 caracteres.</li>
      *   <li><b>403</b> si el id no es de un anfitrión con la cuenta activa y sin restricciones, o si la reserva no es
      *       de uno de sus alojamientos.</li>
@@ -233,5 +235,41 @@ public class ReservaController {
     public ResponseEntity<ReservaCanceladaDTO> cancelarComoAnfitrion(@PathVariable Integer id,
                                                                      @Valid @RequestBody ReservaCancelarAnfitrionRequestDTO dto) {
         return ResponseEntity.ok(reservaService.cancelarComoAnfitrion(id, dto));
+    }
+
+    /**
+     * <b>GET /api/reservas/{id}/cancelacion/simulacion?idHuesped=20</b> — Cuánto se le devolvería al huésped si cancela
+     * ahora su reserva. Solo consulta: no cancela nada ni guarda nada.
+     *
+     * <p>Pide: el id de la reserva en la ruta y el parámetro <code>idHuesped</code>, el id del huésped que hizo la
+     * reserva. Es obligatorio, sin él responde 400.</p>
+     * <p>Retorna:</p>
+     * <ul>
+     *   <li><b>200</b> con el SimulacionCancelacionDTO:
+     *   <pre>
+     * {
+     *   "idReserva": 31, "estado": "CONFIRMADA", "politica": "FLEXIBLE",
+     *   "valorTotal": 500000.0, "valorDevolucion": 500000.0, "aplicaDevolucion": true,
+     *   "mensaje": "Si cancelas ahora se te devolverían 500000.0"
+     * }
+     *   </pre>
+     *   El valor se calcula con la política de cancelación del alojamiento y es el mismo que se devuelve al cancelar
+     *   en ese momento. Con la política flexible se devuelve el total si faltan 24 horas o más para la llegada y nada
+     *   si falta menos. Si no hay devolución, <code>"valorDevolucion"</code> es 0, <code>"aplicaDevolucion"</code> es
+     *   false y el mensaje lo dice.</li>
+     *   <li><b>403</b> si el id no es de un huésped con la cuenta activa y sin restricciones, o si la reserva no es
+     *       suya.</li>
+     *   <li><b>404</b> si la reserva no existe.</li>
+     *   <li><b>409</b> si la reserva ya no se puede cancelar, por ejemplo porque ya está CANCELADA. El mensaje trae su
+     *       estado actual.</li>
+     * </ul>
+     * <p>Uso en el front: al abrir el diálogo de "Cancelar reserva", llamar a este endpoint y mostrar el
+     * <code>"mensaje"</code> para que el huésped sepa cuánto recibiría antes de confirmar. En 403 y 409 mostrar el
+     * <code>"message"</code> del error.</p>
+     */
+    @GetMapping("/{id}/cancelacion/simulacion")
+    public ResponseEntity<SimulacionCancelacionDTO> simularCancelacion(@PathVariable Integer id,
+                                                                       @RequestParam Integer idHuesped) {
+        return ResponseEntity.ok(reservaService.simularCancelacion(id, idHuesped));
     }
 }
