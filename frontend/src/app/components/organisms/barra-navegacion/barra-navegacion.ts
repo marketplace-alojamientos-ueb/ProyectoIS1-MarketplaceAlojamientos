@@ -8,11 +8,15 @@ import { SesionService } from '../../../services/sesion.service';
 const ENLACES: Record<Rol, { texto: string; ruta: string }[]> = {
    HUESPED: [
     { texto: 'Explorar', ruta: '/explorar' },
+    { texto: 'Mis reservas', ruta: '/mis-reservas' },
+    { texto: 'Mis reseñas', ruta: '/mis-resenas' },
     { texto: 'Mi perfil', ruta: '/perfil' }
   ],
   ANFITRION: [
     { texto: 'Mis publicaciones', ruta: '/anfitrion/publicaciones' },
     { texto: 'Disponibilidad', ruta: '/anfitrion/disponibilidad' },
+    { texto: 'Reservas pendientes', ruta: '/anfitrion/reservas' },
+    { texto: 'Todas las reservas', ruta: '/anfitrion/reservas-alojamientos' },
     { texto: 'Mi perfil', ruta: '/perfil' }
     ]
 };

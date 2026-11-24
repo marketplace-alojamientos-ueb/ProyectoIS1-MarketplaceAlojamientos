@@ -1,5 +1,8 @@
 import { HttpErrorResponse } from '@angular/common/http';
 
+/** 502 (Stripe respondió con error) y 503 (falta la llave de Stripe): el back explica qué pasó en "message". */
+const ERRORES_CON_MENSAJE = new Set([502, 503]);
+
 /**
  * Texto para mostrar de un error del back. Spring lo manda en "message";
  * en los 400 de validación el texto útil viene en "errors[0]" (defaultMessage o message).
@@ -14,7 +17,8 @@ export function mensajeDelBack(error: HttpErrorResponse): string {
   if (validacion) {
     return validacion;
   }
-  if (error.status >= 500 || !cuerpo?.message) {
+  const ocultar = error.status >= 500 && !ERRORES_CON_MENSAJE.has(error.status);
+  if (ocultar || !cuerpo?.message) {
     return 'Ocurrió un error inesperado. Intenta de nuevo.';
   }
   return cuerpo.message;

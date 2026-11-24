@@ -1,6 +1,10 @@
 <app-plantilla-principal>
   <a routerLink="/explorar" class="volver">← Volver a los resultados</a>
 
+  @if (pagoCancelado) {
+    <app-alerta tipo="info">Cancelaste el pago en Stripe. No se creó la reserva ni se hizo ningún cobro.</app-alerta>
+  }
+
   @if (publicacion(); as p) {
     <div class="galeria">
       @for (imagen of p.imagenes; track $index) {
@@ -30,6 +34,8 @@
           <h2>Reglas de la casa</h2>
           <p>{{ p.reglas }}</p>
         }
+
+        <app-lista-resenas [idPublicacion]="p.idPublicacion" />
       </section>
 
       <aside class="tarjeta">
@@ -49,7 +55,7 @@
             }
           </dd>
         </dl>
-        <app-alerta tipo="info">Las reservas aún no están habilitadas en la plataforma.</app-alerta>
+        <app-formulario-reserva [publicacion]="p" />
       </aside>
     </div>
   } @else if (error()) {

@@ -4,6 +4,8 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Alerta } from '../../components/atoms/alerta/alerta';
+import { FormularioReserva } from '../../components/organisms/formulario-reserva/formulario-reserva';
+import { ListaResenas } from '../../components/organisms/lista-resenas/lista-resenas';
 import { PlantillaPrincipal } from '../../components/templates/plantilla-principal/plantilla-principal';
 import { PublicacionDetalle } from '../../models/publicacion.model';
 import { PublicacionAnfitrionService } from '../../services/publicacion-anfitrion.service';
@@ -13,11 +15,11 @@ import { MODOS_ACEPTACION, textoTipo } from '../../utils/etiquetas';
 
 /**
  * H-02 (MA-100): detalle de un alojamiento activo (GET /api/publicaciones/{id}/detalle), sin datos del anfitrión.
- * La cotización y la reserva se agregan cuando existan en el back.
+ * Debajo de las tarifas va el formulario para reservar (MA-102 / MA-103) y al final las reseñas (MA-81 / MA-82).
  */
 @Component({
   selector: 'app-detalle-publicacion',
-  imports: [PlantillaPrincipal, RouterLink, CurrencyPipe, Alerta],
+  imports: [PlantillaPrincipal, RouterLink, CurrencyPipe, Alerta, FormularioReserva, ListaResenas],
   templateUrl: './detalle-publicacion.html',
   styleUrl: './detalle-publicacion.css'
 })
@@ -34,8 +36,13 @@ export class DetallePublicacion {
     return this.politicas().find((p) => p.codigo === codigo) ?? { codigo, nombre: codigo, descripcion: '' };
   });
 
+  /** Stripe devuelve aquí con ?pago=cancelado si el huésped no pagó (MA-102). */
+  protected readonly pagoCancelado: boolean;
+
   constructor() {
-    const id = Number(inject(ActivatedRoute).snapshot.paramMap.get('id'));
+    const ruta = inject(ActivatedRoute).snapshot;
+    this.pagoCancelado = ruta.queryParamMap.get('pago') === 'cancelado';
+    const id = Number(ruta.paramMap.get('id'));
     inject(PublicacionService)
       .detalle(id)
       .subscribe({
