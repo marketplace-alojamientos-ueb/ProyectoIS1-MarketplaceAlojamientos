@@ -25,7 +25,21 @@
 
       @if (cancelando() === r.idReserva) {
         <app-cancelar-reserva [idReserva]="r.idReserva" rol="HUESPED" (cancelada)="alCancelar($event)" (volver)="cancelando.set(null)" />
-      } @else if (sePuedeCancelar(r.estado)) {
+      } @else if (resenando() === r.idReserva) {
+        <app-formulario-resena
+          [idCampo]="'nueva-resena-' + r.idReserva"
+          textoBoton="Publicar reseña"
+          [cargando]="guardandoResena()"
+          (enviar)="guardarResena(r, $event)"
+          (cancelar)="resenando.set(null)"
+        />
+      } @else if (terminada(r)) {
+        @if (conResena().has(r.idReserva)) {
+          <small class="nota">Ya dejaste tu reseña. <a routerLink="/mis-resenas">Ver mis reseñas</a></small>
+        } @else {
+          <button type="button" class="enlace" (click)="abrirResena(r)">Dejar reseña</button>
+        }
+      } @else if (puedeCancelar(r)) {
         <button type="button" class="enlace peligro" (click)="abrirCancelacion(r)">Cancelar reserva</button>
       }
     </article>

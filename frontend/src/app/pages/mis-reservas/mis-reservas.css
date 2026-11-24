@@ -40,12 +40,17 @@ dd {
 
 .enlace {
   padding: 0;
+  color: var(--color-primario);
   font: inherit;
   font-weight: 600;
   background: none;
   border: none;
   text-decoration: underline;
   cursor: pointer;
+}
+
+.nota {
+  color: var(--color-texto-suave);
 }
 
 .enlace.peligro {
