@@ -1,0 +1,48 @@
+<div class="panel">
+  @if (rol() === 'HUESPED') {
+    @if (simulacion(); as s) {
+      @if (s.aplicaDevolucion) {
+        <app-alerta tipo="info">
+          Si cancelas ahora se te devolverían <strong>{{ s.valorDevolucion | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
+          de {{ s.valorTotal | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}.
+        </app-alerta>
+      } @else {
+        <app-alerta tipo="info">
+          Si cancelas ahora <strong>no recibirías devolución</strong>, según la política de cancelación del alojamiento.
+        </app-alerta>
+      }
+    } @else if (!error()) {
+      <p class="nota">Calculando la devolución…</p>
+    }
+  } @else {
+    <app-alerta tipo="info">Al cancelar, al huésped se le devuelve el total de la reserva y las fechas quedan libres.</app-alerta>
+  }
+
+  @if (error()) {
+    <app-alerta tipo="error">{{ error() }}</app-alerta>
+  }
+
+  @if (!bloqueada()) {
+    <div class="campo">
+      <app-etiqueta para="motivo-{{ idReserva() }}">Motivo de la cancelación</app-etiqueta>
+      <textarea
+        id="motivo-{{ idReserva() }}"
+        aria-label="Motivo de la cancelación"
+        rows="3"
+        [maxLength]="maxMotivo"
+        [formControl]="motivo"
+        [class.invalida]="!!errorMotivo()"
+      ></textarea>
+      <small [class.error]="!!errorMotivo()">{{ errorMotivo() || motivo.value.length + ' / ' + maxMotivo }}</small>
+    </div>
+  }
+
+  <div class="acciones">
+    @if (!bloqueada()) {
+      <app-boton [deshabilitado]="cargando()" (click)="confirmar()">
+        {{ cargando() ? 'Cancelando…' : 'Confirmar cancelación' }}
+      </app-boton>
+    }
+    <app-boton variante="secundario" (click)="volver.emit()">Volver</app-boton>
+  </div>
+</div>

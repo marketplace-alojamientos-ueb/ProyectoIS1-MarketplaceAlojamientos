@@ -44,3 +44,38 @@ export interface ReservaPendiente {
   idHuesped: number;
   nombreHuesped: string;
 }
+
+/** Resultado de la devolución al cancelar (EstadoDevolucion del back). */
+export type EstadoDevolucion = 'DEVUELTA' | 'SIN_DEVOLUCION';
+
+/** Cuerpo de POST /api/reservas/{id}/cancelar (ReservaCancelarRequestDTO). Motivo obligatorio, máximo 500. */
+export interface ReservaCancelarRequest {
+  idHuesped: number;
+  motivo: string;
+}
+
+/** Cuerpo de POST /api/reservas/{id}/cancelar-anfitrion (ReservaCancelarAnfitrionRequestDTO). */
+export interface ReservaCancelarAnfitrionRequest {
+  idAnfitrion: number;
+  motivo: string;
+}
+
+/** Respuesta 200 de las dos cancelaciones (ReservaCanceladaDTO). */
+export interface ReservaCancelada {
+  idReserva: number;
+  estado: EstadoReserva;
+  valorDevolucion: number;
+  estadoDevolucion: EstadoDevolucion;
+  mensaje: string;
+}
+
+/** GET /api/reservas/{id}/cancelacion/simulacion?idHuesped= (SimulacionCancelacionDTO). Solo consulta. */
+export interface SimulacionCancelacion {
+  idReserva: number;
+  estado: EstadoReserva;
+  politica: string;
+  valorTotal: number;
+  valorDevolucion: number;
+  aplicaDevolucion: boolean;
+  mensaje: string;
+}
