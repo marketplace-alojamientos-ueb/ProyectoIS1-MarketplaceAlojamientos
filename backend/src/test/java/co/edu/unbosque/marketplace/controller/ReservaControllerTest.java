@@ -5,6 +5,10 @@ import co.edu.unbosque.marketplace.model.dto.ReservaCanceladaDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaCancelarAnfitrionRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaCancelarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.SimulacionCancelacionDTO;
+import co.edu.unbosque.marketplace.model.dto.ReservaCheckoutDTO;
+import co.edu.unbosque.marketplace.model.dto.ReservaCheckoutRequestDTO;
+import co.edu.unbosque.marketplace.model.dto.ReservaCheckoutDTO;
+import co.edu.unbosque.marketplace.model.dto.ReservaCheckoutRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaConfirmadaDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaConfirmarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaListadoDTO;
@@ -92,6 +96,35 @@ class ReservaControllerTest {
 
         assertEquals(HttpStatus.OK, respuesta.getStatusCode());
         assertEquals("La reserva fue rechazada y se notificó al huésped", respuesta.getBody().getMensaje());
+    }
+
+    @Test
+    void iniciarPagoStripeResponde201ConLaUrlDePago() {
+        ReservaService reservaService = mock(ReservaService.class);
+        ReservaController controller = new ReservaController(reservaService);
+        ReservaCheckoutRequestDTO solicitud = new ReservaCheckoutRequestDTO();
+        ReservaCheckoutDTO sesion = new ReservaCheckoutDTO();
+        sesion.setUrlPago("https://checkout.stripe.com/c/pay/cs_test_123");
+        when(reservaService.iniciarPagoStripe(solicitud)).thenReturn(sesion);
+
+        ResponseEntity<ReservaCheckoutDTO> respuesta = controller.iniciarPagoStripe(solicitud);
+
+        assertEquals(HttpStatus.CREATED, respuesta.getStatusCode());
+        assertEquals("https://checkout.stripe.com/c/pay/cs_test_123", respuesta.getBody().getUrlPago());
+    }
+
+    @Test
+    void confirmarPagoStripeResponde201ConLaReserva() {
+        ReservaService reservaService = mock(ReservaService.class);
+        ReservaController controller = new ReservaController(reservaService);
+        ReservaConfirmadaDTO confirmada = new ReservaConfirmadaDTO();
+        confirmada.setIdReserva(31);
+        when(reservaService.confirmarPagoStripe("cs_test_123", 20)).thenReturn(confirmada);
+
+        ResponseEntity<ReservaConfirmadaDTO> respuesta = controller.confirmarPagoStripe("cs_test_123", 20);
+
+        assertEquals(HttpStatus.CREATED, respuesta.getStatusCode());
+        assertEquals(31, respuesta.getBody().getIdReserva());
     }
 
     @Test

@@ -5,6 +5,8 @@ import co.edu.unbosque.marketplace.model.dto.ReservaCanceladaDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaCancelarAnfitrionRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaCancelarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.SimulacionCancelacionDTO;
+import co.edu.unbosque.marketplace.model.dto.ReservaCheckoutDTO;
+import co.edu.unbosque.marketplace.model.dto.ReservaCheckoutRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaConfirmadaDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaConfirmarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaListadoDTO;
@@ -167,7 +169,8 @@ public class ReservaController {
     }
 
     /**
-     * <b>POST /api/reservas/confirmar</b> — El huésped confirma la reserva y paga (pago simulado, MA-102).
+     * <b>POST /api/reservas/confirmar</b> — El huésped confirma la reserva y paga (pago simulado, MA-102). Para pagar
+     * con Stripe usar <b>/api/reservas/checkout</b> (más abajo).
      *
      * <p>Pide en el cuerpo:</p>
      * <pre>
@@ -209,6 +212,105 @@ public class ReservaController {
     @PostMapping("/confirmar")
     public ResponseEntity<ReservaConfirmadaDTO> confirmar(@Valid @RequestBody ReservaConfirmarRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(reservaService.confirmar(dto));
+    }
+
+    // =====================================================================================================
+    //  PAGO CON STRIPE (modo de pruebas). Reemplaza al pago simulado de /confirmar.
+    //
+    //  Flujo completo para el front:
+    //   1. Botón "Reservar y pagar"  -> POST /api/reservas/checkout                      -> recibe "urlPago".
+    //   2. window.location.href = urlPago   (el huésped sale a la página de Stripe y paga allá).
+    //   3. Stripe lo devuelve a  http://localhost:4200/reservas/pago-exitoso?session_id=cs_test_...
+    //      (o, si se arrepiente, a http://localhost:4200/publicaciones/{idPublicacion}?pago=cancelado).
+    //   4. La página /reservas/pago-exitoso lee "session_id" de la URL y llama
+    //      POST /api/reservas/checkout/{session_id}/confirmar?idHuesped=20    -> recibe la reserva creada.
+    //
+    //  Tarjetas de prueba de Stripe (cualquier fecha futura, cualquier CVC, cualquier nombre):
+    //   4242 4242 4242 4242 -> pago aprobado
+    //   4000 0000 0000 0002 -> pago rechazado (Stripe muestra el error en su página y el huésped no sale de ahí)
+    //   4000 0025 0000 3155 -> pide autenticación 3D Secure (se aprueba en la ventana que abre Stripe)
+    // =====================================================================================================
+
+    /**
+     * <b>POST /api/reservas/checkout</b> — Paso 1 del pago con Stripe: crea la sesión de pago y devuelve la URL a la
+     * que hay que mandar al huésped.
+     *
+     * <p>Pide en el cuerpo (igual que /confirmar, pero SIN tarjeta y SIN clave de idempotencia):</p>
+     * <pre>
+     * {
+     *   "idHuesped": 20,
+     *   "idPublicacion": 15,
+     *   "fechaLlegada": "2026-12-20",
+     *   "fechaSalida": "2026-12-23",
+     *   "numHuespedes": 3
+     * }
+     * </pre>
+     * <p>Retorna:</p>
+     * <ul>
+     *   <li><b>201</b> con el ReservaCheckoutDTO:
+     *   <pre>
+     * {
+     *   "idSesion": "cs_test_a1B2c3...",
+     *   "urlPago": "https://checkout.stripe.com/c/pay/cs_test_a1B2c3...",
+     *   "idPublicacion": 15,
+     *   "tituloPublicacion": "Cabaña con vista al lago",
+     *   "noches": 3,
+     *   "precioBase": 450000.0,
+     *   "tarifaLimpieza": 50000.0,
+     *   "total": 500000.0
+     * }
+     *   </pre>
+     *   Todavía NO hay reserva ni se bloquearon las fechas: eso pasa en el paso 2, cuando el huésped ya pagó. La
+     *   sesión de Stripe vence a los 60 minutos.</li>
+     *   <li><b>400</b> si falta un dato, la salida no es posterior a la llegada, la llegada ya pasó o hay más
+     *       huéspedes que la capacidad.</li>
+     *   <li><b>403</b> si el id no es de un huésped con la cuenta activa y sin restricciones.</li>
+     *   <li><b>404</b> si la publicación no existe.</li>
+     *   <li><b>409</b> si las fechas no están disponibles, la publicación no está activa o no tiene precio.</li>
+     *   <li><b>502</b> si Stripe respondió con un error.</li>
+     *   <li><b>503</b> si el backend no tiene configurada la llave de Stripe (variable STRIPE_SECRET_KEY).</li>
+     * </ul>
+     * <p>Uso en el front: botón "Reservar y pagar". Con el 201 hacer <code>window.location.href = urlPago</code>
+     * (redirección completa, NO router.navigate ni un iframe). Deshabilitar el botón mientras responde para no crear
+     * dos sesiones. En los errores mostrar el <code>"message"</code>.</p>
+     */
+    @PostMapping("/checkout")
+    public ResponseEntity<ReservaCheckoutDTO> iniciarPagoStripe(@Valid @RequestBody ReservaCheckoutRequestDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(reservaService.iniciarPagoStripe(dto));
+    }
+
+    /**
+     * <b>POST /api/reservas/checkout/{idSesion}/confirmar?idHuesped=20</b> — Paso 2 del pago con Stripe: cuando
+     * Stripe devuelve al huésped, el backend revisa con Stripe que el pago se hizo y crea la reserva.
+     *
+     * <p>Pide: en la ruta el <code>idSesion</code>, que es el <code>session_id</code> que Stripe pone en la URL de
+     * regreso (empieza por <code>cs_test_</code>); y como parámetro <code>idHuesped</code>, el huésped en sesión.
+     * No lleva cuerpo.</p>
+     * <p>Retorna:</p>
+     * <ul>
+     *   <li><b>201</b> con el mismo ReservaConfirmadaDTO de /confirmar. <code>"idTransaccion"</code> trae el id del
+     *       cobro en Stripe (empieza por <code>pi_</code>) y <code>"estado"</code> es <code>CONFIRMADA</code>, o
+     *       <code>PENDIENTE</code> si el alojamiento necesita aprobación del anfitrión. Las fechas quedan reservadas,
+     *       se guarda el pago y se notifica al huésped y al anfitrión.
+     *       <br>Se puede llamar varias veces con el mismo <code>idSesion</code> (por ejemplo, si el huésped recarga la
+     *       página): siempre devuelve la misma reserva, sin crear otra ni cobrar de nuevo.</li>
+     *   <li><b>402</b> si Stripe dice que esa sesión todavía no está pagada. No se crea la reserva.</li>
+     *   <li><b>403</b> si el huésped no está activo o la sesión de pago es de otro huésped.</li>
+     *   <li><b>404</b> si la sesión no existe en Stripe.</li>
+     *   <li><b>409</b> si mientras el huésped pagaba otra persona reservó esas fechas, la publicación dejó de estar
+     *       activa o cambió el precio. En ese caso el backend YA le devolvió el pago completo en Stripe y no se creó
+     *       la reserva; el <code>"message"</code> lo explica.</li>
+     *   <li><b>502</b> / <b>503</b> igual que en el paso 1.</li>
+     * </ul>
+     * <p>Uso en el front: página <code>/reservas/pago-exitoso</code>. Al cargar, leer <code>session_id</code> de la
+     * URL y llamar este endpoint una sola vez. Mientras responde mostrar "Confirmando tu pago...". Con el 201 mostrar
+     * el resumen de la reserva y el <code>"mensaje"</code>; en los errores mostrar el <code>"message"</code> y un
+     * botón para volver al alojamiento.</p>
+     */
+    @PostMapping("/checkout/{idSesion}/confirmar")
+    public ResponseEntity<ReservaConfirmadaDTO> confirmarPagoStripe(@PathVariable String idSesion,
+                                                                    @RequestParam Integer idHuesped) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(reservaService.confirmarPagoStripe(idSesion, idHuesped));
     }
 
     /**

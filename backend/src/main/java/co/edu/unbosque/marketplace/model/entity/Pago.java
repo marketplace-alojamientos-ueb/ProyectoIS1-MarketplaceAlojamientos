@@ -8,8 +8,8 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
- * Movimiento de dinero de una reserva (tabla PAGO). Por ahora el pago es simulado: no se llama a Stripe y en
- * id_transaccion_stripe se guarda un código generado.
+ * Movimiento de dinero de una reserva (tabla PAGO). Con el pago simulado (/confirmar) y en las devoluciones, en
+ * id_transaccion_stripe se guarda un código "SIM-..."; con el pago de Stripe (/checkout) se guarda el id del cobro (pi_...).
  */
 @Entity
 @Table(name = "pago")

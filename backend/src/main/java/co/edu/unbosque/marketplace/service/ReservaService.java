@@ -5,6 +5,8 @@ import co.edu.unbosque.marketplace.model.dto.ReservaCanceladaDTO;
 import co.edu.unbosque.marketplace.model.dto.SimulacionCancelacionDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaCancelarAnfitrionRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaCancelarRequestDTO;
+import co.edu.unbosque.marketplace.model.dto.ReservaCheckoutDTO;
+import co.edu.unbosque.marketplace.model.dto.ReservaCheckoutRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaConfirmadaDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaConfirmarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaListadoDTO;
@@ -34,6 +36,20 @@ public interface ReservaService {
      * 402 si el pago es rechazado (sin crear la reserva ni bloquear el período).
      */
     ReservaConfirmadaDTO confirmar(ReservaConfirmarRequestDTO dto);
+
+    /**
+     * Pago con Stripe, paso 1: revisa huésped, fechas, disponibilidad y capacidad, calcula la cotización y crea la
+     * sesión de pago en Stripe. No crea la reserva. Responde 400, 403, 404 o 409 igual que confirmar, 503 si Stripe
+     * no está configurado y 502 si Stripe falla.
+     */
+    ReservaCheckoutDTO iniciarPagoStripe(ReservaCheckoutRequestDTO dto);
+
+    /**
+     * Pago con Stripe, paso 2: si Stripe confirma que la sesión se pagó, crea la reserva (como confirmar). Es
+     * idempotente por el id de la sesión. Responde 402 si no se ha pagado, 403 si la sesión no es del huésped, 404 si
+     * la sesión no existe y 409 (con devolución del pago en Stripe) si se perdió la disponibilidad o cambió el precio.
+     */
+    ReservaConfirmadaDTO confirmarPagoStripe(String idSesion, Integer idHuesped);
 
     SimulacionCancelacionDTO simularCancelacion(Integer idReserva, Integer idHuesped);
 
