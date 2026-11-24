@@ -15,6 +15,10 @@ public class EventoAuditoria {
 
     public static final String CANCELAR_RESERVA = "CANCELAR_RESERVA";
     public static final String ENTIDAD_RESERVA = "RESERVA";
+    public static final String REPORTAR_RESENA = "REPORTAR_RESENA";
+    public static final String OCULTAR_RESENA = "OCULTAR_RESENA";
+    public static final String MANTENER_RESENA = "MANTENER_RESENA";
+    public static final String ENTIDAD_RESENA = "RESENA";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

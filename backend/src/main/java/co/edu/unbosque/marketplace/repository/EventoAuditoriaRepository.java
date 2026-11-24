@@ -10,4 +10,8 @@ public interface EventoAuditoriaRepository extends JpaRepository<EventoAuditoria
     List<EventoAuditoria> findAllByOrderByFechaDescIdEventoDesc();
 
     List<EventoAuditoria> findByOperacionOrderByFechaDescIdEventoDesc(String operacion);
+
+    List<EventoAuditoria> findByEntidadAfectadaOrderByIdEventoAsc(String entidadAfectada);
+
+    List<EventoAuditoria> findByEntidadAfectadaAndIdEntidadOrderByIdEventoAsc(String entidadAfectada, Integer idEntidad);
 }
