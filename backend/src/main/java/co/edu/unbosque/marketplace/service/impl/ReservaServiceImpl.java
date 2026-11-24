@@ -7,6 +7,7 @@ import co.edu.unbosque.marketplace.model.dto.ReservaCancelarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.SimulacionCancelacionDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaConfirmadaDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaConfirmarRequestDTO;
+import co.edu.unbosque.marketplace.model.dto.ReservaListadoDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaPendienteDTO;
 import co.edu.unbosque.marketplace.model.entity.Anfitrion;
 import co.edu.unbosque.marketplace.model.entity.Cancelacion;
@@ -375,6 +376,28 @@ public class ReservaServiceImpl implements ReservaService {
                 .toList();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<ReservaListadoDTO> listarDelHuesped(Integer idHuesped, EstadoReserva estado) {
+        huespedActivo(idHuesped, "Solo un huésped con la cuenta activa puede consultar sus reservas");
+        return reservaRepository.findByHuesped_IdUsuarioOrderByFechaLlegadaDesc(idHuesped)
+                .stream()
+                .filter(r -> estado == null || r.getEstado() == estado)
+                .map(this::toListadoDTO)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ReservaListadoDTO> listarDelAnfitrion(Integer idAnfitrion, EstadoReserva estado) {
+        exigirAnfitrionHabilitado(idAnfitrion);
+        return reservaRepository.findByPublicacion_Anfitrion_IdUsuarioOrderByFechaLlegadaDesc(idAnfitrion)
+                .stream()
+                .filter(r -> estado == null || r.getEstado() == estado)
+                .map(this::toListadoDTO)
+                .toList();
+    }
+
     /** READ_COMMITTED por lo mismo que confirmar: al bloquear el período tiene que ver lo que dejaron las otras reservas. */
     @Override
     @Transactional(isolation = Isolation.READ_COMMITTED)
@@ -453,6 +476,23 @@ public class ReservaServiceImpl implements ReservaService {
     private MensajeResponseDTO mensaje(String texto) {
         MensajeResponseDTO dto = new MensajeResponseDTO();
         dto.setMensaje(texto);
+        return dto;
+    }
+
+    private ReservaListadoDTO toListadoDTO(Reserva reserva) {
+        ReservaListadoDTO dto = new ReservaListadoDTO();
+        dto.setIdReserva(reserva.getIdReserva());
+        dto.setEstado(reserva.getEstado());
+        dto.setFechaLlegada(reserva.getFechaLlegada());
+        dto.setFechaSalida(reserva.getFechaSalida());
+        dto.setNumHuespedes(reserva.getNumHuespedes());
+        dto.setTotal(reserva.getCotizacion().getTotal());
+        dto.setIdPublicacion(reserva.getPublicacion().getIdPublicacion());
+        dto.setTituloPublicacion(reserva.getPublicacion().getTitulo());
+        dto.setIdHuesped(reserva.getHuesped().getIdUsuario());
+        dto.setNombreHuesped(reserva.getHuesped().getUsuario().getNombreCompleto());
+        dto.setIdAnfitrion(reserva.getPublicacion().getAnfitrion().getIdUsuario());
+        dto.setNombreAnfitrion(reserva.getPublicacion().getAnfitrion().getUsuario().getNombreCompleto());
         return dto;
     }
 
