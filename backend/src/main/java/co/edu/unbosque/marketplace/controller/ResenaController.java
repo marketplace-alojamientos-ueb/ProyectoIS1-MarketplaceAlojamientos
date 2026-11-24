@@ -2,6 +2,9 @@ package co.edu.unbosque.marketplace.controller;
 
 import co.edu.unbosque.marketplace.model.dto.MensajeResponseDTO;
 import co.edu.unbosque.marketplace.model.dto.ResenaActualizarDTO;
+import co.edu.unbosque.marketplace.model.dto.ResenaModerarDTO;
+import co.edu.unbosque.marketplace.model.dto.ResenaReportadaDTO;
+import co.edu.unbosque.marketplace.model.dto.ResenaReportarDTO;
 import co.edu.unbosque.marketplace.model.dto.ResenaRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.ResenaResponseDTO;
 import co.edu.unbosque.marketplace.service.ResenaService;
@@ -133,5 +136,87 @@ public class ResenaController {
     @DeleteMapping("/{id}")
     public ResponseEntity<MensajeResponseDTO> eliminar(@PathVariable Integer id, @RequestParam Integer idHuesped) {
         return ResponseEntity.ok(resenaService.eliminar(id, idHuesped));
+    }
+
+    // ---------- Moderación (MA-82) ----------
+
+    /**
+     * <b>POST /api/resenas/{id}/reportar</b> — Un usuario reporta una reseña para que la revise un administrador.
+     *
+     * <p>Pide (JSON): <code>{ "idUsuario": 7, "motivo": "Lenguaje ofensivo" }</code>. El motivo es obligatorio
+     * (máximo 500 caracteres).</p>
+     * <p>Retorna:</p>
+     * <ul>
+     *   <li><b>200</b> con <code>{ "mensaje": "La reseña fue reportada, un administrador la va a revisar" }</code>.
+     *       El reporte queda en la auditoría con la operación <code>REPORTAR_RESENA</code>.</li>
+     *   <li><b>400</b> si falta el usuario o el motivo.</li>
+     *   <li><b>403</b> si el usuario no tiene la cuenta activa o está restringido.</li>
+     *   <li><b>404</b> si la reseña no existe.</li>
+     *   <li><b>409</b> si la reseña ya está oculta, si quien reporta es el autor o si ya tiene un reporte suyo
+     *       pendiente.</li>
+     * </ul>
+     * <p>Uso en el front: botón "Reportar" de cada reseña en el detalle del alojamiento.</p>
+     */
+    @PostMapping("/{id}/reportar")
+    public ResponseEntity<MensajeResponseDTO> reportar(@PathVariable Integer id,
+                                                       @Valid @RequestBody ResenaReportarDTO dto) {
+        return ResponseEntity.ok(resenaService.reportar(id, dto));
+    }
+
+    /**
+     * <b>GET /api/resenas/reportadas?idAdmin=4</b> — Reseñas con reportes pendientes de moderar.
+     *
+     * <p>Retorna <b>200</b> con un arreglo, del reporte más reciente al más antiguo:</p>
+     * <pre>
+     * [{
+     *   "resena": { ...ResenaResponseDTO... },
+     *   "numeroReportes": 2,
+     *   "motivos": ["Motivo: Lenguaje ofensivo", "Motivo: Es spam"],
+     *   "ultimoReporte": "2026-11-23T12:30:00"
+     * }]
+     * </pre>
+     * <p>Solo salen las reseñas visibles con reportes que llegaron después de la última decisión de un
+     * administrador. Si no hay, el arreglo viene vacío <code>[]</code>. <b>403</b> si el id no es de un administrador
+     * con la cuenta activa.</p>
+     */
+    @GetMapping("/reportadas")
+    public ResponseEntity<List<ResenaReportadaDTO>> listarReportadas(@RequestParam Integer idAdmin) {
+        return ResponseEntity.ok(resenaService.listarReportadas(idAdmin));
+    }
+
+    /**
+     * <b>POST /api/resenas/{id}/ocultar</b> — El administrador oculta la reseña.
+     *
+     * <p>Pide (JSON): <code>{ "idAdmin": 4, "motivo": "Contenido ofensivo" }</code>.</p>
+     * <p>Retorna:</p>
+     * <ul>
+     *   <li><b>200</b> con la ResenaResponseDTO ya con <code>"visible": false</code>. Se guarda el motivo en la
+     *       reseña, la acción de moderación <code>OCULTAMIENTO_REVIEW</code>, el evento de auditoría
+     *       <code>OCULTAR_RESENA</code> y una notificación para el autor.</li>
+     *   <li><b>400</b> si falta el administrador o el motivo.</li>
+     *   <li><b>403</b> si el id no es de un administrador activo.</li>
+     *   <li><b>404</b> si la reseña no existe.</li>
+     *   <li><b>409</b> si la reseña ya estaba oculta.</li>
+     * </ul>
+     */
+    @PostMapping("/{id}/ocultar")
+    public ResponseEntity<ResenaResponseDTO> ocultar(@PathVariable Integer id,
+                                                     @Valid @RequestBody ResenaModerarDTO dto) {
+        return ResponseEntity.ok(resenaService.ocultar(id, dto));
+    }
+
+    /**
+     * <b>POST /api/resenas/{id}/mantener</b> — El administrador revisa los reportes y deja la reseña visible.
+     *
+     * <p>Pide (JSON): <code>{ "idAdmin": 4, "motivo": "No incumple las normas" }</code>.</p>
+     * <p>Retorna <b>200</b> con <code>{ "mensaje": "..." }</code>: los reportes pendientes se dan por atendidos
+     * (evento de auditoría <code>MANTENER_RESENA</code>) y la reseña sale de la lista de reportadas. <b>400</b> si
+     * faltan datos, <b>403</b> si no es un administrador activo, <b>404</b> si no existe y <b>409</b> si está oculta
+     * o no tiene reportes pendientes.</p>
+     */
+    @PostMapping("/{id}/mantener")
+    public ResponseEntity<MensajeResponseDTO> mantener(@PathVariable Integer id,
+                                                       @Valid @RequestBody ResenaModerarDTO dto) {
+        return ResponseEntity.ok(resenaService.mantener(id, dto));
     }
 }

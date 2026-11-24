@@ -2,6 +2,9 @@ package co.edu.unbosque.marketplace.controller;
 
 import co.edu.unbosque.marketplace.model.dto.MensajeResponseDTO;
 import co.edu.unbosque.marketplace.model.dto.ResenaActualizarDTO;
+import co.edu.unbosque.marketplace.model.dto.ResenaModerarDTO;
+import co.edu.unbosque.marketplace.model.dto.ResenaReportadaDTO;
+import co.edu.unbosque.marketplace.model.dto.ResenaReportarDTO;
 import co.edu.unbosque.marketplace.model.dto.ResenaRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.ResenaResponseDTO;
 import co.edu.unbosque.marketplace.service.ResenaService;
@@ -94,5 +97,53 @@ class ResenaControllerTest {
 
         assertEquals(HttpStatus.OK, respuesta.getStatusCode());
         assertEquals("La reseña fue eliminada", respuesta.getBody().getMensaje());
+    }
+
+    @Test
+    void reportarResponde200ConElMensaje() {
+        ResenaReportarDTO dto = new ResenaReportarDTO();
+        MensajeResponseDTO mensaje = new MensajeResponseDTO();
+        mensaje.setMensaje("La reseña fue reportada, un administrador la va a revisar");
+        when(resenaService.reportar(5, dto)).thenReturn(mensaje);
+
+        ResponseEntity<MensajeResponseDTO> respuesta = controller.reportar(5, dto);
+
+        assertEquals(HttpStatus.OK, respuesta.getStatusCode());
+        assertSame(mensaje, respuesta.getBody());
+    }
+
+    @Test
+    void listarReportadasResponde200() {
+        ResenaReportadaDTO reportada = new ResenaReportadaDTO();
+        reportada.setResena(resena);
+        when(resenaService.listarReportadas(4)).thenReturn(List.of(reportada));
+
+        ResponseEntity<List<ResenaReportadaDTO>> respuesta = controller.listarReportadas(4);
+
+        assertEquals(HttpStatus.OK, respuesta.getStatusCode());
+        assertEquals(5, respuesta.getBody().get(0).getResena().getIdResena());
+    }
+
+    @Test
+    void ocultarResponde200ConLaResena() {
+        ResenaModerarDTO dto = new ResenaModerarDTO();
+        when(resenaService.ocultar(5, dto)).thenReturn(resena);
+
+        ResponseEntity<ResenaResponseDTO> respuesta = controller.ocultar(5, dto);
+
+        assertEquals(HttpStatus.OK, respuesta.getStatusCode());
+        assertSame(resena, respuesta.getBody());
+    }
+
+    @Test
+    void mantenerResponde200ConElMensaje() {
+        ResenaModerarDTO dto = new ResenaModerarDTO();
+        MensajeResponseDTO mensaje = new MensajeResponseDTO();
+        when(resenaService.mantener(5, dto)).thenReturn(mensaje);
+
+        ResponseEntity<MensajeResponseDTO> respuesta = controller.mantener(5, dto);
+
+        assertEquals(HttpStatus.OK, respuesta.getStatusCode());
+        assertSame(mensaje, respuesta.getBody());
     }
 }
