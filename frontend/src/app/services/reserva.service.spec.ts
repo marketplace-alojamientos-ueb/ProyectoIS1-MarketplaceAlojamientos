@@ -78,4 +78,16 @@ describe('ReservaService', () => {
     expect(http.expectOne((r) => r.url === '/api/reservas/huesped').request.params.get('idHuesped')).toBe('20');
     expect(http.expectOne((r) => r.url === '/api/reservas/anfitrion').request.params.get('idAnfitrion')).toBe('7');
   });
+
+  it('Stripe: crea la sesión de pago y luego confirma la reserva con el session_id', () => {
+    const datos = { idHuesped: 20, idPublicacion: 15, fechaLlegada: '2026-12-20', fechaSalida: '2026-12-23', numHuespedes: 2 };
+    servicio.iniciarCheckout(datos).subscribe();
+    servicio.confirmarCheckout('cs_test_123', 20).subscribe();
+    const checkout = http.expectOne('/api/reservas/checkout');
+    expect(checkout.request.method).toBe('POST');
+    expect(checkout.request.body).toEqual(datos);
+    const confirmar = http.expectOne((r) => r.url === '/api/reservas/checkout/cs_test_123/confirmar');
+    expect(confirmar.request.method).toBe('POST');
+    expect(confirmar.request.params.get('idHuesped')).toBe('20');
+  });
 });

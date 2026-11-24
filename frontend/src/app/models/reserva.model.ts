@@ -15,7 +15,28 @@ export interface ReservaConfirmarRequest {
   numeroTarjeta: string;
 }
 
-/** Respuesta 201 de POST /api/reservas/confirmar (ReservaConfirmadaDTO). */
+/** POST /api/reservas/checkout (ReservaCheckoutRequestDTO): igual que confirmar, sin tarjeta ni clave. */
+export interface ReservaCheckoutRequest {
+  idHuesped: number;
+  idPublicacion: number;
+  fechaLlegada: string;
+  fechaSalida: string;
+  numHuespedes: number;
+}
+
+/** Respuesta 201 de POST /api/reservas/checkout (ReservaCheckoutDTO): a urlPago se manda al huésped a pagar. */
+export interface ReservaCheckout {
+  idSesion: string;
+  urlPago: string;
+  idPublicacion: number;
+  tituloPublicacion: string;
+  noches: number;
+  precioBase: number;
+  tarifaLimpieza: number;
+  total: number;
+}
+
+/** Respuesta 201 de POST /api/reservas/confirmar y de /checkout/{idSesion}/confirmar (ReservaConfirmadaDTO). */
 export interface ReservaConfirmada {
   idReserva: number;
   estado: EstadoReserva;

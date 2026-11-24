@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { Inicio } from './pages/inicio/inicio';
 import { MisReservas } from './pages/mis-reservas/mis-reservas';
+import { PagoExitoso } from './pages/pago-exitoso/pago-exitoso';
 import { Registro } from './pages/registro/registro';
 import { Login } from './pages/login/login';
 import { RecuperarContrasena } from './pages/recuperar-contrasena/recuperar-contrasena';
@@ -24,6 +25,7 @@ export const routes: Routes = [
   { path: 'inicio', component: Inicio, canActivate: [alInicioDelRol] },
   { path: 'perfil', component: MiPerfil, canActivate: [conSesion] },
   { path: 'mis-reservas', component: MisReservas, canActivate: [soloHuesped] },
+  { path: 'reservas/pago-exitoso', component: PagoExitoso, canActivate: [soloHuesped] },
   { path: 'anfitrion/publicaciones', component: MisPublicaciones, canActivate: [soloAnfitrion] },
   { path: 'anfitrion/publicaciones/nueva', component: FormularioPublicacion, canActivate: [soloAnfitrion] },
   { path: 'anfitrion/publicaciones/:id/editar', component: FormularioPublicacion, canActivate: [soloAnfitrion] },

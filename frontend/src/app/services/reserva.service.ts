@@ -6,6 +6,8 @@ import {
   ReservaCancelada,
   ReservaCancelarAnfitrionRequest,
   ReservaCancelarRequest,
+  ReservaCheckout,
+  ReservaCheckoutRequest,
   ReservaConfirmada,
   ReservaConfirmarRequest,
   ReservaListado,
@@ -23,7 +25,25 @@ const URL = '/api/reservas';
 export class ReservaService {
   private readonly http = inject(HttpClient);
 
-  /** MA-102: 201 con el resumen. 400 datos, 402 pago rechazado, 403 huésped no habilitado, 409 fechas no disponibles. */
+  /**
+   * Pago con Stripe, paso 1: crea la sesión de pago en Stripe (modo de pruebas) y devuelve la URL a la que se manda
+   * al huésped. Todavía no hay reserva. 400 datos, 403 huésped no habilitado, 409 fechas no disponibles,
+   * 502 error de Stripe, 503 el back no tiene la llave de Stripe.
+   */
+  iniciarCheckout(datos: ReservaCheckoutRequest): Observable<ReservaCheckout> {
+    return this.http.post<ReservaCheckout>(`${URL}/checkout`, datos);
+  }
+
+  /**
+   * Pago con Stripe, paso 2: cuando Stripe devuelve al huésped, el back verifica el pago y crea la reserva.
+   * Se puede repetir con la misma sesión sin cobrar de nuevo. 402 sin pagar, 409 fechas ocupadas (el back ya devolvió el pago).
+   */
+  confirmarCheckout(idSesion: string, idHuesped: number): Observable<ReservaConfirmada> {
+    const params = new HttpParams().set('idHuesped', idHuesped);
+    return this.http.post<ReservaConfirmada>(`${URL}/checkout/${encodeURIComponent(idSesion)}/confirmar`, null, { params });
+  }
+
+  /** Pago simulado anterior (MA-102); la app ahora paga con Stripe (iniciarCheckout). 201 con el resumen. 400 datos, 402 pago rechazado, 403 huésped no habilitado, 409 fechas no disponibles. */
   confirmar(datos: ReservaConfirmarRequest): Observable<ReservaConfirmada> {
     return this.http.post<ReservaConfirmada>(`${URL}/confirmar`, datos);
   }
