@@ -5,7 +5,7 @@ import lombok.Getter;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 @Getter
 public class PoliticaFlexible implements PoliticaCancelacion {
@@ -31,8 +31,9 @@ public class PoliticaFlexible implements PoliticaCancelacion {
 
     @Override
     public Double calcularDevolucion(Reserva reserva) {
-        long horasHastaLaLlegada = Duration.between(LocalDateTime.now(reloj),
-                reserva.getFechaLlegada().atStartOfDay()).toHours();
+        // ZonedDateTime (no LocalDateTime) para que la resta mida horas reales en la zona del reloj (pedido por Sonar)
+        long horasHastaLaLlegada = Duration.between(ZonedDateTime.now(reloj),
+                reserva.getFechaLlegada().atStartOfDay(reloj.getZone())).toHours();
         double porcentaje = horasHastaLaLlegada >= horasLimite ? porcentajeAntes : porcentajeDespues;
         return Math.round(reserva.getCotizacion().getTotal() * porcentaje) / 100.0;
     }
