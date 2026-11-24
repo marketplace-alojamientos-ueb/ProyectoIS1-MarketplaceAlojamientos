@@ -43,6 +43,12 @@ small {
   color: var(--color-error);
 }
 
+.nota {
+  margin-top: 0.6rem;
+  text-align: center;
+  color: var(--color-texto-suave);
+}
+
 .resumen {
   display: grid;
   grid-template-columns: auto 1fr;

@@ -21,7 +21,7 @@ const DETALLE = {
   imagenes: ['https://imagenes.test/1.jpg']
 };
 
-function crear() {
+function crear(query: Record<string, string> = {}) {
   sessionStorage.clear();
   TestBed.configureTestingModule({
     imports: [DetallePublicacion],
@@ -29,7 +29,10 @@ function crear() {
       provideRouter([]),
       provideHttpClient(),
       provideHttpClientTesting(),
-      { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ id: '1' }) } } }
+      {
+        provide: ActivatedRoute,
+        useValue: { snapshot: { paramMap: convertToParamMap({ id: '1' }), queryParamMap: convertToParamMap(query) } }
+      }
     ]
   });
   const http = TestBed.inject(HttpTestingController);
@@ -71,5 +74,12 @@ describe('DetallePublicacion', () => {
     req.flush({ message: 'El alojamiento no está disponible' }, { status: 404, statusText: 'Not Found' });
     fixture.detectChanges();
     expect(texto()).toContain('El alojamiento no está disponible');
+  });
+
+  it('si vuelve de Stripe sin pagar avisa que no se creó la reserva', () => {
+    const { fixture, req, texto } = crear({ pago: 'cancelado' });
+    req.flush(DETALLE);
+    fixture.detectChanges();
+    expect(texto()).toContain('Cancelaste el pago en Stripe');
   });
 });

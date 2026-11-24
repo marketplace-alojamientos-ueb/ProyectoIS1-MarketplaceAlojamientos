@@ -1,17 +1,17 @@
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { CurrencyPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormControl, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { finalize } from 'rxjs';
 import { PublicacionDetalle } from '../../../models/publicacion.model';
-import { ReservaConfirmada } from '../../../models/reserva.model';
+import { NavegadorService } from '../../../services/navegador.service';
 import { PublicacionService } from '../../../services/publicacion.service';
 import { ReservaService } from '../../../services/reserva.service';
 import { SesionService } from '../../../services/sesion.service';
 import { aISO, nochesEntre } from '../../../utils/calendario';
 import { mensajeDelBack } from '../../../utils/errores';
+import { guardarPagoPendiente } from '../../../utils/pago-pendiente';
 import { mensajeError } from '../../../utils/validaciones';
 import { Alerta } from '../../atoms/alerta/alerta';
 import { Boton } from '../../atoms/boton/boton';
@@ -19,7 +19,6 @@ import { Etiqueta } from '../../atoms/etiqueta/etiqueta';
 import { CampoFormulario } from '../../molecules/campo-formulario/campo-formulario';
 
 const ENTERO_POSITIVO = /^[1-9]\d*$/;
-const TARJETA = /^\d{16}$/;
 
 /** La salida debe ser posterior a la llegada (misma regla del back). */
 function salidaPosterior(grupo: AbstractControl): ValidationErrors | null {
@@ -28,13 +27,13 @@ function salidaPosterior(grupo: AbstractControl): ValidationErrors | null {
 }
 
 /**
- * H-03 (MA-102 / MA-103): el huésped elige fechas y huéspedes, ve el total estimado y confirma con pago simulado
- * (POST /api/reservas/confirmar). El total real lo calcula el back y llega en la respuesta.
- * La clave de idempotencia se genera una vez por intento: si el huésped cambia algún dato, es un intento nuevo.
+ * H-03 (MA-102): el huésped elige fechas y huéspedes, ve el total estimado y paga con Stripe en modo de pruebas.
+ * Paso 1 del pago: POST /api/reservas/checkout crea la sesión de pago y el huésped sale a la página de Stripe.
+ * Al pagar, Stripe lo devuelve a /reservas/pago-exitoso, donde se crea la reserva (página PagoExitoso).
  */
 @Component({
   selector: 'app-formulario-reserva',
-  imports: [ReactiveFormsModule, RouterLink, CurrencyPipe, DatePipe, Alerta, Boton, Etiqueta, CampoFormulario],
+  imports: [ReactiveFormsModule, RouterLink, CurrencyPipe, Alerta, Boton, Etiqueta, CampoFormulario],
   templateUrl: './formulario-reserva.html',
   styleUrl: './formulario-reserva.css'
 })
@@ -42,13 +41,13 @@ export class FormularioReserva {
   readonly publicacion = input.required<PublicacionDetalle>();
 
   private readonly servicio = inject(ReservaService);
+  private readonly navegador = inject(NavegadorService);
   protected readonly usuario = inject(SesionService).usuario;
   protected readonly hoy = aISO(new Date());
 
+  /** Mientras se crea la sesión de Stripe; evita crear dos si el huésped da doble clic. */
   protected readonly cargando = signal(false);
   protected readonly error = signal('');
-  protected readonly resultado = signal<ReservaConfirmada | null>(null);
-  private clave = crypto.randomUUID();
 
   protected readonly form = new FormGroup(
     {
@@ -57,10 +56,6 @@ export class FormularioReserva {
       numHuespedes: new FormControl('1', {
         nonNullable: true,
         validators: [Validators.required, Validators.pattern(ENTERO_POSITIVO)]
-      }),
-      numeroTarjeta: new FormControl('', {
-        nonNullable: true,
-        validators: [Validators.required, Validators.pattern(TARJETA)]
       })
     },
     { validators: salidaPosterior }
@@ -82,15 +77,7 @@ export class FormularioReserva {
       fechaSalida: filtros.salida ?? '',
       numHuespedes: filtros.capacidad ? String(filtros.capacidad) : '1'
     });
-    // Cualquier cambio en los datos es un intento de reserva distinto.
-    this.form.valueChanges.subscribe(() => {
-      this.clave = crypto.randomUUID();
-      this.error.set('');
-    });
-  }
-
-  protected errorCampo(control: AbstractControl, mensajePatron?: string): string {
-    return mensajeError(control, mensajePatron);
+    this.form.valueChanges.subscribe(() => this.error.set(''));
   }
 
   protected errorLlegada(): string {
@@ -118,28 +105,33 @@ export class FormularioReserva {
     return mensajeError(control, 'Escribe un número mayor que 0');
   }
 
-  confirmar(): void {
+  pagar(): void {
     this.form.markAllAsTouched();
     if (this.form.invalid || this.errorLlegada() || this.errorHuespedes() || this.cargando()) {
       return;
     }
     const v = this.form.getRawValue();
+    const p = this.publicacion();
     this.cargando.set(true);
     this.error.set('');
     this.servicio
-      .confirmar({
+      .iniciarCheckout({
         idHuesped: this.usuario()!.idUsuario,
-        idPublicacion: this.publicacion().idPublicacion,
+        idPublicacion: p.idPublicacion,
         fechaLlegada: v.fechaLlegada,
         fechaSalida: v.fechaSalida,
-        numHuespedes: Number(v.numHuespedes),
-        claveIdempotencia: this.clave,
-        numeroTarjeta: v.numeroTarjeta
+        numHuespedes: Number(v.numHuespedes)
       })
-      .pipe(finalize(() => this.cargando.set(false)))
       .subscribe({
-        next: (reserva) => this.resultado.set(reserva),
-        error: (e: HttpErrorResponse) => this.error.set(mensajeDelBack(e))
+        next: (checkout) => {
+          // El botón queda deshabilitado mientras el navegador sale a Stripe.
+          guardarPagoPendiente({ idPublicacion: p.idPublicacion, tituloPublicacion: p.titulo });
+          this.navegador.irA(checkout.urlPago);
+        },
+        error: (e: HttpErrorResponse) => {
+          this.cargando.set(false);
+          this.error.set(mensajeDelBack(e));
+        }
       });
   }
 }

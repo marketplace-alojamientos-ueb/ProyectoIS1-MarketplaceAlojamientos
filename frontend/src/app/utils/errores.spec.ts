@@ -30,4 +30,12 @@ describe('mensajeDelBack', () => {
     expect(mensajeDelBack(errorHttp(500, { message: 'NullPointerException' }))).toContain('error inesperado');
     expect(mensajeDelBack(errorHttp(404, null))).toContain('error inesperado');
   });
+
+  it('en 502 y 503 muestra el mensaje del back (errores de Stripe o falta la llave)', () => {
+    expect(mensajeDelBack(errorHttp(503, { message: 'El pago con Stripe no está configurado' }))).toBe(
+      'El pago con Stripe no está configurado'
+    );
+    expect(mensajeDelBack(errorHttp(502, { message: 'Stripe rechazó la solicitud' }))).toBe('Stripe rechazó la solicitud');
+    expect(mensajeDelBack(errorHttp(502, null))).toContain('error inesperado');
+  });
 });

@@ -3,9 +3,11 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { PublicacionDetalle } from '../../../models/publicacion.model';
+import { NavegadorService } from '../../../services/navegador.service';
 import { PublicacionService } from '../../../services/publicacion.service';
 import { SesionService } from '../../../services/sesion.service';
 import { aISO, nochesEntre } from '../../../utils/calendario';
+import { leerPagoPendiente } from '../../../utils/pago-pendiente';
 import { FormularioReserva } from './formulario-reserva';
 
 const PUBLICACION: PublicacionDetalle = {
@@ -37,9 +39,15 @@ const SALIDA = enDias(13);
 
 function crear(rol: 'HUESPED' | 'ANFITRION' | null = 'HUESPED', filtros = {}) {
   sessionStorage.clear();
+  const irA = vi.fn();
   TestBed.configureTestingModule({
     imports: [FormularioReserva],
-    providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()]
+    providers: [
+      provideRouter([]),
+      provideHttpClient(),
+      provideHttpClientTesting(),
+      { provide: NavegadorService, useValue: { irA } }
+    ]
   });
   if (rol) {
     TestBed.inject(SesionService).iniciar({ idUsuario: 20, nombreCompleto: 'Luis Pérez', correo: 'luis@test.co', rol });
@@ -55,17 +63,16 @@ function crear(rol: 'HUESPED' | 'ANFITRION' | null = 'HUESPED', filtros = {}) {
     input.value = valor;
     input.dispatchEvent(new Event('input'));
   };
-  const llenar = (tarjeta = '4242424242424242') => {
+  const llenar = () => {
     escribir('input#res-llegada', LLEGADA);
     escribir('input#res-salida', SALIDA);
     escribir('input#res-huespedes', '3');
-    escribir('input#res-tarjeta', tarjeta);
   };
   const enviar = () => {
     el.querySelector('form')!.dispatchEvent(new Event('submit'));
     fixture.detectChanges();
   };
-  return { fixture, http, el, escribir, llenar, enviar, texto: () => el.textContent as string };
+  return { fixture, http, el, escribir, llenar, enviar, irA, texto: () => el.textContent as string };
 }
 
 describe('FormularioReserva', () => {
@@ -87,6 +94,12 @@ describe('FormularioReserva', () => {
     expect(el.querySelector('form')).toBeNull();
   });
 
+  it('ya no pide la tarjeta: el pago se hace en Stripe', () => {
+    const { el, texto } = crear();
+    expect(el.querySelector('#res-tarjeta')).toBeNull();
+    expect(texto()).toContain('Stripe');
+  });
+
   it('precarga las fechas de la búsqueda y muestra el total estimado', () => {
     const { el, fixture, texto } = crear('HUESPED', { llegada: LLEGADA, salida: SALIDA, capacidad: 2 });
     fixture.detectChanges();
@@ -101,76 +114,49 @@ describe('FormularioReserva', () => {
     escribir('input#res-llegada', SALIDA);
     escribir('input#res-salida', LLEGADA);
     escribir('input#res-huespedes', '9');
-    escribir('input#res-tarjeta', '4242424242424242');
     enviar();
     expect(texto()).toContain('La salida debe ser posterior a la llegada');
     expect(texto()).toContain('admite máximo 4 huéspedes');
-    http.expectNone('/api/reservas/confirmar');
+    http.expectNone('/api/reservas/checkout');
   });
 
-  it('MA-102: confirma y muestra el resumen que devuelve el back', () => {
-    const { llenar, enviar, http, fixture, texto } = crear();
+  it('MA-102 con Stripe: crea la sesión de pago y lleva al huésped a la página de Stripe', () => {
+    const { llenar, enviar, http, irA, fixture, texto } = crear();
     llenar();
     enviar();
-    const req = http.expectOne('/api/reservas/confirmar');
-    expect(req.request.body).toEqual(
-      expect.objectContaining({
-        idHuesped: 20,
-        idPublicacion: 15,
-        fechaLlegada: LLEGADA,
-        fechaSalida: SALIDA,
-        numHuespedes: 3,
-        numeroTarjeta: '4242424242424242'
-      })
-    );
-    expect(req.request.body.claveIdempotencia).toBeTruthy();
-    req.flush(
-      {
-        idReserva: 31, estado: 'CONFIRMADA', fechaLlegada: LLEGADA, fechaSalida: SALIDA, numHuespedes: 3,
-        idPublicacion: 15, tituloPublicacion: 'Cabaña con vista al lago', noches: 3, precioBase: 450000,
-        tarifaLimpieza: 50000, total: 500000, idTransaccion: 'SIM-123',
-        mensaje: 'El pago fue aprobado y la reserva quedó confirmada'
-      },
-      { status: 201, statusText: 'Created' }
-    );
+    const req = http.expectOne('/api/reservas/checkout');
+    expect(req.request.body).toEqual({
+      idHuesped: 20,
+      idPublicacion: 15,
+      fechaLlegada: LLEGADA,
+      fechaSalida: SALIDA,
+      numHuespedes: 3
+    });
     fixture.detectChanges();
-    expect(texto()).toContain('El pago fue aprobado y la reserva quedó confirmada');
-    expect(texto()).toContain('SIM-123');
+    expect(texto()).toContain('Llevándote a Stripe');
+    req.flush({ idSesion: 'cs_test_1', urlPago: 'https://checkout.stripe.com/c/pay/cs_test_1', idPublicacion: 15 });
+    expect(irA).toHaveBeenCalledWith('https://checkout.stripe.com/c/pay/cs_test_1');
+    expect(leerPagoPendiente()).toEqual({ idPublicacion: 15, tituloPublicacion: 'Cabaña con vista al lago' });
   });
 
-  it('con aprobación del anfitrión avisa que la solicitud quedó en espera', () => {
-    const { llenar, enviar, http, fixture, texto } = crear();
+  it('no crea dos sesiones si el huésped da doble clic', () => {
+    const { llenar, enviar, http } = crear();
     llenar();
     enviar();
-    http.expectOne('/api/reservas/confirmar').flush({ estado: 'PENDIENTE', noches: 3, total: 500000 });
-    fixture.detectChanges();
-    expect(texto()).toContain('en espera de aprobación del anfitrión');
+    enviar();
+    expect(http.match('/api/reservas/checkout').length).toBe(1);
   });
 
-  it('MA-103: reintentar con los mismos datos usa la misma clave; cambiar un dato genera otra', () => {
-    const { llenar, enviar, escribir, http } = crear();
-    llenar('4000000000000002');
-    enviar();
-    const primero = http.expectOne('/api/reservas/confirmar');
-    const clave = primero.request.body.claveIdempotencia;
-    primero.flush({ message: 'El pago fue rechazado' }, { status: 402, statusText: 'Payment Required' });
-    enviar();
-    const reintento = http.expectOne('/api/reservas/confirmar');
-    expect(reintento.request.body.claveIdempotencia).toBe(clave);
-    reintento.flush({ message: 'El pago fue rechazado' }, { status: 402, statusText: 'Payment Required' });
-    escribir('input#res-tarjeta', '4242424242424242');
-    enviar();
-    expect(http.expectOne('/api/reservas/confirmar').request.body.claveIdempotencia).not.toBe(clave);
-  });
-
-  it('muestra el mensaje del back si el pago es rechazado o las fechas ya no están libres', () => {
-    const { llenar, enviar, http, fixture, texto } = crear();
-    llenar('4000000000000002');
+  it('muestra el mensaje del back si las fechas no están disponibles o falta la llave de Stripe', () => {
+    const { llenar, enviar, http, irA, fixture, texto } = crear();
+    llenar();
     enviar();
     http
-      .expectOne('/api/reservas/confirmar')
-      .flush({ message: 'El pago fue rechazado' }, { status: 402, statusText: 'Payment Required' });
+      .expectOne('/api/reservas/checkout')
+      .flush({ message: 'Las fechas seleccionadas ya no están disponibles' }, { status: 409, statusText: 'Conflict' });
     fixture.detectChanges();
-    expect(texto()).toContain('El pago fue rechazado');
+    expect(texto()).toContain('ya no están disponibles');
+    expect(texto()).toContain('Reservar y pagar');
+    expect(irA).not.toHaveBeenCalled();
   });
 });

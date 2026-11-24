@@ -36,8 +36,13 @@ export class DetallePublicacion {
     return this.politicas().find((p) => p.codigo === codigo) ?? { codigo, nombre: codigo, descripcion: '' };
   });
 
+  /** Stripe devuelve aquí con ?pago=cancelado si el huésped no pagó (MA-102). */
+  protected readonly pagoCancelado: boolean;
+
   constructor() {
-    const id = Number(inject(ActivatedRoute).snapshot.paramMap.get('id'));
+    const ruta = inject(ActivatedRoute).snapshot;
+    this.pagoCancelado = ruta.queryParamMap.get('pago') === 'cancelado';
+    const id = Number(ruta.paramMap.get('id'));
     inject(PublicacionService)
       .detalle(id)
       .subscribe({
