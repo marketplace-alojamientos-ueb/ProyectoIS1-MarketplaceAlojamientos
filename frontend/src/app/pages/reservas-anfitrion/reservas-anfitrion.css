@@ -1,0 +1,79 @@
+.tarjeta {
+  margin-bottom: 1rem;
+  padding: 1rem 1.25rem;
+  background: #fff;
+  border: 1px solid var(--color-borde);
+  border-radius: 12px;
+}
+
+.cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.6rem;
+}
+
+.cabecera strong {
+  font-weight: 600;
+}
+
+dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 1rem;
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+}
+
+dt {
+  color: var(--color-texto-suave);
+}
+
+dd {
+  margin: 0;
+}
+
+.filtro {
+  display: inline-block;
+  margin-bottom: 1rem;
+}
+
+.filtro span {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.filtro select {
+  min-width: 220px;
+  font: inherit;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  background: #fff;
+}
+
+.vacio {
+  color: var(--color-texto-suave);
+}
+
+.enlace {
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  background: none;
+  border: none;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.enlace.peligro {
+  color: var(--color-error);
+}
+
+app-alerta {
+  display: block;
+  margin-bottom: 1rem;
+}
