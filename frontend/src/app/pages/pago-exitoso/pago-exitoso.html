@@ -1,0 +1,36 @@
+<app-plantilla-principal titulo="Pago de la reserva">
+  <section class="tarjeta">
+    @if (confirmando()) {
+      <p class="nota" role="status">Confirmando tu pago…</p>
+    } @else if (reserva(); as r) {
+      @if (r.estado === 'PENDIENTE') {
+        <app-alerta tipo="info">Pagaste con éxito. Tu solicitud quedó en espera de aprobación del anfitrión.</app-alerta>
+      } @else {
+        <app-alerta tipo="exito">{{ r.mensaje }}</app-alerta>
+      }
+      <h2>{{ r.tituloPublicacion }}</h2>
+      <dl class="resumen">
+        <dt>Fechas</dt>
+        <dd>{{ r.fechaLlegada | date: 'dd/MM/yyyy' }} – {{ r.fechaSalida | date: 'dd/MM/yyyy' }}</dd>
+        <dt>Huéspedes</dt>
+        <dd>{{ r.numHuespedes }}</dd>
+        <dt>{{ r.noches }} {{ r.noches === 1 ? 'noche' : 'noches' }}</dt>
+        <dd>{{ r.precioBase | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</dd>
+        <dt>Limpieza</dt>
+        <dd>{{ r.tarifaLimpieza | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</dd>
+        <dt class="total">Total pagado</dt>
+        <dd class="total">{{ r.total | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</dd>
+        <dt>Transacción Stripe</dt>
+        <dd>{{ r.idTransaccion }}</dd>
+      </dl>
+      <a routerLink="/mis-reservas">Ver mis reservas</a>
+    } @else {
+      <app-alerta tipo="error">{{ error() }}</app-alerta>
+      @if (pagoPendiente; as p) {
+        <a [routerLink]="['/publicaciones', p.idPublicacion]">Volver a {{ p.tituloPublicacion }}</a>
+      } @else {
+        <a routerLink="/explorar">Volver a explorar</a>
+      }
+    }
+  </section>
+</app-plantilla-principal>

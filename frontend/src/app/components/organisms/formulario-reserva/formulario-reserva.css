@@ -1,0 +1,79 @@
+h2 {
+  font-size: 1.05rem;
+  margin: 0 0 0.75rem;
+}
+
+.fila {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.campo {
+  margin-bottom: 1rem;
+}
+
+input[type='date'] {
+  width: 100%;
+  font: inherit;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  background: #fff;
+  color: var(--color-texto);
+}
+
+input[type='date']:focus {
+  outline: none;
+  border-color: var(--color-primario);
+  box-shadow: 0 0 0 3px var(--color-foco);
+}
+
+.invalida {
+  border-color: var(--color-error);
+}
+
+small {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.82rem;
+}
+
+.error {
+  color: var(--color-error);
+}
+
+.nota {
+  margin-top: 0.6rem;
+  text-align: center;
+  color: var(--color-texto-suave);
+}
+
+.resumen {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.35rem 1rem;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+}
+
+.resumen dt {
+  color: var(--color-texto-suave);
+}
+
+.resumen dd {
+  margin: 0;
+  text-align: right;
+}
+
+.resumen .total {
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--color-borde);
+  font-weight: 700;
+  color: var(--color-texto);
+}
+
+app-alerta {
+  display: block;
+  margin-bottom: 1rem;
+}

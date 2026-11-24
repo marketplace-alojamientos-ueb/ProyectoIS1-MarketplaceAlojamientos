@@ -1,0 +1,52 @@
+<section class="resenas" aria-labelledby="titulo-resenas">
+  <header>
+    <h2 id="titulo-resenas">Reseñas</h2>
+    @if (resenas().length) {
+      <p class="resumen">
+        <app-estrellas [valor]="promedio()" />
+        <strong>{{ promedio() | number: '1.1-1' }}</strong>
+        · {{ resenas().length }} {{ resenas().length === 1 ? 'reseña' : 'reseñas' }}
+      </p>
+    }
+  </header>
+
+  @if (exito()) {
+    <app-alerta tipo="exito">{{ exito() }}</app-alerta>
+  }
+  @if (error()) {
+    <app-alerta tipo="error">{{ error() }}</app-alerta>
+  }
+
+  @for (r of resenas(); track r.idResena) {
+    <article class="resena">
+      <div class="cabecera">
+        <strong>{{ r.nombreHuesped }}</strong>
+        <app-estrellas [valor]="r.calificacion" />
+        <small>{{ r.fecha | date: 'dd/MM/yyyy' }}</small>
+      </div>
+      @if (r.comentario) {
+        <p>{{ r.comentario }}</p>
+      }
+
+      @if (reportando() === r.idResena) {
+        <div class="reporte">
+          <label>
+            <span>Motivo del reporte</span>
+            <textarea rows="2" [maxLength]="maxMotivo" [formControl]="motivo"></textarea>
+          </label>
+          @if (errorMotivo(); as e) {
+            <small class="error">{{ e }}</small>
+          }
+          <div class="acciones">
+            <button type="button" class="enlace peligro" [disabled]="enviando()" (click)="reportar(r)">Enviar reporte</button>
+            <button type="button" class="enlace secundario" (click)="reportando.set(null)">Cancelar</button>
+          </div>
+        </div>
+      } @else if (puedeReportar(r)) {
+        <button type="button" class="enlace secundario" (click)="abrirReporte(r)">Reportar</button>
+      }
+    </article>
+  } @empty {
+    <p class="vacio">{{ cargado() ? 'Este alojamiento todavía no tiene reseñas.' : 'Cargando reseñas…' }}</p>
+  }
+</section>

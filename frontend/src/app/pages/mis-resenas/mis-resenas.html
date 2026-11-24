@@ -1,0 +1,52 @@
+<app-plantilla-principal titulo="Mis reseñas" subtitulo="Las calificaciones que dejaste en tus estancias.">
+  @if (exito()) {
+    <app-alerta tipo="exito">{{ exito() }}</app-alerta>
+  }
+  @if (error()) {
+    <app-alerta tipo="error">{{ error() }}</app-alerta>
+  }
+
+  @for (r of resenas(); track r.idResena) {
+    <article class="tarjeta">
+      <div class="cabecera">
+        <a [routerLink]="['/publicaciones', r.idPublicacion]">{{ r.tituloPublicacion }}</a>
+        <small>{{ r.fecha | date: 'dd/MM/yyyy' }}</small>
+        @if (!r.visible) {
+          <app-insignia tono="error">Oculta por moderación</app-insignia>
+        }
+      </div>
+
+      @if (editando() === r.idResena) {
+        <app-formulario-resena
+          [idCampo]="'resena-' + r.idResena"
+          [inicial]="{ calificacion: r.calificacion, comentario: r.comentario }"
+          textoBoton="Guardar cambios"
+          [cargando]="guardando()"
+          (enviar)="guardar(r, $event)"
+          (cancelar)="editando.set(null)"
+        />
+      } @else {
+        <app-estrellas [valor]="r.calificacion" />
+        @if (r.comentario) {
+          <p>{{ r.comentario }}</p>
+        }
+        @if (r.visible) {
+          <div class="acciones">
+            @if (porEliminar() === r.idResena) {
+              <span>¿Eliminar la reseña?</span>
+              <button type="button" class="enlace peligro" (click)="eliminar(r)">Sí, eliminar</button>
+              <button type="button" class="enlace secundario" (click)="porEliminar.set(null)">Cancelar</button>
+            } @else {
+              <button type="button" class="enlace" (click)="editar(r)">Editar</button>
+              <button type="button" class="enlace peligro" (click)="porEliminar.set(r.idResena)">Eliminar</button>
+            }
+          </div>
+        } @else {
+          <small class="nota">Un administrador ocultó esta reseña. Ya no se puede editar ni eliminar.</small>
+        }
+      }
+    </article>
+  } @empty {
+    <p class="vacio">{{ cargado() ? 'Todavía no has dejado reseñas.' : 'Cargando…' }}</p>
+  }
+</app-plantilla-principal>

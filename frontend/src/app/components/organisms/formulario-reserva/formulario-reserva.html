@@ -1,0 +1,56 @@
+@if (!usuario()) {
+  <app-alerta tipo="info">Para reservar, <a routerLink="/login">inicia sesión</a> como huésped.</app-alerta>
+} @else if (usuario()!.rol !== 'HUESPED') {
+  <app-alerta tipo="info">Las reservas solo están disponibles para huéspedes.</app-alerta>
+} @else {
+  <form [formGroup]="form" (ngSubmit)="pagar()" novalidate>
+    <h2>Reservar</h2>
+    <div class="fila">
+      <div class="campo">
+        <app-etiqueta para="res-llegada">Llegada</app-etiqueta>
+        <input id="res-llegada" type="date" aria-label="Llegada" formControlName="fechaLlegada" [min]="hoy" [class.invalida]="!!errorLlegada()" />
+        @if (errorLlegada(); as e) {
+          <small class="error">{{ e }}</small>
+        }
+      </div>
+      <div class="campo">
+        <app-etiqueta para="res-salida">Salida</app-etiqueta>
+        <input id="res-salida" type="date" aria-label="Salida" formControlName="fechaSalida" [min]="form.controls.fechaLlegada.value || hoy" [class.invalida]="!!errorSalida()" />
+        @if (errorSalida(); as e) {
+          <small class="error">{{ e }}</small>
+        }
+      </div>
+    </div>
+
+    <app-campo-formulario
+      id="res-huespedes"
+      etiqueta="Huéspedes"
+      modoTeclado="numeric"
+      [control]="form.controls.numHuespedes"
+      [error]="errorHuespedes()"
+      [ayuda]="'Máximo ' + publicacion().capacidad"
+    />
+
+    @if (noches() > 0) {
+      <dl class="resumen">
+        <dt>{{ publicacion().precioPorNoche | currency: 'COP' : 'symbol-narrow' : '1.0-0' }} × {{ noches() }} {{ noches() === 1 ? 'noche' : 'noches' }}</dt>
+        <dd>{{ noches() * publicacion().precioPorNoche | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</dd>
+        <dt>Limpieza</dt>
+        <dd>{{ publicacion().tarifaLimpieza | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</dd>
+        <dt class="total">Total estimado</dt>
+        <dd class="total">{{ totalEstimado() | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</dd>
+      </dl>
+    }
+
+    @if (error()) {
+      <app-alerta tipo="error">{{ error() }}</app-alerta>
+    }
+
+    <app-boton tipo="submit" [completo]="true" [deshabilitado]="cargando()">
+      {{ cargando() ? 'Llevándote a Stripe…' : 'Reservar y pagar' }}
+    </app-boton>
+    <small class="nota">
+      Pagarás en la página segura de Stripe (modo de pruebas, sin cobros reales). Tarjeta de prueba: 4242 4242 4242 4242.
+    </small>
+  </form>
+}

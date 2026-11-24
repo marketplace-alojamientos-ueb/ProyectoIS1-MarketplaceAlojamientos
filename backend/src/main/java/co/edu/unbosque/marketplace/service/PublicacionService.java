@@ -7,6 +7,7 @@ import co.edu.unbosque.marketplace.model.dto.PublicacionDetalleDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionEditarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.PublicacionResponseDTO;
+import co.edu.unbosque.marketplace.model.entity.Publicacion;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -54,4 +55,20 @@ public interface PublicacionService {
      * rango no está disponible.
      */
     void bloquearPeriodoReservado(Integer idPublicacion, LocalDate fechaLlegada, LocalDate fechaSalida);
+
+    /**
+     * Trae la publicación para reservarla, bloqueando su fila hasta que termine la transacción para que otra reserva no
+     * tome las mismas fechas a la vez. No tiene endpoint: lo llama el servicio de reservas. Responde 404 si la
+     * publicación no existe, y 409 si no está ACTIVA o si alguna noche del rango ya no está disponible.
+     */
+    Publicacion obtenerParaReservar(Integer idPublicacion, LocalDate fechaLlegada, LocalDate fechaSalida);
+
+    /**
+     * Bloquea la fila de la publicación hasta que termine la transacción, sin revisar nada más: si otra reserva de la
+     * misma publicación está en curso, espera a que termine. No tiene endpoint: lo llama el servicio de reservas antes
+     * de volver a revisar la clave de idempotencia. Responde 404 si la publicación no existe.
+     */
+    void esperarTurnoParaReservar(Integer idPublicacion);
+
+    void liberarPeriodoReservado(Integer idPublicacion, LocalDate fechaLlegada, LocalDate fechaSalida);
 }

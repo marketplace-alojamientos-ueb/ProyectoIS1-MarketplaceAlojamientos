@@ -1,5 +1,6 @@
 import { TonoInsignia } from '../components/atoms/insignia/insignia';
 import { EstadoPublicacion, TipoPeriodo } from '../models/publicacion-anfitrion.model';
+import { EstadoReserva } from '../models/reserva.model';
 
 
 export const ESTADOS_PUBLICACION: Record<EstadoPublicacion, { texto: string; tono: TonoInsignia }> = {
@@ -36,3 +37,18 @@ export const MODOS_ACEPTACION: Record<string, string> = {
   INMEDIATA: 'Reserva inmediata',
   CON_APROBACION: 'Con aprobación del anfitrión'
 };
+
+/** Estado de una reserva con su color. */
+export const ESTADOS_RESERVA: Record<EstadoReserva, { texto: string; tono: TonoInsignia }> = {
+  PENDIENTE: { texto: 'Pendiente de aprobación', tono: 'aviso' },
+  CONFIRMADA: { texto: 'Confirmada', tono: 'exito' },
+  RECHAZADA: { texto: 'Rechazada', tono: 'error' },
+  CANCELADA: { texto: 'Cancelada', tono: 'neutro' },
+  COMPLETADA: { texto: 'Completada', tono: 'info' },
+  EN_REVISION_MANUAL: { texto: 'En revisión', tono: 'aviso' }
+};
+
+/** Solo se pueden cancelar las reservas pendientes o confirmadas (regla del back, MA-95 / MA-96). */
+export function sePuedeCancelar(estado: EstadoReserva): boolean {
+  return estado === 'PENDIENTE' || estado === 'CONFIRMADA';
+}
