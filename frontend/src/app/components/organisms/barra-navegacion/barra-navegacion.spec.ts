@@ -15,6 +15,7 @@ describe('BarraNavegacion', () => {
 
     expect(fixture.nativeElement.textContent).toContain('Iniciar sesión');
     expect(fixture.nativeElement.textContent).toContain('Explorar');
+    expect(fixture.nativeElement.textContent).toContain('Mis reservas');
     expect(fixture.nativeElement.textContent).toContain('Mis reseñas');
     expect(fixture.nativeElement.textContent).toContain('Mi perfil');
     expect(fixture.nativeElement.textContent).not.toContain('Perfil anfitrión');
@@ -30,6 +31,7 @@ describe('BarraNavegacion', () => {
     expect(texto).toContain('Mis publicaciones');
     expect(texto).toContain('Disponibilidad');
     expect(texto).toContain('Reservas pendientes');
+    expect(texto).toContain('Todas las reservas');
     expect(texto).toContain('Mi perfil');
   });
 

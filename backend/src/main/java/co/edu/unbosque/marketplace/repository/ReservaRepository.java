@@ -12,5 +12,9 @@ public interface ReservaRepository extends JpaRepository<Reserva, Integer> {
     List<Reserva> findByPublicacion_Anfitrion_IdUsuarioAndEstadoOrderByFechaLlegadaAsc(Integer idAnfitrion,
                                                                                          EstadoReserva estado);
 
+    List<Reserva> findByHuesped_IdUsuarioOrderByFechaLlegadaDesc(Integer idHuesped);
+
+    List<Reserva> findByPublicacion_Anfitrion_IdUsuarioOrderByFechaLlegadaDesc(Integer idAnfitrion);
+
     Optional<Reserva> findByClaveIdempotencia(String claveIdempotencia);
 }
