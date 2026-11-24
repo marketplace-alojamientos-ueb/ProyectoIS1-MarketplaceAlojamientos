@@ -6,8 +6,9 @@ import { EstadoReserva, ReservaListado } from '../../models/reserva.model';
 import { SesionService } from '../../services/sesion.service';
 import { MisReservas } from './mis-reservas';
 
-const reserva = (idReserva: number, estado: EstadoReserva, titulo: string): ReservaListado => ({
-  idReserva, estado, fechaLlegada: '2026-12-20', fechaSalida: '2026-12-23', numHuespedes: 2, total: 500000,
+/** Fechas futuras por defecto; las estancias terminadas usan fechas pasadas. */
+const reserva = (idReserva: number, estado: EstadoReserva, titulo: string, fechaSalida = '2099-12-23'): ReservaListado => ({
+  idReserva, estado, fechaLlegada: '2026-12-20', fechaSalida, numHuespedes: 2, total: 500000,
   idPublicacion: 15, tituloPublicacion: titulo, idHuesped: 20, nombreHuesped: 'Luis', idAnfitrion: 7, nombreAnfitrion: 'Ana Gómez'
 });
 
@@ -17,7 +18,7 @@ const LISTA = [
   reserva(33, 'CANCELADA', 'Finca en Villeta')
 ];
 
-function crear(lista: ReservaListado[] = LISTA) {
+function crear(lista: ReservaListado[] = LISTA, resenas: { idReserva: number }[] = []) {
   sessionStorage.clear();
   TestBed.configureTestingModule({
     imports: [MisReservas],
@@ -28,6 +29,7 @@ function crear(lista: ReservaListado[] = LISTA) {
   const fixture = TestBed.createComponent(MisReservas);
   fixture.detectChanges();
   http.expectOne((r) => r.url === '/api/reservas/huesped' && r.params.get('idHuesped') === '20').flush(lista);
+  http.expectOne('/api/resenas/huesped/20').flush(resenas);
   fixture.detectChanges();
   const el = fixture.nativeElement as HTMLElement;
   const botones = (texto: string) => [...el.querySelectorAll('button')].filter((b) => b.textContent?.trim() === texto);
@@ -43,7 +45,7 @@ describe('MisReservas', () => {
     expect(texto()).toContain('Confirmada');
     expect(texto()).toContain('Pendiente de aprobación');
     expect(texto()).toContain('Cancelada');
-    expect(texto()).toContain('20/12/2026');
+    expect(texto()).toContain('20/12/2026 – 23/12/2099');
     expect(texto()).toMatch(/500[.,]000/);
   });
 
@@ -93,9 +95,34 @@ describe('MisReservas', () => {
     http
       .expectOne((r) => r.url === '/api/reservas/huesped')
       .flush({ message: 'No static resource api/reservas/huesped.' }, { status: 404, statusText: 'Not Found' });
+    http.expectOne('/api/resenas/huesped/20').flush([]);
     fixture.detectChanges();
     const texto = fixture.nativeElement.textContent as string;
     expect(texto).toContain('No static resource');
     expect(texto).not.toContain('Aún no tienes reservas');
+  });
+
+  it('MA-81: en una estancia terminada ofrece "Dejar reseña" en vez de cancelar y la publica', () => {
+    const terminada = reserva(40, 'CONFIRMADA', 'Casa en Villa de Leyva', '2026-01-10');
+    const { botones, fixture, http, el, texto } = crear([terminada]);
+    expect(botones('Cancelar reserva').length).toBe(0);
+    botones('Dejar reseña')[0].click();
+    fixture.detectChanges();
+    el.querySelectorAll<HTMLInputElement>('input[type="radio"]')[4].click();
+    el.querySelector('form')!.dispatchEvent(new Event('submit'));
+    const req = http.expectOne((r) => r.url === '/api/resenas' && r.method === 'POST');
+    expect(req.request.body).toEqual({ idHuesped: 20, idReserva: 40, calificacion: 5, comentario: null });
+    req.flush({});
+    fixture.detectChanges();
+    expect(texto()).toContain('Gracias, publicamos tu reseña');
+    expect(texto()).toContain('Ya dejaste tu reseña');
+    expect(botones('Dejar reseña').length).toBe(0);
+  });
+
+  it('si la reserva ya tiene reseña no vuelve a ofrecerla', () => {
+    const terminada = reserva(41, 'COMPLETADA', 'Casa en Villa de Leyva', '2026-01-10');
+    const { botones, texto } = crear([terminada], [{ idReserva: 41 }]);
+    expect(botones('Dejar reseña').length).toBe(0);
+    expect(texto()).toContain('Ya dejaste tu reseña');
   });
 });

@@ -12,6 +12,7 @@ import { Explorar } from './pages/explorar/explorar';
 import { DetallePublicacion } from './pages/detalle-publicacion/detalle-publicacion';
 import { ReservasPendientes } from './pages/reservas-pendientes/reservas-pendientes';
 import { ReservasAnfitrion } from './pages/reservas-anfitrion/reservas-anfitrion';
+import { MisResenas } from './pages/mis-resenas/mis-resenas';
 import { conSesion, sinSesion } from './utils/guards';
 import { alInicioDelRol, soloAnfitrion, soloHuesped } from './utils/guards-rol';
 
@@ -30,6 +31,7 @@ export const routes: Routes = [
   { path: 'anfitrion/reservas', component: ReservasPendientes, canActivate: [soloAnfitrion] },
   { path: 'anfitrion/reservas-alojamientos', component: ReservasAnfitrion, canActivate: [soloAnfitrion] },
   { path: 'explorar', component: Explorar },
+  { path: 'mis-resenas', component: MisResenas, canActivate: [soloHuesped] },
   { path: 'publicaciones/:id', component: DetallePublicacion },
   { path: '**', redirectTo: 'login' }
 ];

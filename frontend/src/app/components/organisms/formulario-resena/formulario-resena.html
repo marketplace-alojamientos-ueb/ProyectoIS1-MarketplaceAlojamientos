@@ -1,0 +1,28 @@
+<form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+  <fieldset>
+    <legend>Calificación</legend>
+    <div class="opciones">
+      @for (n of opciones; track n) {
+        <label>
+          <input type="radio" formControlName="calificacion" [value]="n" />
+          <span aria-hidden="true">{{ n }} ★</span>
+          <span class="solo-lector">{{ n }} de 5</span>
+        </label>
+      }
+    </div>
+    @if (errorCalificacion(); as e) {
+      <small class="error">{{ e }}</small>
+    }
+  </fieldset>
+
+  <label class="campo">
+    <span>Comentario (opcional)</span>
+    <textarea rows="3" formControlName="comentario" [maxLength]="maxComentario"></textarea>
+    <small>{{ form.controls.comentario.value.length }} / {{ maxComentario }}</small>
+  </label>
+
+  <div class="acciones">
+    <app-boton tipo="submit" [deshabilitado]="cargando()">{{ cargando() ? 'Guardando…' : textoBoton() }}</app-boton>
+    <app-boton variante="secundario" (click)="cancelar.emit()">Cancelar</app-boton>
+  </div>
+</form>
