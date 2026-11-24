@@ -1,0 +1,39 @@
+<app-plantilla-principal titulo="Mis reservas" subtitulo="Tus estancias reservadas, pendientes y pasadas.">
+  @if (exito()) {
+    <app-alerta tipo="exito">{{ exito() }}</app-alerta>
+  }
+  @if (error()) {
+    <app-alerta tipo="error">{{ error() }}</app-alerta>
+  }
+
+  @for (r of reservas(); track r.idReserva) {
+    <article class="tarjeta">
+      <div class="cabecera">
+        <a [routerLink]="['/publicaciones', r.idPublicacion]">{{ r.tituloPublicacion }}</a>
+        <app-insignia [tono]="estados[r.estado].tono">{{ estados[r.estado].texto }}</app-insignia>
+      </div>
+      <dl>
+        <dt>Fechas</dt>
+        <dd>{{ r.fechaLlegada | date: 'dd/MM/yyyy' }} – {{ r.fechaSalida | date: 'dd/MM/yyyy' }}</dd>
+        <dt>Huéspedes</dt>
+        <dd>{{ r.numHuespedes }}</dd>
+        <dt>Total</dt>
+        <dd>{{ r.total | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</dd>
+        <dt>Anfitrión</dt>
+        <dd>{{ r.nombreAnfitrion }}</dd>
+      </dl>
+
+      @if (cancelando() === r.idReserva) {
+        <app-cancelar-reserva [idReserva]="r.idReserva" rol="HUESPED" (cancelada)="alCancelar($event)" (volver)="cancelando.set(null)" />
+      } @else if (sePuedeCancelar(r.estado)) {
+        <button type="button" class="enlace peligro" (click)="abrirCancelacion(r)">Cancelar reserva</button>
+      }
+    </article>
+  } @empty {
+    @if (!cargado()) {
+      <p class="vacio">Cargando…</p>
+    } @else if (!error()) {
+      <p class="vacio">Aún no tienes reservas. <a routerLink="/explorar">Explora alojamientos</a>.</p>
+    }
+  }
+</app-plantilla-principal>

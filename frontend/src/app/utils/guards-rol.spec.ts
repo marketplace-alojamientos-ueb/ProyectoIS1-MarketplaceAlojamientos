@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { CanActivateFn, provideRouter, Router, UrlTree } from '@angular/router';
 import { LoginResponse } from '../models/login.model';
 import { SesionService } from '../services/sesion.service';
-import { alInicioDelRol, soloAnfitrion } from './guards-rol';
+import { alInicioDelRol, soloAnfitrion, soloHuesped } from './guards-rol';
 
 const usuario = (rol: string): LoginResponse =>
   ({ idUsuario: 7, nombreCompleto: 'Ana', correo: 'ana@correo.com', rol }) as LoginResponse;
@@ -29,5 +29,11 @@ describe('guards por rol', () => {
     expect(correr(soloAnfitrion, 'ANFITRION')).toBe(true);
     expect(correr(soloAnfitrion, 'HUESPED')).toBe('/explorar');
     expect(correr(soloAnfitrion, null)).toBe('/login');
+  });
+
+  it('soloHuesped deja pasar al huésped y devuelve a los demás a su inicio', () => {
+    expect(correr(soloHuesped, 'HUESPED')).toBe(true);
+    expect(correr(soloHuesped, 'ANFITRION')).toBe('/anfitrion/publicaciones');
+    expect(correr(soloHuesped, null)).toBe('/login');
   });
 });

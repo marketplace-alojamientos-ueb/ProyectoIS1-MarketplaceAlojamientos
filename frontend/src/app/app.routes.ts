@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { Inicio } from './pages/inicio/inicio';
+import { MisReservas } from './pages/mis-reservas/mis-reservas';
 import { Registro } from './pages/registro/registro';
 import { Login } from './pages/login/login';
 import { RecuperarContrasena } from './pages/recuperar-contrasena/recuperar-contrasena';
@@ -11,7 +12,7 @@ import { Explorar } from './pages/explorar/explorar';
 import { DetallePublicacion } from './pages/detalle-publicacion/detalle-publicacion';
 import { ReservasPendientes } from './pages/reservas-pendientes/reservas-pendientes';
 import { conSesion, sinSesion } from './utils/guards';
-import { alInicioDelRol, soloAnfitrion } from './utils/guards-rol';
+import { alInicioDelRol, soloAnfitrion, soloHuesped } from './utils/guards-rol';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -20,6 +21,7 @@ export const routes: Routes = [
   { path: 'recuperar-contrasena', component: RecuperarContrasena },
   { path: 'inicio', component: Inicio, canActivate: [alInicioDelRol] },
   { path: 'perfil', component: MiPerfil, canActivate: [conSesion] },
+  { path: 'mis-reservas', component: MisReservas, canActivate: [soloHuesped] },
   { path: 'anfitrion/publicaciones', component: MisPublicaciones, canActivate: [soloAnfitrion] },
   { path: 'anfitrion/publicaciones/nueva', component: FormularioPublicacion, canActivate: [soloAnfitrion] },
   { path: 'anfitrion/publicaciones/:id/editar', component: FormularioPublicacion, canActivate: [soloAnfitrion] },
