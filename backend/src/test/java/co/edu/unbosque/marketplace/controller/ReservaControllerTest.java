@@ -7,7 +7,9 @@ import co.edu.unbosque.marketplace.model.dto.ReservaCancelarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.SimulacionCancelacionDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaConfirmadaDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaConfirmarRequestDTO;
+import co.edu.unbosque.marketplace.model.dto.ReservaListadoDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaPendienteDTO;
+import co.edu.unbosque.marketplace.model.enums.EstadoReserva;
 import co.edu.unbosque.marketplace.service.ReservaService;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -31,6 +33,34 @@ class ReservaControllerTest {
         when(reservaService.listarPendientes(7)).thenReturn(List.of(reserva));
 
         ResponseEntity<List<ReservaPendienteDTO>> respuesta = controller.listarPendientes(7);
+
+        assertEquals(HttpStatus.OK, respuesta.getStatusCode());
+        assertEquals(31, respuesta.getBody().get(0).getIdReserva());
+    }
+
+    @Test
+    void listarDelHuespedResponde200ConSusReservas() {
+        ReservaService reservaService = mock(ReservaService.class);
+        ReservaController controller = new ReservaController(reservaService);
+        ReservaListadoDTO reserva = new ReservaListadoDTO();
+        reserva.setIdReserva(31);
+        when(reservaService.listarDelHuesped(20, EstadoReserva.CONFIRMADA)).thenReturn(List.of(reserva));
+
+        ResponseEntity<List<ReservaListadoDTO>> respuesta = controller.listarDelHuesped(20, EstadoReserva.CONFIRMADA);
+
+        assertEquals(HttpStatus.OK, respuesta.getStatusCode());
+        assertEquals(31, respuesta.getBody().get(0).getIdReserva());
+    }
+
+    @Test
+    void listarDelAnfitrionResponde200ConLasReservasDeSusAlojamientos() {
+        ReservaService reservaService = mock(ReservaService.class);
+        ReservaController controller = new ReservaController(reservaService);
+        ReservaListadoDTO reserva = new ReservaListadoDTO();
+        reserva.setIdReserva(31);
+        when(reservaService.listarDelAnfitrion(7, null)).thenReturn(List.of(reserva));
+
+        ResponseEntity<List<ReservaListadoDTO>> respuesta = controller.listarDelAnfitrion(7, null);
 
         assertEquals(HttpStatus.OK, respuesta.getStatusCode());
         assertEquals(31, respuesta.getBody().get(0).getIdReserva());

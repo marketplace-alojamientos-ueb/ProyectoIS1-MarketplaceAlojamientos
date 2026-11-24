@@ -7,7 +7,9 @@ import co.edu.unbosque.marketplace.model.dto.ReservaCancelarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.SimulacionCancelacionDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaConfirmadaDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaConfirmarRequestDTO;
+import co.edu.unbosque.marketplace.model.dto.ReservaListadoDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaPendienteDTO;
+import co.edu.unbosque.marketplace.model.enums.EstadoReserva;
 import co.edu.unbosque.marketplace.service.ReservaService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -64,6 +66,59 @@ public class ReservaController {
     @GetMapping("/pendientes")
     public ResponseEntity<List<ReservaPendienteDTO>> listarPendientes(@RequestParam Integer idAnfitrion) {
         return ResponseEntity.ok(reservaService.listarPendientes(idAnfitrion));
+    }
+
+    /**
+     * <b>GET /api/reservas/huesped?idHuesped=20&amp;estado=CONFIRMADA</b> — Reservas de un huésped, de la más
+     * reciente a la más antigua.
+     *
+     * <p>Pide: como parámetro <code>idHuesped</code>, el id del huésped que consulta (obligatorio, sin él responde
+     * 400). Opcional <code>estado</code> para filtrar: PENDIENTE, CONFIRMADA, RECHAZADA, CANCELADA, COMPLETADA o
+     * EN_REVISION_MANUAL. Sin <code>estado</code> trae todas. Un estado que no existe responde 400.</p>
+     * <p>Retorna:</p>
+     * <ul>
+     *   <li><b>200</b> con un arreglo de ReservaListadoDTO, vacío <code>[]</code> si no hay ninguna:
+     *   <pre>
+     * {
+     *   "idReserva": 31, "estado": "CONFIRMADA", "fechaLlegada": "2026-12-20", "fechaSalida": "2026-12-23",
+     *   "numHuespedes": 3, "total": 500000.0,
+     *   "idPublicacion": 15, "tituloPublicacion": "Cabaña con vista al lago",
+     *   "idHuesped": 20, "nombreHuesped": "Luis Pérez Soto",
+     *   "idAnfitrion": 7, "nombreAnfitrion": "Ana Gómez Rojas"
+     * }
+     *   </pre></li>
+     *   <li><b>403</b> si el id no es de un huésped con la cuenta activa y sin restricciones.</li>
+     * </ul>
+     * <p>Uso en el front: pantalla "Mis reservas" del huésped. Mostrar el botón "Cancelar reserva" solo en las que
+     * estén en PENDIENTE o CONFIRMADA. Si el arreglo viene vacío, mostrar "Aún no tienes reservas".</p>
+     */
+    @GetMapping("/huesped")
+    public ResponseEntity<List<ReservaListadoDTO>> listarDelHuesped(@RequestParam Integer idHuesped,
+                                                                    @RequestParam(required = false) EstadoReserva estado) {
+        return ResponseEntity.ok(reservaService.listarDelHuesped(idHuesped, estado));
+    }
+
+    /**
+     * <b>GET /api/reservas/anfitrion?idAnfitrion=7&amp;estado=CONFIRMADA</b> — Reservas de los alojamientos de un
+     * anfitrión, de la más reciente a la más antigua.
+     *
+     * <p>Pide: como parámetro <code>idAnfitrion</code>, el id del anfitrión que consulta (obligatorio, sin él
+     * responde 400). Opcional <code>estado</code> para filtrar, con los mismos valores de la lista del huésped. Sin
+     * <code>estado</code> trae todas. Un estado que no existe responde 400.</p>
+     * <p>Retorna:</p>
+     * <ul>
+     *   <li><b>200</b> con un arreglo de ReservaListadoDTO, el mismo objeto de la lista del huésped, vacío
+     *       <code>[]</code> si no hay ninguna.</li>
+     *   <li><b>403</b> si el id no es de un anfitrión con la cuenta activa y sin restricciones.</li>
+     * </ul>
+     * <p>Uso en el front: pantalla "Reservas de mis alojamientos" del anfitrión. Mostrar el botón "Cancelar reserva"
+     * solo en las que estén en PENDIENTE o CONFIRMADA. Si el arreglo viene vacío, mostrar "Aún no tienes
+     * reservas".</p>
+     */
+    @GetMapping("/anfitrion")
+    public ResponseEntity<List<ReservaListadoDTO>> listarDelAnfitrion(@RequestParam Integer idAnfitrion,
+                                                                      @RequestParam(required = false) EstadoReserva estado) {
+        return ResponseEntity.ok(reservaService.listarDelAnfitrion(idAnfitrion, estado));
     }
 
     /**

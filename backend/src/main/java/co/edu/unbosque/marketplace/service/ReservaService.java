@@ -7,13 +7,19 @@ import co.edu.unbosque.marketplace.model.dto.ReservaCancelarAnfitrionRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaCancelarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaConfirmadaDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaConfirmarRequestDTO;
+import co.edu.unbosque.marketplace.model.dto.ReservaListadoDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaPendienteDTO;
+import co.edu.unbosque.marketplace.model.enums.EstadoReserva;
 
 import java.util.List;
 
 public interface ReservaService {
 
     List<ReservaPendienteDTO> listarPendientes(Integer idAnfitrion);
+
+    List<ReservaListadoDTO> listarDelHuesped(Integer idHuesped, EstadoReserva estado);
+
+    List<ReservaListadoDTO> listarDelAnfitrion(Integer idAnfitrion, EstadoReserva estado);
 
     MensajeResponseDTO aceptar(Integer idReserva, Integer idAnfitrion);
 
