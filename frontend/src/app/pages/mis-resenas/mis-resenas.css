@@ -1,0 +1,61 @@
+.tarjeta {
+  margin-bottom: 1rem;
+  padding: 1rem 1.25rem;
+  background: #fff;
+  border: 1px solid var(--color-borde);
+  border-radius: 12px;
+}
+
+.cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.4rem;
+}
+
+.cabecera a {
+  font-weight: 600;
+}
+
+.cabecera small,
+.vacio,
+.nota {
+  color: var(--color-texto-suave);
+}
+
+.tarjeta p {
+  margin: 0.4rem 0;
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 1rem;
+  margin-top: 0.4rem;
+}
+
+.enlace {
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--color-primario);
+  background: none;
+  border: none;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.enlace.peligro {
+  color: var(--color-error);
+}
+
+.enlace.secundario {
+  color: var(--color-texto-suave);
+}
+
+app-alerta {
+  display: block;
+  margin-bottom: 1rem;
+}

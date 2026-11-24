@@ -23,3 +23,11 @@ export const soloAnfitrion: CanActivateFn = () => {
   }
   return inject(Router).createUrlTree([usuario ? INICIO_POR_ROL[usuario.rol] : '/login']);
 };
+
+export const soloHuesped: CanActivateFn = () => {
+  const usuario = inject(SesionService).usuario();
+  if (usuario?.rol === 'HUESPED') {
+    return true;
+  }
+  return inject(Router).createUrlTree([usuario ? INICIO_POR_ROL[usuario.rol] : '/login']);
+};
