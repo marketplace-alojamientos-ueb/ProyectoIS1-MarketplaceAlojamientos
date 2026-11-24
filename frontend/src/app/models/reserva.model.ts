@@ -79,3 +79,19 @@ export interface SimulacionCancelacion {
   aplicaDevolucion: boolean;
   mensaje: string;
 }
+
+/** Una reserva en "Mis reservas" (huésped) o en las reservas del anfitrión (ReservaListadoDTO). */
+export interface ReservaListado {
+  idReserva: number;
+  estado: EstadoReserva;
+  fechaLlegada: string;
+  fechaSalida: string;
+  numHuespedes: number;
+  total: number;
+  idPublicacion: number;
+  tituloPublicacion: string;
+  idHuesped: number;
+  nombreHuesped: string;
+  idAnfitrion: number;
+  nombreAnfitrion: string;
+}

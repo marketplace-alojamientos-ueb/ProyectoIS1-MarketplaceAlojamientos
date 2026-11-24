@@ -71,4 +71,11 @@ describe('ReservaService', () => {
     huesped.flush({});
     anfitrion.flush({});
   });
+
+  it('lista las reservas del huésped y las del anfitrión', () => {
+    servicio.delHuesped(20).subscribe();
+    servicio.delAnfitrion(7).subscribe();
+    expect(http.expectOne((r) => r.url === '/api/reservas/huesped').request.params.get('idHuesped')).toBe('20');
+    expect(http.expectOne((r) => r.url === '/api/reservas/anfitrion').request.params.get('idAnfitrion')).toBe('7');
+  });
 });

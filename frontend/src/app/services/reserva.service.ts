@@ -8,6 +8,7 @@ import {
   ReservaCancelarRequest,
   ReservaConfirmada,
   ReservaConfirmarRequest,
+  ReservaListado,
   ReservaPendiente,
   SimulacionCancelacion
 } from '../models/reserva.model';
@@ -25,6 +26,16 @@ export class ReservaService {
   /** MA-102: 201 con el resumen. 400 datos, 402 pago rechazado, 403 huésped no habilitado, 409 fechas no disponibles. */
   confirmar(datos: ReservaConfirmarRequest): Observable<ReservaConfirmada> {
     return this.http.post<ReservaConfirmada>(`${URL}/confirmar`, datos);
+  }
+
+  /** "Mis reservas": todas las del huésped, de la más reciente a la más antigua; [] si no tiene. 403 si no es huésped activo. */
+  delHuesped(idHuesped: number): Observable<ReservaListado[]> {
+    return this.http.get<ReservaListado[]>(`${URL}/huesped`, { params: new HttpParams().set('idHuesped', idHuesped) });
+  }
+
+  /** Reservas de los alojamientos del anfitrión, de la más reciente a la más antigua; [] si no tiene. */
+  delAnfitrion(idAnfitrion: number): Observable<ReservaListado[]> {
+    return this.http.get<ReservaListado[]>(`${URL}/anfitrion`, { params: this.anfitrion(idAnfitrion) });
   }
 
   /** MA-60: reservas PENDIENTES de los alojamientos del anfitrión; [] si no tiene. */
