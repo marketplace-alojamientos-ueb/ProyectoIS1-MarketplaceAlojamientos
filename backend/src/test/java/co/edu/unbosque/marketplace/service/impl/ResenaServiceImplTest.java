@@ -10,7 +10,12 @@ import co.edu.unbosque.marketplace.model.entity.Resena;
 import co.edu.unbosque.marketplace.model.entity.Reserva;
 import co.edu.unbosque.marketplace.model.entity.Usuario;
 import co.edu.unbosque.marketplace.model.enums.EstadoReserva;
+import co.edu.unbosque.marketplace.repository.AccionModeracionRepository;
+import co.edu.unbosque.marketplace.repository.AdminRepository;
+import co.edu.unbosque.marketplace.repository.EventoAuditoriaRepository;
 import co.edu.unbosque.marketplace.repository.HuespedRepository;
+import co.edu.unbosque.marketplace.repository.NotificacionRepository;
+import co.edu.unbosque.marketplace.repository.UsuarioRepository;
 import co.edu.unbosque.marketplace.repository.ResenaRepository;
 import co.edu.unbosque.marketplace.repository.ReservaRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,7 +46,9 @@ class ResenaServiceImplTest {
         resenaRepository = mock(ResenaRepository.class);
         reservaRepository = mock(ReservaRepository.class);
         huespedRepository = mock(HuespedRepository.class);
-        servicio = new ResenaServiceImpl(resenaRepository, reservaRepository, huespedRepository);
+        servicio = new ResenaServiceImpl(resenaRepository, reservaRepository, huespedRepository,
+                mock(UsuarioRepository.class), mock(AdminRepository.class), mock(AccionModeracionRepository.class),
+                mock(EventoAuditoriaRepository.class), mock(NotificacionRepository.class));
 
         huesped = huesped(20);
         when(huespedRepository.findById(20)).thenReturn(Optional.of(huesped));
