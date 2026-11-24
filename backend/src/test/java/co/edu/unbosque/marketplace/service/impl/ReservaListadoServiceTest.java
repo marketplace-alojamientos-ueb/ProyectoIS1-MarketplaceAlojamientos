@@ -17,6 +17,7 @@ import co.edu.unbosque.marketplace.repository.NotificacionRepository;
 import co.edu.unbosque.marketplace.repository.PagoRepository;
 import co.edu.unbosque.marketplace.repository.ReservaRepository;
 import co.edu.unbosque.marketplace.service.PublicacionService;
+import co.edu.unbosque.marketplace.service.StripeService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -47,7 +48,8 @@ class ReservaListadoServiceTest {
         anfitrionRepository = mock(AnfitrionRepository.class);
         servicio = new ReservaServiceImpl(reservaRepository, anfitrionRepository, mock(PublicacionService.class),
                 mock(NotificacionRepository.class), huespedRepository, mock(PagoRepository.class),
-                mock(CancelacionRepository.class), mock(EventoAuditoriaRepository.class));
+                mock(CancelacionRepository.class), mock(EventoAuditoriaRepository.class),
+                mock(StripeService.class), "http://localhost:4200");
 
         Usuario usuarioHuesped = new Usuario("1098765432", "Luis", null, "Pérez", "Soto", "luis@correo.com", "hash");
         usuarioHuesped.setIdUsuario(20);

@@ -6,9 +6,12 @@ import co.edu.unbosque.marketplace.model.dto.ReservaCancelarAnfitrionRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaCancelarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.SimulacionCancelacionDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaConfirmadaDTO;
+import co.edu.unbosque.marketplace.model.dto.ReservaCheckoutDTO;
+import co.edu.unbosque.marketplace.model.dto.ReservaCheckoutRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaConfirmarRequestDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaListadoDTO;
 import co.edu.unbosque.marketplace.model.dto.ReservaPendienteDTO;
+import co.edu.unbosque.marketplace.model.dto.SesionStripeDTO;
 import co.edu.unbosque.marketplace.model.entity.Anfitrion;
 import co.edu.unbosque.marketplace.model.entity.Cancelacion;
 import co.edu.unbosque.marketplace.model.entity.Cotizacion;
@@ -32,6 +35,8 @@ import co.edu.unbosque.marketplace.repository.PagoRepository;
 import co.edu.unbosque.marketplace.repository.ReservaRepository;
 import co.edu.unbosque.marketplace.service.PublicacionService;
 import co.edu.unbosque.marketplace.service.ReservaService;
+import co.edu.unbosque.marketplace.service.StripeService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -40,7 +45,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -56,12 +63,22 @@ public class ReservaServiceImpl implements ReservaService {
     private final PagoRepository pagoRepository;
     private final CancelacionRepository cancelacionRepository;
     private final EventoAuditoriaRepository eventoAuditoriaRepository;
+    private final StripeService stripeService;
+    private final String urlFront;
+
+    /** Nombres de los datos de la reserva que se guardan en la sesión de Stripe. */
+    private static final String META_HUESPED = "idHuesped";
+    private static final String META_PUBLICACION = "idPublicacion";
+    private static final String META_LLEGADA = "fechaLlegada";
+    private static final String META_SALIDA = "fechaSalida";
+    private static final String META_HUESPEDES = "numHuespedes";
 
     public ReservaServiceImpl(ReservaRepository reservaRepository, AnfitrionRepository anfitrionRepository,
                               PublicacionService publicacionService, NotificacionRepository notificacionRepository,
                               HuespedRepository huespedRepository, PagoRepository pagoRepository,
                               CancelacionRepository cancelacionRepository,
-                              EventoAuditoriaRepository eventoAuditoriaRepository) {
+                              EventoAuditoriaRepository eventoAuditoriaRepository, StripeService stripeService,
+                              @Value("${app.front.url:http://localhost:4200}") String urlFront) {
         this.reservaRepository = reservaRepository;
         this.anfitrionRepository = anfitrionRepository;
         this.publicacionService = publicacionService;
@@ -70,6 +87,8 @@ public class ReservaServiceImpl implements ReservaService {
         this.pagoRepository = pagoRepository;
         this.cancelacionRepository = cancelacionRepository;
         this.eventoAuditoriaRepository = eventoAuditoriaRepository;
+        this.stripeService = stripeService;
+        this.urlFront = urlFront;
     }
 
     /**
@@ -105,10 +124,7 @@ public class ReservaServiceImpl implements ReservaService {
         // Escenario 2: si el período ya no está disponible se rechaza aquí, antes de procesar el pago
         Publicacion publicacion = publicacionService.obtenerParaReservar(dto.getIdPublicacion(),
                 dto.getFechaLlegada(), dto.getFechaSalida());
-        if (publicacion.getCapacidad() != null && dto.getNumHuespedes() > publicacion.getCapacidad()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "El alojamiento admite máximo " + publicacion.getCapacidad() + " huéspedes");
-        }
+        exigirCapacidad(publicacion, dto.getNumHuespedes());
         Cotizacion cotizacion = cotizar(publicacion, dto.getFechaLlegada(), dto.getFechaSalida());
 
         // Escenario 3: si el pago es rechazado no se crea la reserva ni se bloquea el período
@@ -118,6 +134,116 @@ public class ReservaServiceImpl implements ReservaService {
         }
 
         // Escenario 1: se crea la reserva, se bloquea el período y se registra el pago y la confirmación
+        return crearReservaPagada(dto, huesped, publicacion, cotizacion, "SIM-" + UUID.randomUUID());
+    }
+
+    /**
+     * Stripe paso 1: revisa lo mismo que confirmar (huésped, fechas, disponibilidad, capacidad y precio) y crea la
+     * sesión de pago en Stripe con el total de la cotización. Todavía no crea la reserva ni bloquea el período: eso
+     * pasa en confirmarPagoStripe, cuando Stripe confirma que se pagó.
+     */
+    @Override
+    public ReservaCheckoutDTO iniciarPagoStripe(ReservaCheckoutRequestDTO dto) {
+        exigirFechasValidas(dto.getFechaLlegada(), dto.getFechaSalida());
+        Huesped huesped = huespedActivo(dto.getIdHuesped(), "Solo un huésped con la cuenta activa puede reservar");
+        Publicacion publicacion = publicacionService.obtenerParaReservar(dto.getIdPublicacion(),
+                dto.getFechaLlegada(), dto.getFechaSalida());
+        exigirCapacidad(publicacion, dto.getNumHuespedes());
+        Cotizacion cotizacion = cotizar(publicacion, dto.getFechaLlegada(), dto.getFechaSalida());
+
+        Map<String, String> datosDeLaReserva = new HashMap<>();
+        datosDeLaReserva.put(META_HUESPED, String.valueOf(huesped.getIdUsuario()));
+        datosDeLaReserva.put(META_PUBLICACION, String.valueOf(publicacion.getIdPublicacion()));
+        datosDeLaReserva.put(META_LLEGADA, dto.getFechaLlegada().toString());
+        datosDeLaReserva.put(META_SALIDA, dto.getFechaSalida().toString());
+        datosDeLaReserva.put(META_HUESPEDES, String.valueOf(dto.getNumHuespedes()));
+
+        String detalle = cotizacion.getNoches() + (cotizacion.getNoches() == 1 ? " noche" : " noches") + ", del "
+                + dto.getFechaLlegada() + " al " + dto.getFechaSalida() + ", " + dto.getNumHuespedes()
+                + (dto.getNumHuespedes() == 1 ? " huésped" : " huéspedes");
+        SesionStripeDTO sesion = stripeService.crearSesionDePago(cotizacion.getTotal(),
+                "Reserva en " + publicacion.getTitulo(), detalle, huesped.getUsuario().getCorreo(),
+                urlFront + "/reservas/pago-exitoso?session_id={CHECKOUT_SESSION_ID}",
+                urlFront + "/publicaciones/" + publicacion.getIdPublicacion() + "?pago=cancelado",
+                datosDeLaReserva);
+
+        ReservaCheckoutDTO respuesta = new ReservaCheckoutDTO();
+        respuesta.setIdSesion(sesion.getIdSesion());
+        respuesta.setUrlPago(sesion.getUrlPago());
+        respuesta.setIdPublicacion(publicacion.getIdPublicacion());
+        respuesta.setTituloPublicacion(publicacion.getTitulo());
+        respuesta.setNoches(cotizacion.getNoches());
+        respuesta.setPrecioBase(cotizacion.getPrecioBase());
+        respuesta.setTarifaLimpieza(cotizacion.getTarifaLimpieza());
+        respuesta.setTotal(cotizacion.getTotal());
+        return respuesta;
+    }
+
+    /**
+     * Stripe paso 2: le pregunta a Stripe si la sesión quedó pagada y, si sí, crea la reserva con los datos que se
+     * guardaron en la sesión. El id de la sesión es la clave de idempotencia: si el front llama dos veces (recarga la
+     * página de éxito) se devuelve la misma reserva. Si mientras el huésped pagaba se perdió la disponibilidad o
+     * cambió el precio, se le devuelve el pago completo en Stripe y no se crea la reserva.
+     * READ_COMMITTED por lo mismo que confirmar.
+     */
+    @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public ReservaConfirmadaDTO confirmarPagoStripe(String idSesion, Integer idHuesped) {
+        Huesped huesped = huespedActivo(idHuesped, "Solo un huésped con la cuenta activa puede reservar");
+        SesionStripeDTO sesion = stripeService.consultarSesion(idSesion);
+        Map<String, String> datos = sesion.getMetadatos();
+        if (datos == null || !String.valueOf(idHuesped).equals(datos.get(META_HUESPED))) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Esta sesión de pago no es tuya");
+        }
+        if (!sesion.isPagada()) {
+            throw new ResponseStatusException(HttpStatus.PAYMENT_REQUIRED,
+                    "El pago todavía no se ha completado en Stripe: la reserva no se creó");
+        }
+
+        ReservaConfirmarRequestDTO reservaPagada = new ReservaConfirmarRequestDTO();
+        reservaPagada.setIdHuesped(idHuesped);
+        reservaPagada.setIdPublicacion(Integer.valueOf(datos.get(META_PUBLICACION)));
+        reservaPagada.setFechaLlegada(LocalDate.parse(datos.get(META_LLEGADA)));
+        reservaPagada.setFechaSalida(LocalDate.parse(datos.get(META_SALIDA)));
+        reservaPagada.setNumHuespedes(Integer.valueOf(datos.get(META_HUESPEDES)));
+        reservaPagada.setClaveIdempotencia(idSesion);
+
+        Optional<Reserva> repetida = reservaRepository.findByClaveIdempotencia(idSesion);
+        if (repetida.isPresent()) {
+            return reservaYaHecha(repetida.get(), huesped);
+        }
+        publicacionService.esperarTurnoParaReservar(reservaPagada.getIdPublicacion());
+        repetida = reservaRepository.findByClaveIdempotencia(idSesion);
+        if (repetida.isPresent()) {
+            return reservaYaHecha(repetida.get(), huesped);
+        }
+
+        Publicacion publicacion;
+        try {
+            publicacion = publicacionService.obtenerParaReservar(reservaPagada.getIdPublicacion(),
+                    reservaPagada.getFechaLlegada(), reservaPagada.getFechaSalida());
+        } catch (ResponseStatusException e) {
+            stripeService.reembolsar(sesion.getIdTransaccion(), "reembolso-" + idSesion);
+            throw new ResponseStatusException(e.getStatusCode(), e.getReason()
+                    + ". No se creó la reserva y se devolvió el pago completo a tu tarjeta");
+        }
+        Cotizacion cotizacion = cotizar(publicacion, reservaPagada.getFechaLlegada(), reservaPagada.getFechaSalida());
+        if (sesion.getTotalPagado() == null || Math.abs(sesion.getTotalPagado() - cotizacion.getTotal()) >= 0.01) {
+            stripeService.reembolsar(sesion.getIdTransaccion(), "reembolso-" + idSesion);
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "El precio del alojamiento cambió mientras pagabas. "
+                            + "No se creó la reserva y se devolvió el pago completo a tu tarjeta");
+        }
+        return crearReservaPagada(reservaPagada, huesped, publicacion, cotizacion, sesion.getIdTransaccion());
+    }
+
+    /**
+     * Crea la reserva ya pagada, bloquea el período (si no necesita aprobación), registra el pago y notifica al
+     * huésped y al anfitrión. La usan el pago simulado (confirmar) y el pago con Stripe (confirmarPagoStripe).
+     */
+    private ReservaConfirmadaDTO crearReservaPagada(ReservaConfirmarRequestDTO dto, Huesped huesped,
+                                                    Publicacion publicacion, Cotizacion cotizacion,
+                                                    String idTransaccion) {
         boolean conAprobacion = publicacion.getModoAceptacion() == ModoAceptacion.CON_APROBACION;
         Reserva reserva = new Reserva();
         reserva.setEstado(conAprobacion ? EstadoReserva.PENDIENTE : EstadoReserva.CONFIRMADA);
@@ -133,7 +259,7 @@ public class ReservaServiceImpl implements ReservaService {
             publicacionService.bloquearPeriodoReservado(publicacion.getIdPublicacion(),
                     dto.getFechaLlegada(), dto.getFechaSalida());
         }
-        Pago pago = registrarPago(reserva, huesped);
+        Pago pago = registrarPago(reserva, huesped, idTransaccion);
 
         String fechas = " del " + reserva.getFechaLlegada() + " al " + reserva.getFechaSalida();
         if (conAprobacion) {
@@ -352,14 +478,22 @@ public class ReservaServiceImpl implements ReservaService {
         return !numeroTarjeta.endsWith("0002");
     }
 
-    private Pago registrarPago(Reserva reserva, Huesped huesped) {
+    private void exigirCapacidad(Publicacion publicacion, Integer numHuespedes) {
+        if (publicacion.getCapacidad() != null && numHuespedes > publicacion.getCapacidad()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "El alojamiento admite máximo " + publicacion.getCapacidad() + " huéspedes");
+        }
+    }
+
+    /** idTransaccion: "SIM-..." en el pago simulado, o el id del cobro en Stripe (pi_...). */
+    private Pago registrarPago(Reserva reserva, Huesped huesped, String idTransaccion) {
         Pago pago = new Pago();
         pago.setReserva(reserva);
         pago.setTipoMovimiento(Pago.TIPO_PAGO);
         pago.setValor(reserva.getCotizacion().getTotal());
         pago.setEmisor("HUESPED-" + huesped.getIdUsuario());
         pago.setReceptor("MARKETPLACE");
-        pago.setIdTransaccion("SIM-" + UUID.randomUUID());
+        pago.setIdTransaccion(idTransaccion);
         pago.setEstado(Pago.APROBADO);
         pagoRepository.save(pago);
         return pago;

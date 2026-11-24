@@ -17,6 +17,7 @@ import co.edu.unbosque.marketplace.repository.NotificacionRepository;
 import co.edu.unbosque.marketplace.repository.PagoRepository;
 import co.edu.unbosque.marketplace.repository.ReservaRepository;
 import co.edu.unbosque.marketplace.service.PublicacionService;
+import co.edu.unbosque.marketplace.service.StripeService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -48,7 +49,8 @@ class ReservaServiceImplTest {
         notificacionRepository = mock(NotificacionRepository.class);
         servicio = new ReservaServiceImpl(reservaRepository, anfitrionRepository, publicacionService,
                 notificacionRepository, mock(HuespedRepository.class), mock(PagoRepository.class),
-                mock(CancelacionRepository.class), mock(EventoAuditoriaRepository.class));
+                mock(CancelacionRepository.class), mock(EventoAuditoriaRepository.class),
+                mock(StripeService.class), "http://localhost:4200");
 
         Anfitrion anfitrion = anfitrion(7, "1012345678", "ana@correo.com");
         Anfitrion otroAnfitrion = anfitrion(8, "1011111111", "otro@correo.com");
