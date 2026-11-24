@@ -1,0 +1,49 @@
+<app-plantilla-principal rol="ANFITRION" titulo="Reservas de mis alojamientos" subtitulo="Todas las reservas que han hecho en tus alojamientos.">
+  @if (exito()) {
+    <app-alerta tipo="exito">{{ exito() }}</app-alerta>
+  }
+  @if (error()) {
+    <app-alerta tipo="error">{{ error() }}</app-alerta>
+  }
+
+  <label class="filtro">
+    <span>Estado</span>
+    <select [value]="filtroEstado()" (change)="filtrar($event)">
+      <option value="TODOS">Todos</option>
+      @for (estado of ordenEstados; track estado) {
+        <option [value]="estado">{{ estados[estado].texto }}</option>
+      }
+    </select>
+  </label>
+
+  @for (r of filtradas(); track r.idReserva) {
+    <article class="tarjeta">
+      <div class="cabecera">
+        <strong>{{ r.tituloPublicacion }}</strong>
+        <app-insignia [tono]="estados[r.estado].tono">{{ estados[r.estado].texto }}</app-insignia>
+      </div>
+      <dl>
+        <dt>Huésped</dt>
+        <dd>{{ r.nombreHuesped }}</dd>
+        <dt>Fechas</dt>
+        <dd>{{ r.fechaLlegada | date: 'dd/MM/yyyy' }} – {{ r.fechaSalida | date: 'dd/MM/yyyy' }}</dd>
+        <dt>Huéspedes</dt>
+        <dd>{{ r.numHuespedes }}</dd>
+        <dt>Total</dt>
+        <dd>{{ r.total | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</dd>
+      </dl>
+
+      @if (cancelando() === r.idReserva) {
+        <app-cancelar-reserva [idReserva]="r.idReserva" rol="ANFITRION" (cancelada)="alCancelar($event)" (volver)="cancelando.set(null)" />
+      } @else if (sePuedeCancelar(r.estado)) {
+        <button type="button" class="enlace peligro" (click)="abrirCancelacion(r)">Cancelar reserva</button>
+      }
+    </article>
+  } @empty {
+    @if (!cargado()) {
+      <p class="vacio">Cargando…</p>
+    } @else if (!error()) {
+      <p class="vacio">{{ reservas().length ? 'No hay reservas con ese estado.' : 'Aún no tienes reservas.' }}</p>
+    }
+  }
+</app-plantilla-principal>

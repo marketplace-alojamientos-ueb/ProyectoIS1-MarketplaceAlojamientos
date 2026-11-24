@@ -30,6 +30,7 @@ describe('BarraNavegacion', () => {
     expect(texto).toContain('Mis publicaciones');
     expect(texto).toContain('Disponibilidad');
     expect(texto).toContain('Reservas pendientes');
+    expect(texto).toContain('Todas las reservas');
     expect(texto).toContain('Mi perfil');
   });
 
